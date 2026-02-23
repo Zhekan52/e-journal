@@ -30,32 +30,32 @@ export const StudentView: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <BookOpen className="w-5 h-5 text-white" />
+      <header className="glass sticky top-0 z-30 border-b border-primary-200/50">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-center justify-between h-18 py-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-soft-xl bg-gradient-to-br from-primary-700 to-primary-900 flex items-center justify-center shadow-lg shadow-primary-800/20">
+                <BookOpen className="w-6 h-6 text-white" />
               </div>
-              <span className="font-semibold text-gray-900 text-lg">Дневник</span>
+              <span className="font-semibold text-primary-900 text-xl tracking-tight">Дневник</span>
             </div>
-            <nav className="flex items-center gap-1 bg-gray-100/50 rounded-xl p-1">
+            <nav className="flex items-center gap-1 bg-primary-100/50 rounded-soft-lg p-1.5">
               {tabs.map(tab => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'}`}>
+                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-soft-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-white text-accent-600 shadow-sm' : 'text-primary-600 hover:text-primary-900 hover:bg-white/60'}`}>
                   {tab.icon}
                   <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               ))}
             </nav>
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-gray-100/50 rounded-xl">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:flex items-center gap-3 px-4 py-2.5 bg-primary-100/50 rounded-soft-lg">
+                <div className="w-9 h-9 rounded-soft-lg bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center text-white text-sm font-medium shadow-md">
                   {user?.name?.charAt(0)}
                 </div>
-                <span className="text-sm text-gray-700 font-medium">{user?.name}</span>
+                <span className="text-sm text-primary-700 font-medium">{user?.name}</span>
               </div>
-              <button onClick={logout} className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-red-500">
+              <button onClick={logout} className="p-2.5 rounded-soft-lg hover:bg-primary-100 transition-colors text-primary-500 hover:text-danger-600">
                 <LogOut className="w-5 h-5" />
               </button>
             </div>
@@ -63,7 +63,7 @@ export const StudentView: React.FC = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-10">
         {activeTab === 'home' && <Home myGrades={myGrades} lessons={lessons} />}
         {activeTab === 'schedule' && <Schedule />}
         {activeTab === 'grades' && <Grades myGrades={myGrades} attendance={attendance} studentId={studentId} />}
@@ -98,65 +98,67 @@ const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons
   const avgGrade = myGrades.length > 0 ? (myGrades.reduce((s: number, g: any) => s + g.value, 0) / myGrades.length).toFixed(2) : '—';
 
   return (
-    <div className="animate-fadeIn space-y-8">
-      <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-8 text-white shadow-xl shadow-blue-500/20">
-        <h1 className="text-2xl font-semibold mb-2">Добро пожаловать!</h1>
-        <p className="text-blue-100">
+    <div className="animate-fadeIn space-y-10">
+      {/* Welcome Banner - Minimalism 2.0: typography as hero */}
+      <div className="bg-gradient-to-br from-primary-700 via-primary-800 to-primary-900 rounded-soft-2xl p-10 text-white shadow-xl shadow-primary-900/20">
+        <h1 className="text-3xl font-semibold mb-3 tracking-tight">Добро пожаловать!</h1>
+        <p className="text-primary-300 text-base font-light">
           {new Date().getDate()} {MONTH_NAMES_GEN[new Date().getMonth()]} · {todayLessons.length} уроков сегодня
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-blue-600" />
+      {/* Stats Cards - increased whitespace */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+        <div className="glass rounded-soft-xl p-6 card-hover">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 rounded-soft-lg bg-primary-100 flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-primary-600" />
             </div>
-            <span className="text-sm font-medium text-gray-500">Средний балл</span>
+            <span className="text-sm font-medium text-primary-500">Средний балл</span>
           </div>
-          <div className="text-3xl font-bold text-blue-600">{avgGrade}</div>
+          <div className="text-4xl font-bold text-accent-600">{avgGrade}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-              <ClipboardList className="w-5 h-5 text-green-600" />
+        <div className="glass rounded-soft-xl p-6 card-hover">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 rounded-soft-lg bg-success-100 flex items-center justify-center">
+              <ClipboardList className="w-5 h-5 text-success-600" />
             </div>
-            <span className="text-sm font-medium text-gray-500">Оценок</span>
+            <span className="text-sm font-medium text-primary-500">Оценок</span>
           </div>
-          <div className="text-3xl font-bold text-gray-900">{myGrades.length}</div>
+          <div className="text-4xl font-bold text-primary-900">{myGrades.length}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-purple-600" />
+        <div className="glass rounded-soft-xl p-6 card-hover">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 rounded-soft-lg bg-accent-100 flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-accent-600" />
             </div>
-            <span className="text-sm font-medium text-gray-500">Уроков сегодня</span>
+            <span className="text-sm font-medium text-primary-500">Уроков сегодня</span>
           </div>
-          <div className="text-3xl font-bold text-gray-900">{todayLessons.length}</div>
+          <div className="text-4xl font-bold text-primary-900">{todayLessons.length}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-              <FileText className="w-5 h-5 text-amber-600" />
+        <div className="glass rounded-soft-xl p-6 card-hover">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 rounded-soft-lg bg-warning-100 flex items-center justify-center">
+              <FileText className="w-5 h-5 text-warning-600" />
             </div>
-            <span className="text-sm font-medium text-gray-500">Предметов</span>
+            <span className="text-sm font-medium text-primary-500">Предметов</span>
           </div>
-          <div className="text-3xl font-bold text-gray-900">{SUBJECTS.length}</div>
+          <div className="text-4xl font-bold text-primary-900">{SUBJECTS.length}</div>
         </div>
       </div>
 
       {todayLessons.length > 0 && (
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
-          <h3 className="font-semibold text-gray-900 mb-4">Расписание на сегодня</h3>
+        <div className="glass rounded-soft-xl p-7">
+          <h3 className="font-semibold text-primary-900 mb-5 text-lg">Расписание на сегодня</h3>
           <div className="space-y-3">
             {todayLessons.map((l: any) => (
-              <div key={l.id} className="flex items-center gap-4 p-3 rounded-xl bg-gray-50/50 hover:bg-gray-100 transition-colors">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-sm font-medium text-white shadow-md">
+              <div key={l.id} className="flex items-center gap-4 p-4 rounded-soft-lg bg-primary-50/50 hover:bg-primary-100/50 transition-colors">
+                <div className="w-11 h-11 rounded-soft-lg bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center text-sm font-medium text-white shadow-md">
                   {l.lessonNumber}
                 </div>
-                <span className="flex-1 font-medium text-gray-900">{l.subject}</span>
+                <span className="flex-1 font-medium text-primary-900">{l.subject}</span>
                 {l.startTime && (
-                  <span className="text-sm text-gray-500 bg-blue-50 px-3 py-1.5 rounded-lg">
+                  <span className="text-sm text-primary-500 bg-primary-100 px-4 py-2 rounded-soft-lg font-medium">
                     {l.startTime}-{l.endTime}
                   </span>
                 )}

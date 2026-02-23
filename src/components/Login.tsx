@@ -26,63 +26,66 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4">
+    <div className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-md">
-        {/* Card */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-8 space-y-8">
-          {/* Header */}
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20 mx-auto">
-              <GraduationCap className="w-8 h-8 text-white" />
+        {/* Card - Minimalism 2.0: soft depth, large whitespace */}
+        <div className="glass rounded-soft-2xl p-10 space-y-8">
+          {/* Header - Typography as hero */}
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-soft-xl bg-gradient-to-br from-primary-700 to-primary-900 shadow-lg shadow-primary-800/20 mx-auto">
+              <GraduationCap className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-xl font-semibold text-gray-900">Школьный портал</h1>
-            <p className="text-gray-500 text-sm">Войдите в свой аккаунт</p>
+            <div>
+              <h1 className="text-3xl font-semibold text-primary-900 tracking-tight">Школьный портал</h1>
+              <p className="text-primary-500 text-sm mt-2 font-light">Войдите в свой аккаунт</p>
+            </div>
           </div>
 
           {/* Error */}
           {error && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+            <div className="flex items-center gap-2.5 bg-danger-50 border border-danger-100 text-danger-700 px-4 py-3 rounded-soft-lg text-sm">
               <AlertCircle className="w-4 h-4 shrink-0" />
               {error}
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-700">Логин</label>
+          {/* Form - increased whitespace */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-primary-700">Логин</label>
               <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary-400" />
                 <input
                   type="text"
                   value={username}
                   onChange={e => setUsername(e.target.value)}
                   placeholder="Введите логин"
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400 transition-all"
+                  className="w-full pl-12 pr-4 py-3.5 bg-primary-50/50 border border-primary-200 rounded-soft-lg focus:outline-none focus:ring-2 focus:ring-accent-500/30 focus:border-accent-500 text-primary-900 placeholder-primary-400 transition-all"
                   required
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-700">Пароль</label>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-primary-700">Пароль</label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary-400" />
                 <input
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Введите пароль"
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400 transition-all"
+                  className="w-full pl-12 pr-4 py-3.5 bg-primary-50/50 border border-primary-200 rounded-soft-lg focus:outline-none focus:ring-2 focus:ring-accent-500/30 focus:border-accent-500 text-primary-900 placeholder-primary-400 transition-all"
                   required
                 />
               </div>
             </div>
 
+            {/* CTA Button - Coral accent */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2.5 py-3.5 bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-medium rounded-soft-lg shadow-lg shadow-accent-500/25 transition-all hover:shadow-accent-500/35 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -95,9 +98,9 @@ export const Login: React.FC = () => {
             </button>
           </form>
 
-          {/* Footer */}
+          {/* Footer - minimal */}
           <div className="pt-2 text-center">
-            <p className="text-xs text-gray-400">Школьный портал © {new Date().getFullYear()}</p>
+            <p className="text-xs text-primary-400 font-light">Школьный портал © {new Date().getFullYear()}</p>
           </div>
         </div>
       </div>

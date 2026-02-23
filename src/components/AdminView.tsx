@@ -44,32 +44,32 @@ export const AdminView: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <BookOpen className="w-5 h-5 text-white" />
+      <header className="glass sticky top-0 z-30 border-b border-primary-200/50">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-center justify-between h-18 py-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-soft-xl bg-gradient-to-br from-primary-700 to-primary-900 flex items-center justify-center shadow-lg shadow-primary-800/20">
+                <BookOpen className="w-6 h-6 text-white" />
               </div>
-              <span className="font-semibold text-gray-900 text-lg">Панель управления</span>
+              <span className="font-semibold text-primary-900 text-xl tracking-tight">Панель управления</span>
             </div>
-            <nav className="flex items-center gap-1 bg-gray-100/50 rounded-xl p-1">
+            <nav className="flex items-center gap-1 bg-primary-100/50 rounded-soft-lg p-1.5">
               {tabs.map(tab => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'}`}>
+                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-soft-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-white text-accent-600 shadow-sm' : 'text-primary-600 hover:text-primary-900 hover:bg-white/60'}`}>
                   {tab.icon}
                   <span className="hidden lg:inline">{tab.label}</span>
                 </button>
               ))}
             </nav>
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-gray-100/50 rounded-xl">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:flex items-center gap-3 px-4 py-2.5 bg-primary-100/50 rounded-soft-lg">
+                <div className="w-9 h-9 rounded-soft-lg bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center text-white text-sm font-medium shadow-md">
                   {user?.name?.charAt(0)}
                 </div>
-                <span className="text-sm text-gray-700 font-medium">{user?.name}</span>
+                <span className="text-sm text-primary-700 font-medium">{user?.name}</span>
               </div>
-              <button onClick={logout} className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-red-500">
+              <button onClick={logout} className="p-2.5 rounded-soft-lg hover:bg-primary-100 transition-colors text-primary-500 hover:text-danger-600">
                 <LogOut className="w-5 h-5" />
               </button>
             </div>
@@ -77,7 +77,7 @@ export const AdminView: React.FC = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-10">
         {activeTab === 'dashboard' && <AdminDashboard />}
         {activeTab === 'schedule' && <Schedule editable={scheduleEditMode} onEditModeChange={setScheduleEditMode} onOpenLessonPage={handleOpenLessonPage} />}
         {activeTab === 'journal' && <Journal />}
@@ -289,129 +289,129 @@ const AdminDashboard: React.FC = () => {
   const totalGrades = filteredGrades.length;
 
   return (
-    <div className="animate-fadeIn space-y-8">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-8 text-white shadow-xl shadow-blue-500/20">
-        <h1 className="text-2xl font-semibold mb-2">Добро пожаловать!</h1>
-        <p className="text-blue-100">
+    <div className="animate-fadeIn space-y-10">
+      {/* Welcome Banner - Minimalism 2.0: typography as hero */}
+      <div className="bg-gradient-to-br from-primary-700 via-primary-800 to-primary-900 rounded-soft-2xl p-10 text-white shadow-xl shadow-primary-900/20">
+        <h1 className="text-3xl font-semibold mb-3 tracking-tight">Добро пожаловать!</h1>
+        <p className="text-primary-300 text-base font-light">
           {new Date().getDate()} {MONTH_NAMES_GEN[new Date().getMonth()]} · {students.length} учеников · {todayLessons.length} уроков сегодня
         </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-              <Users className="w-5 h-5 text-blue-600" />
+      {/* Stats Cards - increased whitespace */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+        <div className="glass rounded-soft-xl p-6 card-hover">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 rounded-soft-lg bg-primary-100 flex items-center justify-center">
+              <Users className="w-5 h-5 text-primary-600" />
             </div>
-            <span className="text-sm font-medium text-gray-500">Учеников</span>
+            <span className="text-sm font-medium text-primary-500">Учеников</span>
           </div>
-          <div className="text-3xl font-bold text-gray-900">{students.length}</div>
+          <div className="text-4xl font-bold text-primary-900">{students.length}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-              <Award className="w-5 h-5 text-green-600" />
+        <div className="glass rounded-soft-xl p-6 card-hover">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 rounded-soft-lg bg-success-100 flex items-center justify-center">
+              <Award className="w-5 h-5 text-success-600" />
             </div>
-            <span className="text-sm font-medium text-gray-500">Средний балл</span>
+            <span className="text-sm font-medium text-primary-500">Средний балл</span>
           </div>
-          <div className="text-3xl font-bold text-blue-600">{avgGrade}</div>
+          <div className="text-4xl font-bold text-accent-600">{avgGrade}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-              <ClipboardList className="w-5 h-5 text-purple-600" />
+        <div className="glass rounded-soft-xl p-6 card-hover">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 rounded-soft-lg bg-accent-100 flex items-center justify-center">
+              <ClipboardList className="w-5 h-5 text-accent-600" />
             </div>
-            <span className="text-sm font-medium text-gray-500">Оценок</span>
+            <span className="text-sm font-medium text-primary-500">Оценок</span>
           </div>
-          <div className="text-3xl font-bold text-gray-900">{filteredGrades.length}</div>
+          <div className="text-4xl font-bold text-primary-900">{filteredGrades.length}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
+        <div className="glass rounded-soft-xl p-6 card-hover">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 rounded-soft-lg bg-danger-100 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-danger-600" />
             </div>
-            <span className="text-sm font-medium text-gray-500">Пропуски (Н)</span>
+            <span className="text-sm font-medium text-primary-500">Пропуски (Н)</span>
           </div>
-          <div className="text-3xl font-bold text-gray-900">{absentCount}</div>
+          <div className="text-4xl font-bold text-primary-900">{absentCount}</div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
-          <h3 className="font-semibold text-gray-900 mb-4">Лучшие ученики</h3>
+        <div className="glass rounded-soft-xl p-7">
+          <h3 className="font-semibold text-primary-900 mb-5 text-lg">Лучшие ученики</h3>
           <div className="space-y-3">
             {topStudents.map((s, i) => (
-              <div key={s.id} className="flex items-center gap-4 p-3 rounded-xl bg-gray-50/50 hover:bg-gray-100 transition-colors">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium ${
+              <div key={s.id} className="flex items-center gap-4 p-4 rounded-soft-lg bg-primary-50/50 hover:bg-primary-100/50 transition-colors">
+                <div className={`w-11 h-11 rounded-soft-lg flex items-center justify-center text-sm font-medium ${
                   i === 0 ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white shadow-md' :
                   i === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white shadow-md' :
                   i === 2 ? 'bg-gradient-to-br from-orange-300 to-orange-400 text-white shadow-md' :
-                  'bg-gray-200 text-gray-600'
+                  'bg-primary-200 text-primary-600'
                 }`}>
                   {i + 1}
                 </div>
-                <span className="flex-1 font-medium text-gray-900">{s.lastName} {s.firstName}</span>
-                <span className="font-semibold text-blue-600">{s.avg.toFixed(2)}</span>
+                <span className="flex-1 font-medium text-primary-900">{s.lastName} {s.firstName}</span>
+                <span className="font-semibold text-accent-600">{s.avg.toFixed(2)}</span>
               </div>
             ))}
-            {topStudents.length === 0 && <p className="text-gray-400 text-center py-8">Нет данных</p>}
+            {topStudents.length === 0 && <p className="text-primary-400 text-center py-8">Нет данных</p>}
           </div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
-          <h3 className="font-semibold text-gray-900 mb-4">Требуют внимания</h3>
+        <div className="glass rounded-soft-xl p-7">
+          <h3 className="font-semibold text-primary-900 mb-5 text-lg">Требуют внимания</h3>
           <div className="space-y-3">
             {weakStudents.map((s, i) => (
-              <div key={s.id} className="flex items-center gap-4 p-3 rounded-xl bg-gray-50/50 hover:bg-gray-100 transition-colors">
-                <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center text-sm font-medium text-red-600">
+              <div key={s.id} className="flex items-center gap-4 p-4 rounded-soft-lg bg-primary-50/50 hover:bg-primary-100/50 transition-colors">
+                <div className="w-11 h-11 rounded-soft-lg bg-danger-100 flex items-center justify-center text-sm font-medium text-danger-600">
                   {i + 1}
                 </div>
-                <span className="flex-1 font-medium text-gray-900">{s.lastName} {s.firstName}</span>
-                <span className="font-semibold text-red-600">{s.avg.toFixed(2)}</span>
+                <span className="flex-1 font-medium text-primary-900">{s.lastName} {s.firstName}</span>
+                <span className="font-semibold text-danger-600">{s.avg.toFixed(2)}</span>
               </div>
             ))}
-            {weakStudents.length === 0 && <p className="text-gray-400 text-center py-8">Нет данных</p>}
+            {weakStudents.length === 0 && <p className="text-primary-400 text-center py-8">Нет данных</p>}
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
-          <h3 className="font-semibold text-gray-900 mb-5">Средний балл по предметам</h3>
-          <div className="space-y-4">
+        <div className="glass rounded-soft-xl p-7">
+          <h3 className="font-semibold text-primary-900 mb-6 text-lg">Средний балл по предметам</h3>
+          <div className="space-y-5">
             {avgBySubject.map(item => (
               <div key={item.subject}>
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="font-medium text-gray-700">{item.subject}</span>
-                  <span className="font-semibold text-gray-900">{item.avg.toFixed(2)}</span>
+                <div className="flex justify-between text-sm mb-2.5">
+                  <span className="font-medium text-primary-700">{item.subject}</span>
+                  <span className="font-semibold text-primary-900">{item.avg.toFixed(2)}</span>
                 </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full transition-all duration-500 ${item.avg >= 4.5 ? 'bg-gradient-to-r from-green-400 to-green-500' : item.avg >= 3.5 ? 'bg-gradient-to-r from-blue-400 to-blue-500' : item.avg >= 2.5 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' : 'bg-gradient-to-r from-red-400 to-red-500'}`}
+                <div className="h-2.5 bg-primary-100 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-700 ${item.avg >= 4.5 ? 'bg-gradient-to-r from-success-400 to-success-500' : item.avg >= 3.5 ? 'bg-gradient-to-r from-primary-400 to-primary-500' : item.avg >= 2.5 ? 'bg-gradient-to-r from-warning-400 to-warning-500' : 'bg-gradient-to-r from-danger-400 to-danger-500'}`}
                     style={{ width: `${(item.avg / 5) * 100}%` }} />
                 </div>
               </div>
             ))}
           </div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
-          <h3 className="font-semibold text-gray-900 mb-12">Распределение оценок</h3>
-          <div className="flex items-end justify-center gap-8 h-52 mt-6">
+        <div className="glass rounded-soft-xl p-7">
+          <h3 className="font-semibold text-primary-900 mb-14">Распределение оценок</h3>
+          <div className="flex items-end justify-center gap-10 h-52 mt-6">
             {[5, 4, 3, 2].map(v => {
               const count = distribution[v as keyof typeof distribution] || 0;
               const pct = totalGrades > 0 ? (count / totalGrades) * 100 : 0;
               const colors = {
-                5: 'bg-gradient-to-t from-green-400 to-green-500',
-                4: 'bg-gradient-to-t from-blue-400 to-blue-500',
-                3: 'bg-gradient-to-t from-yellow-400 to-yellow-500',
-                2: 'bg-gradient-to-t from-red-400 to-red-500'
+                5: 'bg-gradient-to-t from-success-400 to-success-500',
+                4: 'bg-gradient-to-t from-primary-400 to-primary-500',
+                3: 'bg-gradient-to-t from-warning-400 to-warning-500',
+                2: 'bg-gradient-to-t from-danger-400 to-danger-500'
               };
               return (
                 <div key={v} className="flex flex-col items-center gap-3">
-                  <span className="text-lg font-semibold text-gray-700">{count}</span>
+                  <span className="text-xl font-semibold text-primary-700">{count}</span>
                   <div className={`w-16 rounded-t-lg ${colors[v as keyof typeof colors]} shadow-md`}
                     style={{ height: `${Math.max(pct * 1.8, 12)}px` }} />
-                  <span className="text-sm font-medium text-gray-600">{v}</span>
+                  <span className="text-sm font-medium text-primary-600">{v}</span>
                 </div>
               );
             })}
@@ -420,17 +420,17 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {todayLessons.length > 0 && (
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
-          <h3 className="font-semibold text-gray-900 mb-4">Расписание на сегодня</h3>
+        <div className="glass rounded-soft-xl p-7">
+          <h3 className="font-semibold text-primary-900 mb-5 text-lg">Расписание на сегодня</h3>
           <div className="space-y-3">
             {todayLessons.map(l => (
-              <div key={l.id} className="flex items-center gap-4 p-3 rounded-xl bg-gray-50/50 hover:bg-gray-100 transition-colors">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-sm font-medium text-white shadow-md">
+              <div key={l.id} className="flex items-center gap-4 p-4 rounded-soft-lg bg-primary-50/50 hover:bg-primary-100/50 transition-colors">
+                <div className="w-11 h-11 rounded-soft-lg bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center text-sm font-medium text-white shadow-md">
                   {l.lessonNumber}
                 </div>
-                <span className="flex-1 font-medium text-gray-900">{l.subject}</span>
+                <span className="flex-1 font-medium text-primary-900">{l.subject}</span>
                 {l.startTime && (
-                  <span className="text-sm text-gray-500 bg-blue-50 px-3 py-1.5 rounded-lg">
+                  <span className="text-sm text-primary-500 bg-primary-100 px-4 py-2 rounded-soft-lg font-medium">
                     {l.startTime}-{l.endTime}
                   </span>
                 )}
@@ -440,22 +440,22 @@ const AdminDashboard: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white/80 backdrop-blur rounded-xl border border-white/50 p-5 text-center shadow-lg">
-          <div className="text-3xl font-bold text-gray-900">{tests.length}</div>
-          <div className="text-xs text-gray-500 mt-2 font-medium">Тестов</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+        <div className="glass rounded-soft-xl p-5 text-center card-hover">
+          <div className="text-4xl font-bold text-primary-900">{tests.length}</div>
+          <div className="text-xs text-primary-500 mt-3 font-medium">Тестов</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-xl border border-white/50 p-5 text-center shadow-lg">
-          <div className="text-3xl font-bold text-gray-900">{SUBJECTS.length}</div>
-          <div className="text-xs text-gray-500 mt-2 font-medium">Предметов</div>
+        <div className="glass rounded-soft-xl p-5 text-center card-hover">
+          <div className="text-4xl font-bold text-primary-900">{SUBJECTS.length}</div>
+          <div className="text-xs text-primary-500 mt-3 font-medium">Предметов</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-xl border border-white/50 p-5 text-center shadow-lg">
-          <div className="text-3xl font-bold text-gray-900">{lessons.length}</div>
-          <div className="text-xs text-gray-500 mt-2 font-medium">Уроков в расписании</div>
+        <div className="glass rounded-soft-xl p-5 text-center card-hover">
+          <div className="text-4xl font-bold text-primary-900">{lessons.length}</div>
+          <div className="text-xs text-primary-500 mt-3 font-medium">Уроков в расписании</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-xl border border-white/50 p-5 text-center shadow-lg">
-          <div className="text-3xl font-bold text-gray-900">{attendance.length}</div>
-          <div className="text-xs text-gray-500 mt-2 font-medium">Отметок посещаемости</div>
+        <div className="glass rounded-soft-xl p-5 text-center card-hover">
+          <div className="text-4xl font-bold text-primary-900">{attendance.length}</div>
+          <div className="text-xs text-primary-500 mt-3 font-medium">Отметок посещаемости</div>
         </div>
       </div>
     </div>

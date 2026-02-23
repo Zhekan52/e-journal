@@ -6,9 +6,9 @@ import { AdminView } from './components/AdminView';
 const LoadingScreen: React.FC = () => (
   <div className="min-h-screen flex items-center justify-center">
     <div className="text-center">
-      <div className="w-16 h-16 border-4 border-primary-100 border-t-primary-500 rounded-full animate-spin mx-auto mb-6" />
-      <p className="text-gray-600 text-lg font-medium animate-pulse-soft">Загрузка данных...</p>
-      <p className="text-gray-400 text-sm mt-2">Подключение к базе данных</p>
+      <div className="w-14 h-14 border-3 border-primary-200 border-t-accent-500 rounded-full animate-spin mx-auto mb-6" />
+      <p className="text-primary-700 text-base font-medium">Загрузка данных...</p>
+      <p className="text-primary-400 text-sm mt-2 font-light">Подключение к базе данных</p>
     </div>
   </div>
 );
