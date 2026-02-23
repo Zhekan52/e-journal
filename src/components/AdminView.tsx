@@ -857,7 +857,7 @@ const Journal: React.FC = () => {
           </div>
         </div>
 
-        <div className="glass rounded-3xl p-6 text-gray-900 shadow-soft-xl">
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -881,7 +881,7 @@ const Journal: React.FC = () => {
           </div>
         </div>
 
-        <div className="glass rounded-2xl p-6 shadow-soft space-y-5">
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Тема урока</label>
@@ -1022,7 +1022,7 @@ const Journal: React.FC = () => {
           <TestResultsSection test={assignedTest} date={lessonPageDate} subject={selectedSubject} students={sortedStudents} testAttempts={testAttempts} testRetakes={testRetakes} setTestRetakes={setTestRetakes} setTestAttempts={setTestAttempts} grades={grades} setGrades={setGrades} journalColumns={journalColumns} lessonNumber={lessonPageLessonNum} testAssignments={testAssignments} setTestAssignments={setTestAssignments} />
         )}
 
-        <div className="glass rounded-2xl shadow-soft overflow-hidden border border-white/50">
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 overflow-hidden shadow-lg">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

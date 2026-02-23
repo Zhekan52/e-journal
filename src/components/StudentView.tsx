@@ -101,22 +101,50 @@ const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons
     <div className="animate-fadeIn space-y-8">
       <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-8 text-white shadow-xl shadow-blue-500/20">
         <h1 className="text-2xl font-semibold mb-2">Добро пожаловать!</h1>
-        <p className="text-blue-100">Сегодня {new Date().getDate()} {MONTH_NAMES_GEN[new Date().getMonth()]}</p>
+        <p className="text-blue-100">
+          {new Date().getDate()} {MONTH_NAMES_GEN[new Date().getMonth()]} · {todayLessons.length} уроков сегодня
+        </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <div className="text-sm font-medium text-gray-500 mb-2">Средний балл</div>
-          <div className="text-4xl font-bold text-blue-600">{avgGrade}</div>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-blue-600" />
+            </div>
+            <span className="text-sm font-medium text-gray-500">Средний балл</span>
+          </div>
+          <div className="text-3xl font-bold text-blue-600">{avgGrade}</div>
         </div>
         <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <div className="text-sm font-medium text-gray-500 mb-2">Всего оценок</div>
-          <div className="text-4xl font-bold text-gray-900">{myGrades.length}</div>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+              <ClipboardList className="w-5 h-5 text-green-600" />
+            </div>
+            <span className="text-sm font-medium text-gray-500">Оценок</span>
+          </div>
+          <div className="text-3xl font-bold text-gray-900">{myGrades.length}</div>
         </div>
         <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <div className="text-sm font-medium text-gray-500 mb-2">Уроков сегодня</div>
-          <div className="text-4xl font-bold text-gray-900">{todayLessons.length}</div>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-purple-600" />
+            </div>
+            <span className="text-sm font-medium text-gray-500">Уроков сегодня</span>
+          </div>
+          <div className="text-3xl font-bold text-gray-900">{todayLessons.length}</div>
+        </div>
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+              <FileText className="w-5 h-5 text-amber-600" />
+            </div>
+            <span className="text-sm font-medium text-gray-500">Предметов</span>
+          </div>
+          <div className="text-3xl font-bold text-gray-900">{SUBJECTS.length}</div>
         </div>
       </div>
+
       {todayLessons.length > 0 && (
         <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
           <h3 className="font-semibold text-gray-900 mb-4">Расписание на сегодня</h3>
@@ -196,18 +224,18 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
 
   return (
     <div className="animate-fadeIn">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Оценки</h2>
-      <div className="glass rounded-3xl overflow-hidden shadow-soft">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">Оценки</h2>
+      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 overflow-hidden shadow-lg">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               {monthGroups.length > 0 && (
-                <tr className="bg-primary-50/50">
-                  <th className="sticky left-0 z-10 bg-primary-50/50 px-5 py-3 text-left font-semibold text-primary-700 border-b border-r border-primary-100 min-w-[180px]"></th>
+                <tr className="bg-blue-50/50">
+                  <th className="sticky left-0 z-10 bg-blue-50/50 px-5 py-3 text-left font-semibold text-blue-700 border-b border-r border-blue-100 min-w-[180px]"></th>
                   {monthGroups.map((mg, i) => (
-                    <th key={i} colSpan={mg.dates.length} className="px-3 py-3 text-center font-bold text-primary-800 border-b border-r border-primary-100 text-xs uppercase">{mg.month}</th>
+                    <th key={i} colSpan={mg.dates.length} className="px-3 py-3 text-center font-bold text-blue-800 border-b border-r border-blue-100 text-xs uppercase">{mg.month}</th>
                   ))}
-                  <th className="px-4 py-3 text-center font-semibold text-primary-700 border-b border-primary-100">Ср.</th>
+                  <th className="px-4 py-3 text-center font-semibold text-blue-700 border-b border-blue-100">Ср.</th>
                 </tr>
               )}
               <tr className="bg-gray-50/50">
@@ -262,7 +290,7 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
                     })}
                     <td className="px-3 py-3 text-center font-bold border-gray-100">
                       {avg !== null ? (
-                        <span className={`inline-flex items-center justify-center w-11 h-9 rounded-xl text-sm font-bold ${avg >= 4.5 ? 'bg-success-100 text-success-700' : avg >= 3.5 ? 'bg-primary-100 text-primary-700' : avg >= 2.5 ? 'bg-warning-100 text-warning-700' : 'bg-danger-100 text-danger-700'}`}>
+                        <span className={`inline-flex items-center justify-center w-11 h-9 rounded-xl text-sm font-bold ${avg >= 4.5 ? 'bg-green-100 text-green-700' : avg >= 3.5 ? 'bg-blue-100 text-blue-700' : avg >= 2.5 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
                           {avg.toFixed(1)}
                         </span>
                       ) : (
@@ -587,7 +615,7 @@ const Diary: React.FC<DiaryProps> = ({
         : test.questions;
       return (
         <div className="animate-fadeIn max-w-3xl mx-auto">
-          <button onClick={() => setShowCorrectAnswers(false)} className="flex items-center gap-2 text-primary-600 hover:text-primary-700 mb-4 font-medium">
+          <button onClick={() => setShowCorrectAnswers(false)} className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4 font-medium">
             <ArrowLeft className="w-4 h-4" /> Назад к результатам
           </button>
           <h2 className="text-xl font-bold text-gray-900 mb-4">Разбор ответов</h2>
@@ -655,7 +683,7 @@ const Diary: React.FC<DiaryProps> = ({
             })}
           </div>
           <button onClick={() => { setTakingTest(null); setTestFinished(false); setTestResult(null); setShowCorrectAnswers(false); }}
-            className="mt-6 w-full px-6 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors">
+            className="mt-6 w-full px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">
             Вернуться в дневник
           </button>
         </div>
@@ -699,7 +727,7 @@ const Diary: React.FC<DiaryProps> = ({
               Посмотреть правильные ответы
             </button>
             <button onClick={() => { setTakingTest(null); setTestFinished(false); setTestResult(null); }}
-              className="w-full px-6 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors">
+              className="w-full px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">
               Вернуться в дневник
             </button>
           </div>
@@ -819,11 +847,11 @@ const Diary: React.FC<DiaryProps> = ({
           const dayNameIdx = dow === 0 ? 6 : dow - 1;
 
           return (
-            <div key={dayIdx} className="glass rounded-2xl overflow-hidden shadow-soft">
-              <div className="px-6 py-4 bg-gradient-to-r from-primary-50 to-primary-100/50 border-b border-primary-100">
+            <div key={dayIdx} className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 overflow-hidden shadow-lg">
+              <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-blue-100/50 border-b border-blue-100">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-gray-900">{DAY_NAMES[dayNameIdx]}</h3>
-                  <span className="text-sm font-semibold text-primary-700">{date.getDate()} {MONTH_NAMES_GEN[date.getMonth()]}</span>
+                  <span className="text-sm font-semibold text-blue-700">{date.getDate()} {MONTH_NAMES_GEN[date.getMonth()]}</span>
                 </div>
               </div>
               <table className="w-full text-sm">
@@ -898,13 +926,13 @@ const Diary: React.FC<DiaryProps> = ({
                                 </button>
                               ) : (
                                 <button onClick={() => setShowConfirm({ test: testObj, entry, variantId: assignment?.variantId })}
-                                  className="flex items-center gap-2 p-2.5 bg-primary-50 rounded-xl border border-primary-200 hover:bg-primary-100 transition-colors w-full text-left group">
-                                  <div className="w-9 h-9 rounded-xl bg-primary-200 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-300 transition-colors">
-                                    <Play className="w-4 h-4 text-primary-700" />
+                                  className="flex items-center gap-2 p-2.5 bg-blue-50 rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors w-full text-left group">
+                                  <div className="w-9 h-9 rounded-xl bg-blue-200 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-300 transition-colors">
+                                    <Play className="w-4 h-4 text-blue-700" />
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="text-xs font-bold text-primary-900 truncate">{testObj.title}</div>
-                                    <div className="text-[10px] text-primary-600">
+                                    <div className="text-xs font-bold text-blue-900 truncate">{testObj.title}</div>
+                                    <div className="text-[10px] text-blue-600">
                                       {assignment?.variantId && testObj.variants
                                         ? `Вариант: ${testObj.variants.find((v: any) => v.id === assignment.variantId)?.name || '—'}`
                                         : testObj.useVariants && testObj.variants && testObj.variants.length > 0
@@ -940,10 +968,10 @@ const Diary: React.FC<DiaryProps> = ({
                               <div className="flex flex-wrap gap-1.5 justify-center">
                                 {dayGrades.map((g: any, i: number) => (
                                   <span key={i} className={`inline-flex items-center justify-center w-9 h-9 rounded-xl text-sm font-bold ${
-                                    g.value === 5 ? 'bg-success-100 text-success-700' :
-                                    g.value === 4 ? 'bg-primary-100 text-primary-700' :
-                                    g.value === 3 ? 'bg-warning-100 text-warning-700' :
-                                    'bg-danger-100 text-danger-700'
+                                    g.value === 5 ? 'bg-green-100 text-green-700' :
+                                    g.value === 4 ? 'bg-blue-100 text-blue-700' :
+                                    g.value === 3 ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
                                   }`}>{g.value}</span>
                                 ))}
                                 {dayGrades.length === 0 && <span className="text-gray-400">—</span>}
@@ -1081,10 +1109,10 @@ const Statistics: React.FC<StatisticsProps> = ({ studentId, grades, lessons, stu
 
   const getAvgColor = (avg: number) => {
     if (avg === 0) return 'bg-gray-100 text-gray-400';
-    if (avg >= 4.5) return 'bg-success-100 text-success-700';
-    if (avg >= 3.5) return 'bg-primary-100 text-primary-700';
-    if (avg >= 2.5) return 'bg-warning-100 text-warning-700';
-    return 'bg-danger-100 text-danger-700';
+    if (avg >= 4.5) return 'bg-green-100 text-green-700';
+    if (avg >= 3.5) return 'bg-blue-100 text-blue-700';
+    if (avg >= 2.5) return 'bg-yellow-100 text-yellow-700';
+    return 'bg-red-100 text-red-700';
   };
 
   return (
@@ -1096,31 +1124,31 @@ const Statistics: React.FC<StatisticsProps> = ({ studentId, grades, lessons, stu
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
         <div className="relative z-10">
-          <div className="text-sm font-medium text-primary-200 mb-2">Ваш средний балл</div>
+          <div className="text-sm font-medium text-blue-200 mb-2">Ваш средний балл</div>
           <div className="text-5xl font-bold mb-2">{myOverallAvg > 0 ? myOverallAvg.toFixed(2) : '—'}</div>
-          <div className="text-primary-200 text-sm">по всем предметам</div>
+          <div className="text-blue-200 text-sm">по всем предметам</div>
         </div>
       </div>
 
       {/* Статистика класса */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="glass rounded-2xl p-6 card-hover">
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
           <div className="text-sm font-semibold text-gray-500 mb-2">Средний балл класса</div>
           <div className="text-4xl font-bold text-gray-900">{classOverallAvg > 0 ? classOverallAvg.toFixed(2) : '—'}</div>
         </div>
-        <div className="glass rounded-2xl p-6 card-hover">
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
           <div className="text-sm font-semibold text-gray-500 mb-2">Учеников в классе</div>
           <div className="text-4xl font-bold text-gray-900">{totalStudents}</div>
         </div>
-        <div className="glass rounded-2xl p-6 card-hover">
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
           <div className="text-sm font-semibold text-gray-500 mb-2">Всего оценок</div>
           <div className="text-4xl font-bold text-gray-900">{allGrades.length}</div>
         </div>
       </div>
 
       {/* Статистика по предметам */}
-      <div className="glass rounded-3xl p-6 shadow-soft">
-        <h3 className="font-bold text-gray-900 mb-6 text-lg">Статистика по предметам</h3>
+      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
+        <h3 className="font-semibold text-gray-900 mb-6 text-lg">Статистика по предметам</h3>
         <div className="space-y-4">
           {subjectStats.length > 0 ? subjectStats.map(stat => (
             <div key={stat.subject} className="p-4 rounded-2xl bg-white/60 hover:bg-white transition-colors border border-white/80">
