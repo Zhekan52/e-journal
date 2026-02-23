@@ -1072,10 +1072,9 @@ const Statistics: React.FC<StatisticsProps> = ({ studentId, grades, lessons, stu
   const getPositionBadge = (pos: number, total: number) => {
     if (pos === 0) return <span className="text-gray-400">—</span>;
     const colorClass = getPositionColor(pos, total);
-    const suffix = pos === 1 ? 'е' : pos >= 2 && pos <= 4 ? 'е' : 'е';
     return (
       <span className={`px-2.5 py-1 rounded-lg text-sm font-bold ${colorClass}`}>
-        {pos}-м{suffix} из {total}
+        {pos}-ое из {total}
       </span>
     );
   };

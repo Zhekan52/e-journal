@@ -1068,8 +1068,8 @@ const Journal: React.FC = () => {
                   const hwGrade = hwCol ? getGrade(s.id, lessonPageDate, hwCol.id, lessonPageLessonNum) : null;
 
                   return (
-                    <tr key={s.id} className="border-b border-gray-100 hover:bg-white/40 transition-colors">
-                      <td className="sticky left-0 z-10 bg-white/0 hover:bg-white/40 px-4 py-2 font-medium text-gray-900 text-xs border-r border-gray-100 whitespace-nowrap backdrop-blur-sm">
+                    <tr key={s.id} className="border-b border-gray-300 hover:bg-gray-50/60 transition-colors">
+                      <td className="sticky left-0 z-10 bg-white/0 hover:bg-white/40 px-4 py-2 font-medium text-gray-900 text-xs border-r border-gray-300 whitespace-nowrap backdrop-blur-sm">
                         <div className="flex items-center gap-2">
                           <span className="text-gray-400 text-xs w-4">{idx + 1}.</span>
                           <span>{s.lastName} {s.firstName}</span>
@@ -1081,7 +1081,7 @@ const Journal: React.FC = () => {
                         const att = attendance.find(a => a.studentId === s.id && a.date === d && a.subject === selectedSubject);
                         const at = att ? ATTENDANCE_TYPES.find(at => at.value === att.type) : null;
                         return (
-                          <td key={d} className="px-1 py-2 text-center border-r border-gray-100">
+                          <td key={d} className="px-1 py-2 text-center border-r border-gray-300">
                             {att ? (
                               <span className={`inline-block w-7 h-7 leading-7 rounded-md text-[10px] font-bold ${at?.bgColor} ${at?.color}`}>
                                 {att.type}
@@ -1095,12 +1095,12 @@ const Journal: React.FC = () => {
                               }`}>
                                 {g.value}
                               </span>
-                            ) : <span className="text-gray-200">·</span>}
+                            ) : <span className="text-gray-300">·</span>}
                           </td>
                         );
                       })}
 
-                      <td className="px-1 py-2 text-center border-r border-gray-100">
+                      <td className="px-1 py-2 text-center border-r border-gray-300">
                         {(() => {
                           const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
                           const at = att ? ATTENDANCE_TYPES.find(at => at.value === att.type) : null;
@@ -1118,7 +1118,7 @@ const Journal: React.FC = () => {
                               disabled={isBlocked}
                               className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
                                 (mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                                : 'bg-gray-50 text-gray-300 hover:bg-gray-100 border-2 border-dashed border-gray-300'}`}
+                                : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'}`}
                               title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                             >
                               {showAttendance ? att?.type : (mainGrade?.value || '')}
@@ -1128,7 +1128,7 @@ const Journal: React.FC = () => {
                       </td>
 
                       {entry?.checkHomework && (
-                        <td className="px-1 py-2 text-center border-r border-gray-100">
+                        <td className="px-1 py-2 text-center border-r border-gray-300">
                           {(() => {
                             const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
                             const isBlocked = !!att;
@@ -1142,7 +1142,7 @@ const Journal: React.FC = () => {
                                 disabled={isBlocked}
                                 className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${hwGrade ?
                                   (hwGrade.value === 5 ? 'bg-green-100 text-green-700' : hwGrade.value === 4 ? 'bg-blue-100 text-blue-700' : hwGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                                  : 'bg-gray-50 text-gray-300 hover:bg-gray-100 border-2 border-dashed border-gray-300'}`}
+                                  : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'}`}
                                 title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                               >
                                 {hwGrade?.value || ''}
@@ -1157,7 +1157,7 @@ const Journal: React.FC = () => {
                         const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
                         const isBlocked = !!att;
                         return (
-                          <td key={c.id} className="px-1 py-2 text-center border-r border-gray-100">
+                          <td key={c.id} className="px-1 py-2 text-center border-r border-gray-300">
                             <button
                               onClick={e => {
                                 if (!isBlocked) {
@@ -1167,7 +1167,7 @@ const Journal: React.FC = () => {
                               disabled={isBlocked}
                               className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${g ?
                                 (g.value === 5 ? 'bg-green-100 text-green-700' : g.value === 4 ? 'bg-blue-100 text-blue-700' : g.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                                : 'bg-gray-50 text-gray-300 hover:bg-gray-100 border-2 border-dashed border-gray-300'}`}
+                                : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'}`}
                               title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                             >
                               {g?.value || ''}
@@ -1176,13 +1176,13 @@ const Journal: React.FC = () => {
                         );
                       })}
 
-                      <td className="px-2 py-2 text-center border-r border-gray-100 font-bold text-gray-700">
+                      <td className="px-2 py-2 text-center border-r border-gray-300 font-bold text-gray-700">
                         {s.avg > 0 ? s.avg.toFixed(1) : '—'}
                       </td>
-                      <td className="px-2 py-2 text-center border-r border-gray-100">
+                      <td className="px-2 py-2 text-center border-r border-gray-300">
                         {s.trend === 1 && <TrendingUp className="w-4 h-4 text-green-500 mx-auto" />}
                         {s.trend === -1 && <TrendingDown className="w-4 h-4 text-red-500 mx-auto" />}
-                        {s.trend === 0 && <span className="text-gray-300">—</span>}
+                        {s.trend === 0 && <span className="text-gray-400">—</span>}
                       </td>
                       <td className="px-2 py-2 text-center">
                         {(s.daysSinceLastGrade >= 14 || s.avg === 0) && allSlots.length > 0 && (
@@ -1270,26 +1270,26 @@ const Journal: React.FC = () => {
               <thead>
                 {/* Month row */}
                 {monthGroups.length > 0 && (
-                  <tr className="bg-amber-50">
-                    <th className="sticky left-0 z-20 bg-amber-50 w-[48px] min-w-[48px] border-b border-r border-amber-200" />
-                    <th className="sticky left-[48px] z-20 bg-amber-50 min-w-[140px] border-b border-r border-amber-200" />
+                  <tr className="bg-amber-100">
+                    <th className="sticky left-0 z-20 bg-amber-100 w-[48px] min-w-[48px] border-b border-r border-amber-300" />
+                    <th className="sticky left-[48px] z-20 bg-amber-100 min-w-[140px] border-b border-r border-amber-300" />
                     {monthGroups.map((mg, i) => {
                       const totalCols = mg.slots.reduce((sum: number, sl) => sum + 1 + getColumnsForSlot(sl.date, sl.lessonNumber).length, 0);
                       return (
-                        <th key={i} colSpan={totalCols} className="px-2 py-2 text-center font-semibold text-amber-800 border-b border-r border-amber-200 text-xs uppercase">
+                        <th key={i} colSpan={totalCols} className="px-2 py-2 text-center font-semibold text-amber-900 border-b border-r border-amber-300 text-xs uppercase">
                           {mg.month}
                         </th>
                       );
                     })}
-                    <th className="px-3 py-2 border-b border-amber-200" />
-                    {showTrend && <th className="border-b border-amber-200" />}
-                    {showNotAsked && <th className="border-b border-amber-200" />}
+                    <th className="px-3 py-2 border-b border-amber-300" />
+                    {showTrend && <th className="border-b border-amber-300" />}
+                    {showNotAsked && <th className="border-b border-amber-300" />}
                   </tr>
                 )}
                 {/* Date + lesson number row */}
-                <tr className="bg-gray-50">
-                  <th className="sticky left-0 z-20 bg-gray-50 px-2 py-2 text-xs font-medium text-gray-500 border-b border-r border-gray-200 w-[48px] min-w-[48px]">№</th>
-                  <th className="sticky left-[48px] z-20 bg-gray-50 px-3 py-2 text-left text-xs font-medium text-gray-500 border-b border-r border-gray-200 min-w-[140px]">ФИ</th>
+                <tr className="bg-gray-100">
+                  <th className="sticky left-0 z-20 bg-gray-100 px-2 py-2 text-xs font-medium text-gray-600 border-b border-r border-gray-300 w-[48px] min-w-[48px]">№</th>
+                  <th className="sticky left-[48px] z-20 bg-gray-100 px-3 py-2 text-left text-xs font-medium text-gray-600 border-b border-r border-gray-300 min-w-[140px]">ФИ</th>
                   {allSlots.map(sl => {
                     const cols = getColumnsForSlot(sl.date, sl.lessonNumber);
                     const totalCols = 1 + cols.length;
@@ -1299,7 +1299,7 @@ const Journal: React.FC = () => {
                     const slotsOnDate = allSlots.filter(s => s.date === sl.date);
                     const showLessonNum = slotsOnDate.length > 1;
                     return (
-                      <th key={sl.key} colSpan={totalCols} className="px-1 py-1 text-center border-b border-r border-gray-200 min-w-[44px] relative">
+                      <th key={sl.key} colSpan={totalCols} className="px-1 py-1 text-center border-b border-r border-gray-300 min-w-[44px] relative">
                         <button onClick={(e) => {
                           if (popoverDate === sl.key) {
                             setPopoverDate(null);
@@ -1309,12 +1309,12 @@ const Journal: React.FC = () => {
                             setPopoverRect(e.currentTarget.getBoundingClientRect());
                           }
                         }}
-                          className="text-xs font-medium text-gray-600 hover:text-primary-600 transition-colors">
+                          className="text-xs font-medium text-gray-700 hover:text-primary-600 transition-colors">
                           {parseInt(sl.date.split('-')[2])}
                           <ChevronDown className={`w-3 h-3 inline ml-0.5 transition-transform ${popoverDate === sl.key ? 'rotate-180' : ''}`} />
                         </button>
                         {showLessonNum && (
-                          <div className="text-[9px] font-bold text-primary-600 bg-primary-50 rounded px-1 mt-0.5">
+                          <div className="text-[9px] font-bold text-primary-600 bg-primary-100 rounded px-1 mt-0.5">
                             Ур. {sl.lessonNumber}
                           </div>
                         )}
@@ -1324,9 +1324,9 @@ const Journal: React.FC = () => {
                       </th>
                     );
                   })}
-                  <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 border-b border-gray-200 min-w-[56px]">Ср.</th>
-                  {showTrend && <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 border-b border-gray-200 w-10">↕</th>}
-                  {showNotAsked && <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 border-b border-gray-200 w-10">⚠</th>}
+                  <th className="px-3 py-2 text-center text-xs font-medium text-gray-600 border-b border-gray-300 min-w-[56px]">Ср.</th>
+                  {showTrend && <th className="px-2 py-2 text-center text-xs font-medium text-gray-600 border-b border-gray-300 w-10">↕</th>}
+                  {showNotAsked && <th className="px-2 py-2 text-center text-xs font-medium text-gray-600 border-b border-gray-300 w-10">⚠</th>}
                 </tr>
               </thead>
               <tbody>
@@ -1337,9 +1337,9 @@ const Journal: React.FC = () => {
                   const daysSince = lastDate ? Math.floor((Date.now() - new Date(lastDate).getTime()) / 86400000) : 999;
 
                   return (
-                    <tr key={student.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                      <td className="sticky left-0 z-10 bg-white px-2 py-1.5 text-center text-xs text-gray-500 border-r border-gray-200 w-[48px]">{idx + 1}</td>
-                      <td className="sticky left-[48px] z-10 bg-white px-3 py-1.5 font-medium text-gray-900 text-xs border-r border-gray-200 whitespace-nowrap">{student.lastName} {student.firstName}</td>
+                    <tr key={student.id} className="border-b border-gray-300 hover:bg-gray-50/60">
+                      <td className="sticky left-0 z-10 bg-white px-2 py-1.5 text-center text-xs text-gray-500 border-r border-gray-300 w-[48px]">{idx + 1}</td>
+                      <td className="sticky left-[48px] z-10 bg-white px-3 py-1.5 font-medium text-gray-900 text-xs border-r border-gray-300 whitespace-nowrap">{student.lastName} {student.firstName}</td>
                       {allSlots.map(sl => {
                         const cols = getColumnsForSlot(sl.date, sl.lessonNumber);
                         const mainGrade = getGrade(student.id, sl.date, undefined, sl.lessonNumber);
@@ -1351,7 +1351,7 @@ const Journal: React.FC = () => {
                         const isBlocked = showAttendance;
                         return (
                           <React.Fragment key={sl.key}>
-                            <td className="px-0.5 py-0.5 text-center border-r border-gray-100">
+                            <td className="px-0.5 py-0.5 text-center border-r border-gray-300">
                               <button 
                                 onClick={e => {
                                   if (!isBlocked) {
@@ -1361,7 +1361,7 @@ const Journal: React.FC = () => {
                                 disabled={isBlocked}
                                 className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
                                   (mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                                  : 'hover:bg-gray-100 text-gray-300 border-2 border-dashed border-gray-300'}`}
+                                  : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'}`}
                                 title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                               >
                                 {showAttendance ? att?.type : (mainGrade?.value || '')}
@@ -1370,7 +1370,7 @@ const Journal: React.FC = () => {
                             {cols.map(c => {
                               const g = getGrade(student.id, sl.date, c.id, sl.lessonNumber);
                               return (
-                                <td key={c.id} className="px-0.5 py-0.5 text-center border-r border-gray-100">
+                                <td key={c.id} className="px-0.5 py-0.5 text-center border-r border-gray-300">
                                   <button 
                                     onClick={e => {
                                       if (!isBlocked) {
@@ -1380,7 +1380,7 @@ const Journal: React.FC = () => {
                                     disabled={isBlocked}
                                     className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${g ?
                                       (g.value === 5 ? 'bg-green-100 text-green-700' : g.value === 4 ? 'bg-blue-100 text-blue-700' : g.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                                      : 'hover:bg-gray-100 text-gray-300 border-2 border-dashed border-gray-300'}`}
+                                      : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'}`}
                                     title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                                   >
                                     {g?.value || ''}
@@ -1391,7 +1391,7 @@ const Journal: React.FC = () => {
                           </React.Fragment>
                         );
                       })}
-                      <td className="px-2 py-1.5 text-center border-gray-200">
+                      <td className="px-2 py-1.5 text-center border-gray-300">
                         {avg > 0 ? (
                           <span className={`font-bold text-sm ${avg >= 4.5 ? 'text-green-600' : avg >= 3.5 ? 'text-blue-600' : avg >= 2.5 ? 'text-yellow-600' : 'text-red-600'}`}>
                             {avg.toFixed(1)}
@@ -1427,7 +1427,7 @@ const Journal: React.FC = () => {
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-xs text-gray-600">
+              <tr className="bg-gray-100 border-b border-gray-300 text-xs text-gray-700">
                 <th className="px-3 py-2 text-left w-10">№</th>
                 <th className="px-3 py-2 text-left w-28">Дата</th>
                 <th className="px-3 py-2 text-left w-28">Тип урока</th>
@@ -1450,7 +1450,7 @@ const Journal: React.FC = () => {
                 const slotsOnDate = allSlots.filter(s => s.date === sl.date);
 
                 return (
-                  <tr key={sl.key} className="border-b border-gray-50 hover:bg-gray-50">
+                  <tr key={sl.key} className="border-b border-gray-300 hover:bg-gray-50">
                     <td className="px-3 py-2 text-gray-500">{idx + 1}</td>
                     <td className="px-3 py-2 text-gray-700 font-medium">
                       {parseInt(sl.date.split('-')[2])} {MONTH_NAMES_GEN[parseInt(sl.date.split('-')[1]) - 1]?.slice(0, 3)}
@@ -1574,7 +1574,7 @@ const Journal: React.FC = () => {
       {/* ATTENDANCE TAB */}
       {journalTab === 'attendance' && (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center gap-4">
+          <div className="px-4 py-3 border-b border-gray-300 bg-gray-100 flex items-center gap-4">
             <div className="flex gap-2 text-xs">
               {ATTENDANCE_TYPES.map(at => (
                 <span key={at.value} className={`px-2 py-1 rounded-md font-bold ${at.bgColor} ${at.color}`}>
@@ -1587,28 +1587,28 @@ const Journal: React.FC = () => {
             <table className="w-full text-sm">
               <thead>
                 {monthGroups.length > 0 && (
-                  <tr className="bg-amber-50">
-                    <th className="sticky left-0 z-20 bg-amber-50 w-[48px] border-b border-r border-amber-200" />
-                    <th className="sticky left-[48px] z-20 bg-amber-50 min-w-[140px] border-b border-r border-amber-200" />
+                  <tr className="bg-amber-100">
+                    <th className="sticky left-0 z-20 bg-amber-100 w-[48px] border-b border-r border-amber-300" />
+                    <th className="sticky left-[48px] z-20 bg-amber-100 min-w-[140px] border-b border-r border-amber-300" />
                     {monthGroups.map((mg, i) => (
-                      <th key={i} colSpan={mg.slots.length} className="px-2 py-2 text-center font-semibold text-amber-800 border-b border-r border-amber-200 text-xs uppercase">{mg.month}</th>
+                      <th key={i} colSpan={mg.slots.length} className="px-2 py-2 text-center font-semibold text-amber-900 border-b border-r border-amber-300 text-xs uppercase">{mg.month}</th>
                     ))}
-                    <th className="border-b border-amber-200" />
+                    <th className="border-b border-amber-300" />
                   </tr>
                 )}
-                <tr className="bg-gray-50">
-                  <th className="sticky left-0 z-20 bg-gray-50 px-2 py-2 text-xs font-medium text-gray-500 border-b border-r border-gray-200 w-[48px]">№</th>
-                  <th className="sticky left-[48px] z-20 bg-gray-50 px-3 py-2 text-left text-xs font-medium text-gray-500 border-b border-r border-gray-200 min-w-[140px]">ФИ</th>
+                <tr className="bg-gray-100">
+                  <th className="sticky left-0 z-20 bg-gray-100 px-2 py-2 text-xs font-medium text-gray-600 border-b border-r border-gray-300 w-[48px]">№</th>
+                  <th className="sticky left-[48px] z-20 bg-gray-100 px-3 py-2 text-left text-xs font-medium text-gray-600 border-b border-r border-gray-300 min-w-[140px]">ФИ</th>
                   {allSlots.map(sl => {
                     const slotsOnDate = allSlots.filter(s => s.date === sl.date);
                     return (
-                      <th key={sl.key} className="px-1 py-2 text-center text-xs font-medium text-gray-600 border-b border-r border-gray-200 min-w-[44px]">
+                      <th key={sl.key} className="px-1 py-2 text-center text-xs font-medium text-gray-700 border-b border-r border-gray-300 min-w-[44px]">
                         <div>{parseInt(sl.date.split('-')[2])}</div>
                         {slotsOnDate.length > 1 && <div className="text-[9px] text-primary-600">Ур.{sl.lessonNumber}</div>}
                       </th>
                     );
                   })}
-                  <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 border-b border-gray-200 min-w-[100px]">Итого</th>
+                  <th className="px-3 py-2 text-center text-xs font-medium text-gray-600 border-b border-gray-300 min-w-[100px]">Итого</th>
                 </tr>
               </thead>
               <tbody>
@@ -1617,16 +1617,16 @@ const Journal: React.FC = () => {
                   const counts = { 'Н': 0, 'УП': 0, 'Б': 0, 'ОП': 0 };
                   studentAtt.forEach(a => { counts[a.type]++; });
                   return (
-                    <tr key={student.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                      <td className="sticky left-0 z-10 bg-white px-2 py-1.5 text-center text-xs text-gray-500 border-r border-gray-200">{idx + 1}</td>
-                      <td className="sticky left-[48px] z-10 bg-white px-3 py-1.5 font-medium text-gray-900 text-xs border-r border-gray-200 whitespace-nowrap">{student.lastName} {student.firstName}</td>
+                    <tr key={student.id} className="border-b border-gray-300 hover:bg-gray-50/60">
+                      <td className="sticky left-0 z-10 bg-white px-2 py-1.5 text-center text-xs text-gray-500 border-r border-gray-300">{idx + 1}</td>
+                      <td className="sticky left-[48px] z-10 bg-white px-3 py-1.5 font-medium text-gray-900 text-xs border-r border-gray-300 whitespace-nowrap">{student.lastName} {student.firstName}</td>
                       {allSlots.map(sl => {
                         const mark = getAttendanceMark(student.id, sl.date);
                         const at = mark ? ATTENDANCE_TYPES.find(a => a.value === mark.type) : null;
                         return (
-                          <td key={sl.key} className="px-0.5 py-0.5 text-center border-r border-gray-100">
+                          <td key={sl.key} className="px-0.5 py-0.5 text-center border-r border-gray-300">
                             <button onClick={e => setAttendancePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date })}
-                              className={`w-8 h-8 rounded-md text-[10px] font-bold transition-all ${at ? `${at.bgColor} ${at.color}` : 'hover:bg-gray-100 text-gray-300 border-2 border-dashed border-gray-300'}`}>
+                              className={`w-8 h-8 rounded-md text-[10px] font-bold transition-all ${at ? `${at.bgColor} ${at.color}` : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'}`}>
                               {mark?.type || ''}
                             </button>
                           </td>
