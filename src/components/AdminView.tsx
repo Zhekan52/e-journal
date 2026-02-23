@@ -775,14 +775,38 @@ const Journal: React.FC = () => {
     console.log('Lesson page - columns for slot:', { date: lessonPageDate, lessonNumber: lessonPageLessonNum, cols });
     const assignedTest = entry?.testId ? tests.find(t => t.id === entry.testId) : null;
 
-    // Simple calculation without useMemo
-    const last5Dates = (!grades || !Array.isArray(grades)) ? [] : (() => {
-      const datesSet = new Set(
+    // Находим текущий индекс урока для навигации
+    const currentSlotIndex = allSlots.findIndex(
+      sl => sl.date === lessonPageDate && sl.lessonNumber === lessonPageLessonNum
+    );
+    const prevSlot = currentSlotIndex > 0 ? allSlots[currentSlotIndex - 1] : null;
+    const nextSlot = currentSlotIndex < allSlots.length - 1 ? allSlots[currentSlotIndex + 1] : null;
+
+    // Функция перехода на предыдущий/следующий урок
+    const goToSlot = (slot: { date: string; lessonNumber: number } | null) => {
+      if (slot) {
+        setLessonPageDate(slot.date);
+        setLessonPageLessonNum(slot.lessonNumber);
+      }
+    };
+
+    // Simple calculation without useMemo - теперь включает и оценки, и посещаемость
+    const last5Dates = (!grades || !Array.isArray(grades) || !attendance) ? [] : (() => {
+      // Даты с оценками (без колонок)
+      const gradeDates = new Set(
         grades
           .filter(g => g.subject === selectedSubject && g.date !== lessonPageDate && g.date < lessonPageDate && !g.columnId)
           .map(g => g.date)
       );
-      return Array.from(datesSet).sort((a, b) => a.localeCompare(b)).slice(-5);
+      // Даты с посещаемостью
+      const attendanceDates = new Set(
+        attendance
+          .filter(a => a.subject === selectedSubject && a.date !== lessonPageDate && a.date < lessonPageDate)
+          .map(a => a.date)
+      );
+      // Объединяем оба набора
+      const allDatesSet = new Set([...gradeDates, ...attendanceDates]);
+      return Array.from(allDatesSet).sort((a, b) => a.localeCompare(b)).slice(-5);
     })();
 
     const lpStudentGrades = (!sortedStudents || !grades || !lessons) ? [] : sortedStudents.map(s => {
@@ -795,9 +819,43 @@ const Journal: React.FC = () => {
 
     return (
       <div className="animate-fadeIn space-y-6">
-        <button onClick={() => setLessonPageDate(null)} className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium">
-          <ArrowLeft className="w-4 h-4" /> Назад к журналу
-        </button>
+        <div className="flex items-center justify-between">
+          <button onClick={() => setLessonPageDate(null)} className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium">
+            <ArrowLeft className="w-4 h-4" /> Назад к журналу
+          </button>
+          {/* Навигация по урокам */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => goToSlot(prevSlot)}
+              disabled={!prevSlot}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                prevSlot
+                  ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-50 text-gray-300 cursor-not-allowed'
+              }`}
+              title={prevSlot ? `Урок ${prevSlot.lessonNumber} ${prevSlot.date}` : 'Нет предыдущего урока'}
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" />
+              <span className="hidden sm:inline">Предыдущий</span>
+            </button>
+            <span className="text-sm text-gray-400 px-2">
+              {currentSlotIndex + 1} / {allSlots.length}
+            </span>
+            <button
+              onClick={() => goToSlot(nextSlot)}
+              disabled={!nextSlot}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                nextSlot
+                  ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-50 text-gray-300 cursor-not-allowed'
+              }`}
+              title={nextSlot ? `Урок ${nextSlot.lessonNumber} ${nextSlot.date}` : 'Нет следующего урока'}
+            >
+              <span className="hidden sm:inline">Следующий</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
 
         <div className="glass rounded-3xl p-6 text-gray-900 shadow-soft-xl">
           <div className="flex items-start justify-between">
