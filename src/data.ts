@@ -27,6 +27,11 @@ export interface Grade {
   columnId?: string;
 }
 
+export interface DiaryEntryAttachment {
+  name: string;
+  url: string;
+}
+
 export interface DiaryEntry {
   id: string;
   date: string;
@@ -34,6 +39,7 @@ export interface DiaryEntry {
   subject: string;
   topic: string;
   homework: string;
+  attachment?: DiaryEntryAttachment;
   grade?: number;
   testId?: string;
   checkHomework?: boolean;
