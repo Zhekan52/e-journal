@@ -2311,12 +2311,156 @@ const TestResultsSection: React.FC<{
   );
 };
 
+// ==================== TEST PREVIEW MODAL ====================
+const TestPreviewModal: React.FC<{
+  test: Test;
+  selectedVariantId: string | null;
+  onVariantChange: (id: string | null) => void;
+  onClose: () => void;
+}> = ({ test, selectedVariantId, onVariantChange, onClose }) => {
+  const renderFormula = (formulaStr: string) => {
+    if (!formulaStr) return null;
+    try {
+      return <span dangerouslySetInnerHTML={{ __html: katex.renderToString(formulaStr, { throwOnError: false, displayMode: true }) }} className="text-lg" />;
+    } catch {
+      return <span className="text-red-500">Ошибка в формуле</span>;
+    }
+  };
+
+  // Получаем вопросы для отображения
+  const getQuestions = () => {
+    if (test.useVariants && selectedVariantId) {
+      const variant = test.variants?.find(v => v.id === selectedVariantId);
+      return variant?.questions || [];
+    }
+    return test.questions;
+  };
+
+  const questions = getQuestions();
+  const hasVariants = test.useVariants && test.variants && test.variants.length > 0;
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+        {/* Заголовок */}
+        <div className="p-5 border-b border-gray-200 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">{test.title || 'Без названия'}</h3>
+            <p className="text-sm text-gray-500">{test.subject} · {questions.length} вопросов {test.timeLimit > 0 && `· ${test.timeLimit} мин`}</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Выбор варианта для тестов с вариантами */}
+        {hasVariants && (
+          <div className="p-4 bg-gray-50 border-b border-gray-200">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Выберите вариант:</label>
+            <div className="flex flex-wrap gap-2">
+              {test.variants?.map(variant => (
+                <button
+                  key={variant.id}
+                  onClick={() => onVariantChange(variant.id)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedVariantId === variant.id
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {variant.name} ({variant.questions.length})
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Список вопросов */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {questions.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p>Нет вопросов в этом варианте</p>
+            </div>
+          ) : (
+            questions.map((q, qi) => (
+              <div key={q.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                {/* Номер вопроса и тип */}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-bold text-gray-900">Вопрос {qi + 1}</span>
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                    q.type === 'single' ? 'bg-blue-100 text-blue-700' :
+                    q.type === 'multiple' ? 'bg-purple-100 text-purple-700' :
+                    'bg-green-100 text-green-700'
+                  }`}>
+                    {q.type === 'single' ? 'Один ответ' : q.type === 'multiple' ? 'Несколько ответов' : 'Текстовый'}
+                  </span>
+                </div>
+
+                {/* Текст вопроса */}
+                <p className="text-gray-900 mb-3">{q.text || 'Без текста'}</p>
+
+                {/* Изображение */}
+                {q.image && (
+                  <div className="mb-3">
+                    <img src={q.image} alt="Question" className="max-h-48 rounded-lg border border-gray-200" />
+                  </div>
+                )}
+
+                {/* Формула */}
+                {q.formula && (
+                  <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200 flex items-center justify-center">
+                    {renderFormula(q.formula)}
+                  </div>
+                )}
+
+                {/* Варианты ответов */}
+                {(q.type === 'single' || q.type === 'multiple') && q.options.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    {q.options.map((opt, oi) => (
+                      <div key={opt.id} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-200">
+                        <div className={`w-5 h-5 mt-0.5 rounded flex items-center justify-center ${
+                          q.type === 'single' ? 'border-2 border-gray-300 rounded-full' : 'border-2 border-gray-300 rounded'
+                        }`}>
+                        </div>
+                        <span className="text-gray-700">{opt.text || 'Без текста'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Текстовый ответ */}
+                {q.type === 'text' && (
+                  <div className="mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                    <span className="text-sm text-gray-500">Правильный ответ: </span>
+                    <span className="text-gray-700 font-medium">{q.correctAnswer || 'Не указан'}</span>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Кнопка закрытия */}
+        <div className="p-4 border-t border-gray-200">
+          <button onClick={onClose} className="w-full px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium">
+            Закрыть предпросмотр
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
 // ==================== TESTS MANAGER ====================
 const TestsManager: React.FC = () => {
   const { tests, setTests } = useData();
   const [editingTest, setEditingTest] = useState<Test | null>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [filterSubject, setFilterSubject] = useState<string>('all');
+  const [previewTest, setPreviewTest] = useState<Test | null>(null);
+  const [previewVariant, setPreviewVariant] = useState<string | null>(null);
 
   // Получаем уникальные предметы из тестов
   const subjectsWithTests = useMemo(() => {
@@ -2418,6 +2562,9 @@ const TestsManager: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <button onClick={() => { setPreviewTest(test); setPreviewVariant(null); }} className="p-2 rounded-lg hover:bg-gray-100" title="Предпросмотр">
+                  <Eye className="w-4 h-4 text-blue-500" />
+                </button>
                 <button onClick={() => { setEditingTest(test); setShowEditor(true); }} className="p-2 rounded-lg hover:bg-gray-100">
                   <Edit2 className="w-4 h-4 text-gray-500" />
                 </button>
@@ -2435,6 +2582,16 @@ const TestsManager: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Модальное окно предпросмотра */}
+      {previewTest && (
+        <TestPreviewModal 
+          test={previewTest} 
+          selectedVariantId={previewTest.useVariants ? previewVariant : null}
+          onVariantChange={setPreviewVariant}
+          onClose={() => { setPreviewTest(null); setPreviewVariant(null); }} 
+        />
+      )}
     </div>
   );
 };
