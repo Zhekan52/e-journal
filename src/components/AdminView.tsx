@@ -2361,8 +2361,20 @@ const TestsManager: React.FC = () => {
           <Plus className="w-5 h-5" /> Создать тест
         </button>
       </div>
+      <div className="mb-4">
+        <select
+          value={subjectFilter}
+          onChange={(e) => setSubjectFilter(e.target.value)}
+          className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="Все">Все предметы</option>
+          {SUBJECTS.map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+      </div>
       <div className="grid gap-4">
-        {tests.map(test => {
+        {filteredTests.map(test => {
           const hasVariants = test.useVariants && test.variants && test.variants.length > 0;
           return (
             <div key={test.id} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all">
