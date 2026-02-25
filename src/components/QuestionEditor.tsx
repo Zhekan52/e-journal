@@ -23,7 +23,7 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({
   onFormulaChange,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(!!image || !!formula);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

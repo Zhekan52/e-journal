@@ -809,12 +809,18 @@ const Journal: React.FC = () => {
       return Array.from(allDatesSet).sort((a, b) => a.localeCompare(b)).slice(-5);
     })();
 
-    const lpStudentGrades = (!sortedStudents || !grades || !lessons) ? [] : sortedStudents.map(s => {
+    const lpStudentGrades = (!sortedStudents || !grades || !lessons || !allSlots) ? [] : sortedStudents.map(s => {
       const avg = getStudentAvg(s.id);
       const trend = getStudentTrend(s.id);
-      const lastDate = getLastGradeDate(s.id);
-      const daysSinceLastGrade = lastDate ? Math.floor((Date.now() - new Date(lastDate).getTime()) / 86400000) : 999;
-      return { ...s, avg, trend, daysSinceLastGrade };
+      // Count lessons since last grade (not days)
+      const studentGrades = grades.filter(g => g.studentId === s.id && g.subject === selectedSubject && !g.columnId);
+      const lastGradeSlot = studentGrades.length > 0 
+        ? allSlots.slice().reverse().find(slot => studentGrades.some(g => g.date === slot.date && g.lessonNumber === slot.lessonNumber))
+        : null;
+      const lessonsSinceLastGrade = lastGradeSlot && allSlots.length > 0
+        ? allSlots.length - 1 - allSlots.findIndex(slot => slot.key === lastGradeSlot.key)
+        : 999;
+      return { ...s, avg, trend, lessonsSinceLastGrade };
     });
 
     return (
@@ -1068,7 +1074,7 @@ const Journal: React.FC = () => {
                   const hwGrade = hwCol ? getGrade(s.id, lessonPageDate, hwCol.id, lessonPageLessonNum) : null;
 
                   return (
-                    <tr key={s.id} className="border-b border-gray-300 hover:bg-gray-50/60 transition-colors">
+                    <tr key={s.id} className="border-b-2 border-gray-300 hover:bg-gray-50/60 transition-colors">
                       <td className="sticky left-0 z-10 bg-white/0 hover:bg-white/40 px-4 py-2 font-medium text-gray-900 text-xs border-r border-gray-300 whitespace-nowrap backdrop-blur-sm">
                         <div className="flex items-center gap-2">
                           <span className="text-gray-400 text-xs w-4">{idx + 1}.</span>
@@ -1185,8 +1191,8 @@ const Journal: React.FC = () => {
                         {s.trend === 0 && <span className="text-gray-400">—</span>}
                       </td>
                       <td className="px-2 py-2 text-center">
-                        {(s.daysSinceLastGrade >= 3 || s.avg === 0) && allSlots.length > 0 && (
-                          <span title={s.daysSinceLastGrade >= 999 ? 'Ни разу не спрашивали' : `Не спрашивали ${s.daysSinceLastGrade} дн.`}>
+                        {(s.lessonsSinceLastGrade >= 3 || s.avg === 0) && allSlots.length > 0 && (
+                          <span title={s.lessonsSinceLastGrade >= 999 ? 'Ни разу не спрашивали' : `Не спрашивали ${s.lessonsSinceLastGrade} ур. дн.`}>
                             <AlertTriangle className="w-4 h-4 text-amber-500 mx-auto" />
                           </span>
                         )}
