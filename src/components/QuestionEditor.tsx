@@ -87,7 +87,7 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-blue-400 hover:text-blue-600 hover:bg-gray-50 transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-primary-400 hover:text-primary-600 hover:bg-gray-50 transition-all"
             >
               <Upload className="w-5 h-5" />
               <span className="text-sm">Загрузить изображение</span>

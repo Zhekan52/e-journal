@@ -136,12 +136,12 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
 
   const getSubjectColor = (subject: string): string => {
     const colors: Record<string, string> = {
-      'Математика': 'bg-blue-200 text-blue-900 border-blue-300',
-      'Русский язык': 'bg-emerald-200 text-emerald-900 border-emerald-300',
-      'Обществознание': 'bg-yellow-200 text-yellow-900 border-yellow-300',
-      'География': 'bg-cyan-200 text-cyan-900 border-cyan-300',
+      'Математика': 'bg-blue-100 text-blue-800 border-blue-200',
+      'Русский язык': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      'Обществознание': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'География': 'bg-cyan-100 text-cyan-800 border-cyan-200',
     };
-    return colors[subject] || 'bg-gray-200 text-gray-900 border-gray-300';
+    return colors[subject] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   return (
@@ -202,13 +202,13 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px]">
               <thead>
-                <tr className="border-b border-gray-300">
-                  <th className="w-16 p-4 text-xs font-medium text-gray-600 uppercase tracking-wider">№</th>
+                <tr className="border-b border-gray-200">
+                  <th className="w-16 p-4 text-xs font-medium text-gray-500 uppercase tracking-wider">№</th>
                   {weekDates.map((date, i) => (
                     <th key={i}
-                      className={`p-4 text-center border-l border-gray-300 cursor-pointer hover:bg-blue-50/50 transition-colors ${isToday(date) ? 'bg-blue-50' : ''}`}
+                      className={`p-4 text-center border-l border-gray-200 cursor-pointer hover:bg-blue-50/50 transition-colors ${isToday(date) ? 'bg-blue-50' : ''}`}
                       onClick={() => { setSelectedDate(date); setViewMode('day'); }}>
-                      <div className="text-xs font-medium text-gray-600 uppercase">{DAY_NAMES_SHORT[i]}</div>
+                      <div className="text-xs font-medium text-gray-500 uppercase">{DAY_NAMES_SHORT[i]}</div>
                       <div className={`text-2xl font-semibold mt-1 ${isToday(date) ? 'text-blue-600' : 'text-gray-900'}`}>
                         {date.getDate()}
                       </div>
@@ -218,15 +218,15 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
               </thead>
               <tbody>
                 {LESSON_NUMBERS.map(num => (
-                  <tr key={num} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50/50 transition-colors">
+                  <tr key={num} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors">
                     <td className="p-3 text-center">
-                      <div className="text-sm font-medium text-gray-500">{num}</div>
+                      <div className="text-sm font-medium text-gray-400">{num}</div>
                     </td>
                     {weekDates.map((weekDate, dayIdx) => {
                       const dateStr = formatDate(weekDate);
                       const lesson = lessons.find(l => l.date === dateStr && l.lessonNumber === num);
                       return (
-                        <td key={dayIdx} className={`p-2 border-l border-gray-300 ${isToday(weekDate) ? 'bg-blue-50/30' : ''}`}>
+                        <td key={dayIdx} className={`p-2 border-l border-gray-200 ${isToday(weekDate) ? 'bg-blue-50/30' : ''}`}>
                           {lesson ? (
                             <div className={`p-3 rounded-lg border text-sm ${getSubjectColor(lesson.subject)} transition-all hover:shadow-md cursor-pointer relative group`}
                               onClick={() => editable ? openEditModal(lesson) : onOpenLessonPage && onOpenLessonPage(lesson.subject, lesson.date, lesson.lessonNumber)}>
@@ -252,8 +252,8 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
                             </div>
                           ) : editable ? (
                             <button onClick={() => openAddModal(dateStr, num)}
-                              className="w-full h-full min-h-[70px] rounded-lg border-2 border-dashed border-blue-300 hover:border-blue-400 hover:bg-blue-50/30 transition-all flex items-center justify-center">
-                              <Plus className="w-5 h-5 text-gray-400" />
+                              className="w-full h-full min-h-[70px] rounded-lg border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50/30 transition-all flex items-center justify-center">
+                              <Plus className="w-5 h-5 text-gray-300" />
                             </button>
                           ) : (
                             <div className="min-h-[70px]" />
@@ -271,32 +271,32 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
 
       {/* Month View */}
       {viewMode === 'month' && (
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 overflow-hidden shadow-lg relative">
+        <div className="glass rounded-3xl overflow-hidden shadow-soft relative">
           <div className="grid grid-cols-7">
             {DAY_NAMES_SHORT.concat('Вс').map(d => (
-              <div key={d} className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+              <div key={d} className="p-4 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100">
                 {d}
               </div>
             ))}
             {getMonthDays(currentDate.getFullYear(), currentDate.getMonth()).map((date, i) => {
-              if (!date) return <div key={i} className="p-3 min-h-[90px] border-b border-r border-gray-200 bg-gray-100/50" />;
+              if (!date) return <div key={i} className="p-3 min-h-[90px] border-b border-r border-gray-50 bg-gray-50/30" />;
               const dateStr = formatDate(date);
               const dayLessons = getLessonsForDate(dateStr);
               return (
                 <div key={i}
-                  className={`p-3 min-h-[90px] border-b border-r border-gray-200 cursor-pointer hover:bg-white/50 transition-colors ${isToday(date) ? 'bg-blue-50/30' : ''}`}
+                  className={`p-3 min-h-[90px] border-b border-r border-gray-50 cursor-pointer hover:bg-white/50 transition-colors ${isToday(date) ? 'bg-primary-50/30' : ''}`}
                   onClick={() => setPopupDay({ date })}>
-                  <div className={`text-sm font-bold mb-2 ${isToday(date) ? 'text-blue-600' : 'text-gray-800'}`}>
+                  <div className={`text-sm font-bold mb-2 ${isToday(date) ? 'text-primary-600' : 'text-gray-700'}`}>
                     {date.getDate()}
                   </div>
                   <div className="space-y-1">
                     {dayLessons.slice(0, 3).map(l => (
-                      <div key={l.id} className="text-[10px] font-medium text-gray-700 bg-white/70 rounded-lg px-2 py-1 border border-gray-200">
+                      <div key={l.id} className="text-[10px] font-medium text-gray-600 bg-white/60 rounded-lg px-2 py-1 border border-gray-100">
                         {l.subject}
                       </div>
                     ))}
                     {dayLessons.length > 3 && (
-                      <div className="text-[10px] text-gray-500 font-medium">+{dayLessons.length - 3}</div>
+                      <div className="text-[10px] text-gray-400 font-medium">+{dayLessons.length - 3}</div>
                     )}
                   </div>
                 </div>
@@ -318,7 +318,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-bold text-xl">{dayName}</h3>
-                        <p className="text-blue-100 text-sm mt-1">{popupDay.date.getDate()} {MONTH_NAMES_GEN[popupDay.date.getMonth()]} {popupDay.date.getFullYear()}</p>
+                        <p className="text-primary-100 text-sm mt-1">{popupDay.date.getDate()} {MONTH_NAMES_GEN[popupDay.date.getMonth()]} {popupDay.date.getFullYear()}</p>
                       </div>
                       <button onClick={() => setPopupDay(null)} className="p-2 rounded-xl hover:bg-white/20 transition-colors">
                         <X className="w-5 h-5" />
@@ -328,8 +328,8 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
                   <div className="p-5 max-h-[60vh] overflow-y-auto">
                     {dayLessons.length === 0 ? (
                       <div className="text-center py-12">
-                        <CalendarIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <p className="text-gray-500">Нет уроков в этот день</p>
+                        <CalendarIcon className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+                        <p className="text-gray-400">Нет уроков в этот день</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -358,7 +358,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
                       setCurrentDate(popupDay.date);
                       setViewMode('day');
                       setPopupDay(null);
-                    }} className="w-full py-3 text-sm font-semibold text-blue-600 hover:bg-blue-50 rounded-2xl transition-colors border border-blue-200">
+                    }} className="w-full py-3 text-sm font-semibold text-primary-600 hover:bg-primary-50 rounded-2xl transition-colors border border-primary-200">
                       Подробнее →
                     </button>
                   </div>
@@ -376,13 +376,13 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
         return (
           <div className="space-y-4">
             {dayLessons.length === 0 ? (
-              <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-16 text-center shadow-lg">
-                <CalendarIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg font-medium">Нет уроков в этот день</p>
+              <div className="glass rounded-3xl p-16 text-center">
+                <CalendarIcon className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+                <p className="text-gray-400 text-lg font-medium">Нет уроков в этот день</p>
               </div>
             ) : dayLessons.map((lesson, idx) => (
               <div key={lesson.id}
-                className={`bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-5 flex items-center gap-5 hover:shadow-xl transition-all animate-fadeIn ${!editable ? 'cursor-pointer' : ''}`}
+                className={`glass rounded-2xl p-5 flex items-center gap-5 hover:shadow-soft transition-all animate-fadeIn card-hover ${!editable ? 'cursor-pointer' : ''}`}
                 style={{ animationDelay: `${idx * 60}ms` }}
                 onClick={() => !editable && onOpenLessonPage && onOpenLessonPage(lesson.subject, lesson.date, lesson.lessonNumber)}>
                 <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex flex-col items-center justify-center shadow-lg shadow-primary-200">
@@ -395,12 +395,12 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
                   {lesson.startTime && lesson.endTime ? (
                     <div className="text-sm font-semibold text-gray-600 bg-gray-100 px-4 py-2 rounded-xl">{lesson.startTime} - {lesson.endTime}</div>
                   ) : (
-                    <div className="text-sm font-medium text-gray-500 italic">Время не указано</div>
+                    <div className="text-sm font-medium text-gray-400 italic">Время не указано</div>
                   )}
                 </div>
                 {editable && (
                   <div className="flex gap-2 flex-shrink-0">
-                    <button onClick={e => { e.stopPropagation(); openEditModal(lesson); }} className="p-2.5 rounded-xl hover:bg-white/60 transition-colors text-gray-500 hover:text-blue-600">
+                    <button onClick={e => { e.stopPropagation(); openEditModal(lesson); }} className="p-2.5 rounded-xl hover:bg-white/60 transition-colors text-gray-500 hover:text-primary-600">
                       <Edit2 className="w-5 h-5" />
                     </button>
                     <button onClick={e => { e.stopPropagation(); deleteLesson(lesson.id); }} className="p-2.5 rounded-xl hover:bg-red-50 transition-colors text-gray-500 hover:text-red-500">
@@ -417,7 +417,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
             ))}
             {editable && (
               <button onClick={() => openAddModal(dateStr, dayLessons.length + 1)}
-                className="w-full py-5 border-2 border-dashed border-gray-300 rounded-3xl text-gray-500 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/30 transition-all flex items-center justify-center gap-3 font-medium">
+                className="w-full py-5 border-2 border-dashed border-gray-200 rounded-3xl text-gray-400 hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50/30 transition-all flex items-center justify-center gap-3 font-medium">
                 <Plus className="w-6 h-6" /> Добавить урок
               </button>
             )}
@@ -471,7 +471,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
                 </div>
               </div>
-              <p className="text-xs text-gray-500 text-center">Время указывать необязательно</p>
+              <p className="text-xs text-gray-400 text-center">Время указывать необязательно</p>
             </div>
             <div className="flex gap-3 pt-2">
               {editingLesson && (
