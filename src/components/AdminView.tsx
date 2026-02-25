@@ -814,7 +814,14 @@ const Journal: React.FC = () => {
       const trend = getStudentTrend(s.id);
       const lastDate = getLastGradeDate(s.id);
       const daysSinceLastGrade = lastDate ? Math.floor((Date.now() - new Date(lastDate).getTime()) / 86400000) : 999;
-      return { ...s, avg, trend, daysSinceLastGrade };
+      // Считаем количество уроков без оценки
+      const lessonsWithoutGrade = allSlots.filter(sl => {
+        const mainGrade = getGrade(s.id, sl.date, undefined, sl.lessonNumber);
+        const cols = getColumnsForSlot(sl.date, sl.lessonNumber);
+        const hasAnyGrade = mainGrade || cols.some(c => getGrade(s.id, sl.date, c.id, sl.lessonNumber));
+        return !hasAnyGrade;
+      }).length;
+      return { ...s, avg, trend, daysSinceLastGrade, lessonsWithoutGrade };
     });
 
     return (
@@ -1185,8 +1192,8 @@ const Journal: React.FC = () => {
                         {s.trend === 0 && <span className="text-gray-400">—</span>}
                       </td>
                       <td className="px-2 py-2 text-center">
-                        {(s.daysSinceLastGrade >= 14 || s.avg === 0) && allSlots.length > 0 && (
-                          <span title={s.daysSinceLastGrade >= 999 ? 'Ни разу не спрашивали' : `Не спрашивали ${s.daysSinceLastGrade} дн.`}>
+                        {allSlots.length > 0 && (s.lessonsWithoutGrade >= 3 || s.avg === 0) && (
+                          <span title={s.avg === 0 ? 'Нет оценок' : `Не спрашивали ${s.lessonsWithoutGrade} уроков`}>
                             <AlertTriangle className="w-4 h-4 text-amber-500 mx-auto" />
                           </span>
                         )}
@@ -1335,6 +1342,13 @@ const Journal: React.FC = () => {
                   const trend = getStudentTrend(student.id);
                   const lastDate = getLastGradeDate(student.id);
                   const daysSince = lastDate ? Math.floor((Date.now() - new Date(lastDate).getTime()) / 86400000) : 999;
+                  // Считаем количество уроков без оценки
+                  const lessonsWithoutGrade = allSlots.filter(sl => {
+                    const mainGrade = getGrade(student.id, sl.date, undefined, sl.lessonNumber);
+                    const cols = getColumnsForSlot(sl.date, sl.lessonNumber);
+                    const hasAnyGrade = mainGrade || cols.some(c => getGrade(student.id, sl.date, c.id, sl.lessonNumber));
+                    return !hasAnyGrade;
+                  }).length;
 
                   return (
                     <tr key={student.id} className="border-b border-gray-300 hover:bg-gray-50/60">
@@ -1406,8 +1420,8 @@ const Journal: React.FC = () => {
                       )}
                       {showNotAsked && (
                         <td className="px-2 py-1.5 text-center">
-                          {allDates.length > 0 && (daysSince >= 14 || grades.filter(g => g.studentId === student.id && g.subject === selectedSubject && lessons.some(l => l.date === g.date && l.subject === selectedSubject)).length === 0) && (
-                            <span title={daysSince >= 999 ? 'Ни разу не спрашивали' : `Не спрашивали ${daysSince} дн.`}>
+                          {allDates.length > 0 && (lessonsWithoutGrade >= 3 || avg === 0) && (
+                            <span title={avg === 0 ? 'Нет оценок' : `Не спрашивали ${lessonsWithoutGrade} уроков`}>
                               <AlertTriangle className="w-4 h-4 text-amber-500 mx-auto" />
                             </span>
                           )}
