@@ -2316,6 +2316,19 @@ const TestsManager: React.FC = () => {
   const { tests, setTests } = useData();
   const [editingTest, setEditingTest] = useState<Test | null>(null);
   const [showEditor, setShowEditor] = useState(false);
+  const [filterSubject, setFilterSubject] = useState<string>('all');
+
+  // Получаем уникальные предметы из тестов
+  const subjectsWithTests = useMemo(() => {
+    const subjects = new Set(tests.map(t => t.subject));
+    return Array.from(subjects).sort();
+  }, [tests]);
+
+  // Фильтруем тесты по выбранному предмету
+  const filteredTests = useMemo(() => {
+    if (filterSubject === 'all') return tests;
+    return tests.filter(t => t.subject === filterSubject);
+  }, [tests, filterSubject]);
 
   const createNewTest = () => {
     const newTest: Test = {
@@ -2363,8 +2376,27 @@ const TestsManager: React.FC = () => {
           <Plus className="w-5 h-5" /> Создать тест
         </button>
       </div>
+      
+      {/* Фильтр по предметам */}
+      {subjectsWithTests.length > 0 && (
+        <div className="mb-6">
+          <select
+            value={filterSubject}
+            onChange={e => setFilterSubject(e.target.value)}
+            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="all">Все предметы ({tests.length})</option>
+            {subjectsWithTests.map(subject => (
+              <option key={subject} value={subject}>
+                {subject} ({tests.filter(t => t.subject === subject).length})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="grid gap-4">
-        {tests.map(test => {
+        {filteredTests.map(test => {
           const hasVariants = test.useVariants && test.variants && test.variants.length > 0;
           return (
             <div key={test.id} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all">
@@ -2396,10 +2428,10 @@ const TestsManager: React.FC = () => {
             </div>
           );
         })}
-        {tests.length === 0 && (
+        {filteredTests.length === 0 && (
           <div className="text-center py-12 text-gray-400">
             <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p>Нет тестов. Создайте первый тест.</p>
+            <p>{filterSubject === 'all' ? 'Нет тестов. Создайте первый тест.' : `Нет тестов по предмету "${filterSubject}"`}</p>
           </div>
         )}
       </div>
