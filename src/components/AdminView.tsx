@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
@@ -1185,7 +1185,7 @@ const Journal: React.FC = () => {
                         {s.trend === 0 && <span className="text-gray-400">—</span>}
                       </td>
                       <td className="px-2 py-2 text-center">
-                        {(s.daysSinceLastGrade >= 14 || s.avg === 0) && allSlots.length > 0 && (
+                        {(s.daysSinceLastGrade >= 3 || s.avg === 0) && allSlots.length > 0 && (
                           <span title={s.daysSinceLastGrade >= 999 ? 'Ни разу не спрашивали' : `Не спрашивали ${s.daysSinceLastGrade} дн.`}>
                             <AlertTriangle className="w-4 h-4 text-amber-500 mx-auto" />
                           </span>
@@ -1406,7 +1406,7 @@ const Journal: React.FC = () => {
                       )}
                       {showNotAsked && (
                         <td className="px-2 py-1.5 text-center">
-                          {allDates.length > 0 && (daysSince >= 14 || grades.filter(g => g.studentId === student.id && g.subject === selectedSubject && lessons.some(l => l.date === g.date && l.subject === selectedSubject)).length === 0) && (
+                          {allDates.length > 0 && (daysSince >= 3 || grades.filter(g => g.studentId === student.id && g.subject === selectedSubject && lessons.some(l => l.date === g.date && l.subject === selectedSubject)).length === 0) && (
                             <span title={daysSince >= 999 ? 'Ни разу не спрашивали' : `Не спрашивали ${daysSince} дн.`}>
                               <AlertTriangle className="w-4 h-4 text-amber-500 mx-auto" />
                             </span>
@@ -2298,6 +2298,12 @@ const TestsManager: React.FC = () => {
   const { tests, setTests } = useData();
   const [editingTest, setEditingTest] = useState<Test | null>(null);
   const [showEditor, setShowEditor] = useState(false);
+  const [previewTest, setPreviewTest] = useState<Test | null>(null);
+  const [subjectFilter, setSubjectFilter] = useState<string>('Все');
+
+  const filteredTests = subjectFilter === 'Р’СЃРµ' 
+    ? tests 
+    : tests.filter(t => t.subject === subjectFilter);
 
   const createNewTest = () => {
     const newTest: Test = {
@@ -2332,6 +2338,10 @@ const TestsManager: React.FC = () => {
   const deleteTest = (id: string) => {
     setTests(prev => prev.filter(t => t.id !== id));
   };
+
+  if (previewTest) {
+    return <TestPreview test={previewTest} onClose={() => setPreviewTest(null)} />;
+  }
 
   if (showEditor && editingTest) {
     return <TestEditor test={editingTest} onSave={saveTest} onCancel={() => { setShowEditor(false); setEditingTest(null); }} />;
@@ -2371,19 +2381,84 @@ const TestsManager: React.FC = () => {
                 <button onClick={() => { setEditingTest(test); setShowEditor(true); }} className="p-2 rounded-lg hover:bg-gray-100">
                   <Edit2 className="w-4 h-4 text-gray-500" />
                 </button>
-                <button onClick={() => deleteTest(test.id)} className="p-2 rounded-lg hover:bg-red-50">
+                <button onClick={() => setPreviewTest(test)} className="p-2 rounded-lg hover:bg-blue-50" title="Предпросмотр"><Eye className="w-4 h-4 text-blue-500" /></button><button onClick={() => deleteTest(test.id)} className="p-2 rounded-lg hover:bg-red-50">
                   <Trash2 className="w-4 h-4 text-red-500" />
                 </button>
               </div>
             </div>
           );
         })}
-        {tests.length === 0 && (
+        {filteredTests.length === 0 && (
           <div className="text-center py-12 text-gray-400">
             <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p>Нет тестов. Создайте первый тест.</p>
           </div>
         )}
+      </div>
+    </div>
+  );
+};
+
+// ==================== TEST PREVIEW ====================
+const TestPreview: React.FC<{ test: Test; onClose: () => void }> = ({ test, onClose }) => {
+  const renderFormula = (formula: string) => {
+    try {
+      return katex.renderToString(formula, { throwOnError: false, displayMode: true });
+    } catch {
+      return formula;
+    }
+  };
+
+  const allQuestions = test.variants.flatMap(v => v.questions);
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between rounded-t-2xl">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">{test.title}</h2>
+            <p className="text-sm text-gray-500">{test.subject} вЂў {test.variants.length} РІР°СЂРёР°РЅС‚РѕРІ вЂў {allQuestions.length} РІРѕРїСЂРѕСЃРѕРІ</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6 space-y-6">
+          {test.variants.map((variant, vIdx) => (
+            <div key={variant.id} className="border border-gray-200 rounded-xl p-4">
+              <h3 className="font-semibold text-gray-800 mb-4">Р’Р°СЂРёР°РЅС‚ {vIdx + 1}</h3>
+              <div className="space-y-4">
+                {variant.questions.map((q, qIdx) => (
+                  <div key={q.id} className="border-b border-gray-100 last:border-0 pb-4 last:pb-0">
+                    <div className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-xs font-medium text-gray-600">
+                        {qIdx + 1}
+                      </span>
+                      <div className="flex-1">
+                        <p className="text-gray-900">{q.text}</p>
+                        {q.image && (
+                          <img src={q.image} alt={`Вопрос ${qIdx + 1}`} className="mt-2 max-h-40 rounded-lg border border-gray-200" />
+                        )}
+                        {q.formula && (
+                          <div className="mt-2 p-3 bg-blue-50 rounded-lg flex items-center justify-center">
+                            <span dangerouslySetInnerHTML={{ __html: renderFormula(q.formula) }} />
+                          </div>
+                        )}
+                        <div className="mt-2 space-y-1">
+                          {q.options.map((opt, oIdx) => (
+                            <div key={opt.id} className={`text-sm px-3 py-2 rounded-lg ${opt.correct ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-600'}`}>
+                              {String.fromCharCode(65 + oIdx)}. {opt.text}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
