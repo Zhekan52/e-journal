@@ -202,11 +202,11 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px]">
               <thead>
-                <tr className="border-b-2 border-gray-400">
-                  <th className="w-16 p-4 text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-300">№</th>
+                <tr className="border-b border-gray-400">
+                  <th className="w-16 p-4 text-xs font-medium text-gray-500 uppercase tracking-wider">№</th>
                   {weekDates.map((date, i) => (
                     <th key={i}
-                      className={`p-4 text-center border-l-2 border-gray-400 cursor-pointer hover:bg-blue-50/50 transition-colors ${isToday(date) ? 'bg-blue-50' : ''}`}
+                      className={`p-4 text-center border-l border-gray-400 cursor-pointer hover:bg-blue-50/50 transition-colors ${isToday(date) ? 'bg-blue-50' : ''}`}
                       onClick={() => { setSelectedDate(date); setViewMode('day'); }}>
                       <div className="text-xs font-medium text-gray-500 uppercase">{DAY_NAMES_SHORT[i]}</div>
                       <div className={`text-2xl font-semibold mt-1 ${isToday(date) ? 'text-blue-600' : 'text-gray-900'}`}>
@@ -218,15 +218,15 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
               </thead>
               <tbody>
                 {LESSON_NUMBERS.map(num => (
-                  <tr key={num} className="border-b-2 border-gray-300 last:border-b-0 hover:bg-gray-50/50 transition-colors">
-                    <td className="p-3 text-center border-r border-gray-300">
-                      <div className="text-sm font-medium text-gray-500">{num}</div>
+                  <tr key={num} className="border-b border-gray-300 last:border-b-0 hover:bg-gray-50/50 transition-colors">
+                    <td className="p-3 text-center">
+                      <div className="text-sm font-medium text-gray-400">{num}</div>
                     </td>
                     {weekDates.map((weekDate, dayIdx) => {
                       const dateStr = formatDate(weekDate);
                       const lesson = lessons.find(l => l.date === dateStr && l.lessonNumber === num);
                       return (
-                        <td key={dayIdx} className={`p-2 border-l-2 border-gray-400 ${isToday(weekDate) ? 'bg-blue-50/30' : ''}`}>
+                        <td key={dayIdx} className={`p-2 border-l border-gray-400 ${isToday(weekDate) ? 'bg-blue-50/30' : ''}`}>
                           {lesson ? (
                             <div className={`p-3 rounded-lg border text-sm ${getSubjectColor(lesson.subject)} transition-all hover:shadow-md cursor-pointer relative group`}
                               onClick={() => editable ? openEditModal(lesson) : onOpenLessonPage && onOpenLessonPage(lesson.subject, lesson.date, lesson.lessonNumber)}>
@@ -274,17 +274,17 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
         <div className="glass rounded-3xl overflow-hidden shadow-soft relative">
           <div className="grid grid-cols-7">
             {DAY_NAMES_SHORT.concat('Вс').map(d => (
-              <div key={d} className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider border-b-2 border-gray-400">
+              <div key={d} className="p-4 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-300">
                 {d}
               </div>
             ))}
             {getMonthDays(currentDate.getFullYear(), currentDate.getMonth()).map((date, i) => {
-              if (!date) return <div key={i} className="p-3 min-h-[90px] border-b-2 border-r-2 border-gray-300 bg-gray-50/30" />;
+              if (!date) return <div key={i} className="p-3 min-h-[90px] border-b border-r border-gray-200 bg-gray-50/30" />;
               const dateStr = formatDate(date);
               const dayLessons = getLessonsForDate(dateStr);
               return (
                 <div key={i}
-                  className={`p-3 min-h-[90px] border-b-2 border-r-2 border-gray-300 cursor-pointer hover:bg-white/50 transition-colors ${isToday(date) ? 'bg-primary-50/30' : ''}`}
+                  className={`p-3 min-h-[90px] border-b border-r border-gray-200 cursor-pointer hover:bg-white/50 transition-colors ${isToday(date) ? 'bg-primary-50/30' : ''}`}
                   onClick={() => setPopupDay({ date })}>
                   <div className={`text-sm font-bold mb-2 ${isToday(date) ? 'text-primary-600' : 'text-gray-700'}`}>
                     {date.getDate()}
