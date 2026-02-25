@@ -814,14 +814,16 @@ const Journal: React.FC = () => {
       const trend = getStudentTrend(s.id);
       const lastDate = getLastGradeDate(s.id);
       const daysSinceLastGrade = lastDate ? Math.floor((Date.now() - new Date(lastDate).getTime()) / 86400000) : 999;
-      // Считаем количество уроков без оценки
-      const lessonsWithoutGrade = allSlots.filter(sl => {
+      // Проверяем последние 3 урока без оценки
+      const last3Slots = [...allSlots].sort((a, b) => b.date.localeCompare(a.date) || b.lessonNumber - a.lessonNumber).slice(0, 3);
+      const last3WithoutGrade = last3Slots.filter(sl => {
         const mainGrade = getGrade(s.id, sl.date, undefined, sl.lessonNumber);
         const cols = getColumnsForSlot(sl.date, sl.lessonNumber);
         const hasAnyGrade = mainGrade || cols.some(c => getGrade(s.id, sl.date, c.id, sl.lessonNumber));
         return !hasAnyGrade;
       }).length;
-      return { ...s, avg, trend, daysSinceLastGrade, lessonsWithoutGrade };
+      const hasNoGradesAtAll = avg === 0;
+      return { ...s, avg, trend, daysSinceLastGrade, last3WithoutGrade, hasNoGradesAtAll };
     });
 
     return (
@@ -1075,7 +1077,7 @@ const Journal: React.FC = () => {
                   const hwGrade = hwCol ? getGrade(s.id, lessonPageDate, hwCol.id, lessonPageLessonNum) : null;
 
                   return (
-                    <tr key={s.id} className="border-b border-gray-300 hover:bg-gray-50/60 transition-colors">
+                    <tr key={s.id} className="border-b-2 border-gray-400 hover:bg-gray-50/60 transition-colors">
                       <td className="sticky left-0 z-10 bg-white/0 hover:bg-white/40 px-4 py-2 font-medium text-gray-900 text-xs border-r border-gray-300 whitespace-nowrap backdrop-blur-sm">
                         <div className="flex items-center gap-2">
                           <span className="text-gray-400 text-xs w-4">{idx + 1}.</span>
@@ -1192,8 +1194,8 @@ const Journal: React.FC = () => {
                         {s.trend === 0 && <span className="text-gray-400">—</span>}
                       </td>
                       <td className="px-2 py-2 text-center">
-                        {allSlots.length > 0 && (s.lessonsWithoutGrade >= 3 || s.avg === 0) && (
-                          <span title={s.avg === 0 ? 'Нет оценок' : `Не спрашивали ${s.lessonsWithoutGrade} уроков`}>
+                        {allSlots.length > 0 && (s.last3WithoutGrade >= 3 || s.hasNoGradesAtAll) && (
+                          <span title={s.hasNoGradesAtAll ? 'Нет оценок' : `Не спрашивали ${s.last3WithoutGrade} из последних 3 уроков`}>
                             <AlertTriangle className="w-4 h-4 text-amber-500 mx-auto" />
                           </span>
                         )}
@@ -1342,13 +1344,15 @@ const Journal: React.FC = () => {
                   const trend = getStudentTrend(student.id);
                   const lastDate = getLastGradeDate(student.id);
                   const daysSince = lastDate ? Math.floor((Date.now() - new Date(lastDate).getTime()) / 86400000) : 999;
-                  // Считаем количество уроков без оценки
-                  const lessonsWithoutGrade = allSlots.filter(sl => {
+                  // Проверяем последние 3 урока без оценки
+                  const last3Slots = [...allSlots].sort((a, b) => b.date.localeCompare(a.date) || b.lessonNumber - a.lessonNumber).slice(0, 3);
+                  const last3WithoutGrade = last3Slots.filter(sl => {
                     const mainGrade = getGrade(student.id, sl.date, undefined, sl.lessonNumber);
                     const cols = getColumnsForSlot(sl.date, sl.lessonNumber);
                     const hasAnyGrade = mainGrade || cols.some(c => getGrade(student.id, sl.date, c.id, sl.lessonNumber));
                     return !hasAnyGrade;
                   }).length;
+                  const hasNoGradesAtAll = avg === 0;
 
                   return (
                     <tr key={student.id} className="border-b border-gray-300 hover:bg-gray-50/60">
@@ -1420,8 +1424,8 @@ const Journal: React.FC = () => {
                       )}
                       {showNotAsked && (
                         <td className="px-2 py-1.5 text-center">
-                          {allDates.length > 0 && (lessonsWithoutGrade >= 3 || avg === 0) && (
-                            <span title={avg === 0 ? 'Нет оценок' : `Не спрашивали ${lessonsWithoutGrade} уроков`}>
+                          {allDates.length > 0 && (last3WithoutGrade >= 3 || hasNoGradesAtAll) && (
+                            <span title={hasNoGradesAtAll ? 'Нет оценок' : `Не спрашивали ${last3WithoutGrade} из последних 3 уроков`}>
                               <AlertTriangle className="w-4 h-4 text-amber-500 mx-auto" />
                             </span>
                           )}
