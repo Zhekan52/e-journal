@@ -2307,7 +2307,7 @@ const TestsManager: React.FC = () => {
   const [previewTest, setPreviewTest] = useState<Test | null>(null);
   const [subjectFilter, setSubjectFilter] = useState<string>('Все');
 
-  const filteredTests = subjectFilter === 'Р’СЃРµ' 
+  const filteredTests = subjectFilter === 'Все' 
     ? tests 
     : tests.filter(t => t.subject === subjectFilter);
 
