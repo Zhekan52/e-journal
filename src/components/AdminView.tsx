@@ -1,4 +1,47 @@
-import React, { us eState, useMemo, useEffect, useRef } from 'react';
+import React, { 23:50:58.355 Running build in Washington, D.C., USA (East) – iad1
+23:50:58.355 Build machine configuration: 2 cores, 8 GB
+23:50:58.516 Cloning github.com/Zhekan52/e-journal (Branch: main, Commit: 122c6fe)
+23:50:59.574 Cloning completed: 1.058s
+23:50:59.783 Restored build cache from previous deployment (7qofDjraAuX2qfm7SPb5JDEvyhQg)
+23:51:01.237 Running "vercel build"
+23:51:01.892 Vercel CLI 50.23.2
+23:51:03.085 Installing dependencies...
+23:51:04.364 
+23:51:04.365 up to date in 921ms
+23:51:04.365 
+23:51:04.365 19 packages are looking for funding
+23:51:04.366   run `npm fund` for details
+23:51:04.397 Running "npm run build"
+23:51:04.493 
+23:51:04.493 > react-vite-tailwind@0.0.0 build
+23:51:04.493 > vite build
+23:51:04.494 
+23:51:04.967 [36mvite v7.2.4 [32mbuilding client environment for production...[36m[39m
+23:51:05.065 transforming...
+23:51:05.772 [32m✓[39m 12 modules transformed.
+23:51:05.783 [31m✗[39m Build failed in 775ms
+23:51:05.784 [31merror during build:
+23:51:05.784 [31m[vite:esbuild] Transform failed with 1 error:
+23:51:05.784 /vercel/path0/src/components/AdminView.tsx:1:19: ERROR: Expected "}" but found "eState"[31m
+23:51:05.784 file: [36m/vercel/path0/src/components/AdminView.tsx:1:19[31m
+23:51:05.784 [33m
+23:51:05.784 [33mExpected "}" but found "eState"[33m
+23:51:05.784 1  |  import React, { us eState, useMemo, useEffect, useRef } from 'react';
+23:51:05.784    |                     ^
+23:51:05.784 2  |  import { createPortal } from 'react-dom';
+23:51:05.784 3  |  import { useAuth, useData } from '../context';
+23:51:05.784 [31m
+23:51:05.784     at failureErrorWithLog (/vercel/path0/node_modules/esbuild/lib/main.js:1467:15)
+23:51:05.784     at /vercel/path0/node_modules/esbuild/lib/main.js:736:50
+23:51:05.785     at responseCallbacks.<computed> (/vercel/path0/node_modules/esbuild/lib/main.js:603:9)
+23:51:05.785     at handleIncomingPacket (/vercel/path0/node_modules/esbuild/lib/main.js:658:12)
+23:51:05.785     at Socket.readFromStdout (/vercel/path0/node_modules/esbuild/lib/main.js:581:7)
+23:51:05.785     at Socket.emit (node:events:508:28)
+23:51:05.785     at addChunk (node:internal/streams/readable:559:12)
+23:51:05.785     at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+23:51:05.785     at Readable.push (node:internal/streams/readable:390:5)
+23:51:05.785     at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)[39m
+23:51:05.814 Error: Command "npm run build" exited with 1useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
@@ -1605,7 +1648,7 @@ const Journal: React.FC = () => {
               <tr className="bg-gray-100 border-b border-gray-300 text-xs text-gray-700">
                 <th className="px-3 py-2 text-left w-10">№</th>
                 <th className="px-3 py-2 text-left w-28">Дата</th>
-                <th className="px-3 py-2 text-left w-28">Тип урока</th>
+                <th className="px-3 py-2 text-left w-40">Тип урока</th>
                 <th className="px-3 py-2 text-left">Тема урока</th>
                 <th className="px-3 py-2 text-left">Домашнее задание</th>
                 <th className="px-3 py-2 text-center w-16">Пров. ДЗ</th>
@@ -1638,7 +1681,7 @@ const Journal: React.FC = () => {
                           if (existing) return prev.map(l => l.id === existing.id ? { ...l, type: e.target.value, lessonNumber: sl.lessonNumber } : l);
                           return [...prev, { id: `lt${Date.now()}`, date: sl.date, subject: selectedSubject, type: e.target.value, lessonNumber: sl.lessonNumber }];
                         });
-                      }} className="w-full px-2 py-1.5 text-xs border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500">
+                      }} className="w-full min-w-[140px] px-2 py-1.5 text-xs border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500">
                         <option value="">—</option>
                         {customLessonTypes && Array.isArray(customLessonTypes) && customLessonTypes.map(clt => <option key={clt.id} value={clt.value}>{clt.label}</option>)}
                       </select>
