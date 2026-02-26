@@ -203,21 +203,21 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
             <thead>
               {monthGroups.length > 0 && (
                 <tr className="bg-primary-50/50">
-                  <th className="sticky left-0 z-10 bg-primary-50/50 px-5 py-3 text-left font-semibold text-primary-700 border-b border-r border-primary-100 min-w-[180px]"></th>
+                  <th className="sticky left-0 z-10 bg-primary-50/50 px-5 py-3 text-left font-semibold text-primary-700 border-b border-r border-primary-300 min-w-[180px]"></th>
                   {monthGroups.map((mg, i) => (
-                    <th key={i} colSpan={mg.dates.length} className="px-3 py-3 text-center font-bold text-primary-800 border-b border-r border-primary-100 text-xs uppercase">{mg.month}</th>
+                    <th key={i} colSpan={mg.dates.length} className="px-3 py-3 text-center font-bold text-primary-800 border-b border-r border-primary-300 text-xs uppercase">{mg.month}</th>
                   ))}
-                  <th className="px-4 py-3 text-center font-semibold text-primary-700 border-b border-primary-100">Ср.</th>
+                  <th className="px-4 py-3 text-center font-semibold text-primary-700 border-b border-primary-300">Ср.</th>
                 </tr>
               )}
               <tr className="bg-gray-50/50">
-                <th className="sticky left-0 z-10 bg-gray-50/50 px-5 py-3 text-left font-semibold text-gray-600 border-b border-r border-gray-100 min-w-[180px]">Предмет</th>
+                <th className="sticky left-0 z-10 bg-gray-50/50 px-5 py-3 text-left font-semibold text-gray-600 border-b border-r border-gray-300 min-w-[180px]">Предмет</th>
                 {allDates.map(d => (
-                  <th key={d} className="px-3 py-3 text-center font-semibold text-gray-500 border-b border-r border-gray-50 min-w-[50px]">
+                  <th key={d} className="px-3 py-3 text-center font-semibold text-gray-500 border-b border-r border-gray-200 min-w-[50px]">
                     {parseInt(d.split('-')[2])}
                   </th>
                 ))}
-                <th className="px-4 py-3 text-center font-semibold text-gray-500 border-b border-gray-100 min-w-[64px]">Ср.</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-500 border-b border-gray-300 min-w-[64px]">Ср.</th>
               </tr>
             </thead>
             <tbody>
@@ -229,8 +229,8 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
                   ? data.allGrades.reduce((a, b) => a + b, 0) / data.allGrades.length 
                   : null;
                 return (
-                  <tr key={subject} className="border-b border-gray-50 hover:bg-white/50 transition-colors">
-                    <td className="sticky left-0 z-10 bg-white px-5 py-3 font-bold text-gray-900 border-r border-gray-100">{subject}</td>
+                  <tr key={subject} className="border-b border-gray-200 hover:bg-white/50 transition-colors">
+                    <td className="sticky left-0 z-10 bg-white px-5 py-3 font-bold text-gray-900 border-r border-gray-300">{subject}</td>
                     {allDates.map(d => {
                       const vals = data.dates[d] || [];
                       // Ищем отметку посещаемости для этой даты и предмета
@@ -242,7 +242,7 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
                       // Если есть посещаемость — показываем её, иначе оценки
                       if (att) {
                         return (
-                          <td key={d} className="px-1.5 py-2 text-center border-r border-gray-50">
+                          <td key={d} className="px-1.5 py-2 text-center border-r border-gray-200">
                             <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold ${at?.bgColor} ${at?.color}`}>
                               {att.type}
                             </span>
@@ -251,7 +251,7 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
                       }
                       
                       return (
-                        <td key={d} className="px-1.5 py-2 text-center border-r border-gray-50">
+                        <td key={d} className="px-1.5 py-2 text-center border-r border-gray-200">
                           <div className="flex flex-wrap gap-1 justify-center">
                             {vals.map((v, i) => (
                               <span key={i} className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold ${gradeColor(v)}`}>{v}</span>
@@ -260,7 +260,7 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
                         </td>
                       );
                     })}
-                    <td className="px-3 py-3 text-center font-bold border-gray-100">
+                    <td className="px-3 py-3 text-center font-bold border-gray-300">
                       {avg !== null ? (
                         <span className={`inline-flex items-center justify-center w-11 h-9 rounded-xl text-sm font-bold ${avg >= 4.5 ? 'bg-success-100 text-success-700' : avg >= 3.5 ? 'bg-primary-100 text-primary-700' : avg >= 2.5 ? 'bg-warning-100 text-warning-700' : 'bg-danger-100 text-danger-700'}`}>
                           {avg.toFixed(1)}
