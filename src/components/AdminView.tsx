@@ -462,6 +462,115 @@ const AdminDashboard: React.FC = () => {
   );
 };
 
+// ==================== KEYBOARD GRADE INPUT PORTAL ====================
+const KeyboardGradeInputPortal: React.FC<{
+  anchorRect: DOMRect;
+  currentGrade?: number;
+  onSelect: (v: number) => void;
+  onDelete?: () => void;
+  onClose: () => void;
+}> = ({ anchorRect, currentGrade, onSelect, onDelete, onClose }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
+
+  useEffect(() => {
+    // Фокус на инпуте при открытии
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key >= '2' && e.key <= '5') {
+        e.preventDefault();
+        onSelect(parseInt(e.key));
+        onClose();
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && currentGrade && onDelete) {
+        e.preventDefault();
+        onDelete();
+        onClose();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onSelect, onDelete, onClose, currentGrade]);
+
+  const widgetW = 180;
+  const widgetH = 70;
+  let top = anchorRect.bottom + 4;
+  let left = anchorRect.left + anchorRect.width / 2 - widgetW / 2;
+  if (top + widgetH > window.innerHeight) top = anchorRect.top - widgetH - 4;
+  if (left < 8) left = 8;
+  if (left + widgetW > window.innerWidth - 8) left = window.innerWidth - widgetW - 8;
+
+  return createPortal(
+    <div ref={ref} className="fixed z-[100] bg-white rounded-xl shadow-2xl border border-gray-200 p-3 animate-scaleIn"
+      style={{ top, left, width: widgetW }}>
+      <div className="flex items-center gap-2 mb-2">
+        <input
+          ref={inputRef}
+          type="text"
+          maxLength={1}
+          className="w-12 h-10 text-center text-lg font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          placeholder="?"
+          onKeyDown={(e) => {
+            if (e.key >= '2' && e.key <= '5') {
+              onSelect(parseInt(e.key));
+              onClose();
+            } else if (e.key === 'Enter') {
+              // Ничего не делаем при Enter, ждём пока пользователь введёт цифру
+            } else if (e.key === 'Escape') {
+              onClose();
+            }
+          }}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val >= '2' && val <= '5') {
+              onSelect(parseInt(val));
+              onClose();
+            }
+          }}
+        />
+        <div className="flex-1 text-xs text-gray-500">
+          {currentGrade ? 'Введите новую оценку' : 'Введите оценку 2-5'}
+        </div>
+      </div>
+      <div className="flex gap-1 justify-center">
+        {[5, 4, 3, 2].map(v => (
+          <button key={v} onClick={() => { onSelect(v); onClose(); }}
+            className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+              v === 5 ? 'bg-green-100 text-green-700 hover:bg-green-200' :
+              v === 4 ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
+              v === 3 ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' :
+              'bg-red-100 text-red-700 hover:bg-red-200'
+            }`}>
+            {v}
+          </button>
+        ))}
+      </div>
+      {currentGrade && onDelete && (
+        <button onClick={() => { onDelete(); onClose(); }} className="w-full mt-2 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-1">
+          <Trash2 className="w-3 h-3" /> Удалить оценку
+        </button>
+      )}
+      <div className="mt-1.5 text-[10px] text-gray-400 text-center">
+        Клавиши: 2-5 — выбрать • Del — удалить • Esc — закрыть
+      </div>
+    </div>,
+    document.body
+  );
+};
+
 // ==================== GRADE PICKER PORTAL ====================
 const GradePickerPortal: React.FC<{
   anchorRect: DOMRect;
@@ -635,6 +744,8 @@ const Journal: React.FC = () => {
   const [showTrend, setShowTrend] = useState(true);
   const [showNotAsked, setShowNotAsked] = useState(true);
   const [showFutureDates, setShowFutureDates] = useState(true);
+  const [gradeInputMode, setGradeInputMode] = useState<'widget' | 'keyboard'>('widget');
+  const [keyboardInputState, setKeyboardInputState] = useState<{ rect: DOMRect; studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
   const [gradePickerState, setGradePickerState] = useState<{ rect: DOMRect; studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
   const [attendancePickerState, setAttendancePickerState] = useState<{ rect: DOMRect; studentId: string; date: string } | null>(null);
   const [popoverDate, setPopoverDate] = useState<string | null>(null);
@@ -1184,7 +1295,11 @@ const Journal: React.FC = () => {
                             <button
                               onClick={e => {
                                 if (!isBlocked) {
-                                  setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, lessonNumber: lessonPageLessonNum });
+                                  if (gradeInputMode === 'keyboard') {
+                                    setKeyboardInputState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, lessonNumber: lessonPageLessonNum });
+                                  } else {
+                                    setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, lessonNumber: lessonPageLessonNum });
+                                  }
                                 }
                               }}
                               disabled={isBlocked}
@@ -1208,7 +1323,11 @@ const Journal: React.FC = () => {
                               <button 
                                 onClick={e => {
                                   if (!isBlocked) {
-                                    setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: hwCol?.id, lessonNumber: lessonPageLessonNum });
+                                    if (gradeInputMode === 'keyboard') {
+                                      setKeyboardInputState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: hwCol?.id, lessonNumber: lessonPageLessonNum });
+                                    } else {
+                                      setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: hwCol?.id, lessonNumber: lessonPageLessonNum });
+                                    }
                                   }
                                 }}
                                 disabled={isBlocked}
@@ -1233,7 +1352,11 @@ const Journal: React.FC = () => {
                             <button
                               onClick={e => {
                                 if (!isBlocked) {
-                                  setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: c.id, lessonNumber: lessonPageLessonNum });
+                                  if (gradeInputMode === 'keyboard') {
+                                    setKeyboardInputState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: c.id, lessonNumber: lessonPageLessonNum });
+                                  } else {
+                                    setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: c.id, lessonNumber: lessonPageLessonNum });
+                                  }
                                 }
                               }}
                               disabled={isBlocked}
@@ -1278,6 +1401,16 @@ const Journal: React.FC = () => {
             onSelect={v => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
             onDelete={() => { deleteGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
             onClose={() => setGradePickerState(null)}
+          />
+        )}
+
+        {keyboardInputState && (
+          <KeyboardGradeInputPortal
+            anchorRect={keyboardInputState.rect}
+            currentGrade={getGrade(keyboardInputState.studentId, keyboardInputState.date, keyboardInputState.columnId, keyboardInputState.lessonNumber)?.value}
+            onSelect={v => { setGrade(keyboardInputState.studentId, keyboardInputState.date, v, keyboardInputState.columnId, keyboardInputState.lessonNumber); setKeyboardInputState(null); }}
+            onDelete={() => { deleteGrade(keyboardInputState.studentId, keyboardInputState.date, keyboardInputState.columnId, keyboardInputState.lessonNumber); setKeyboardInputState(null); }}
+            onClose={() => setKeyboardInputState(null)}
           />
         )}
       </div>
@@ -1337,6 +1470,55 @@ const Journal: React.FC = () => {
               </div>
               <span className="text-sm text-gray-700">Будущие даты</span>
             </label>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <span className="text-sm text-gray-700 font-medium block mb-3">Способ ввода оценок:</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setGradeInputMode('widget')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  gradeInputMode === 'widget'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <div className="w-5 h-5 grid grid-cols-2 gap-0.5">
+                  <span className="bg-current rounded-sm"></span>
+                  <span className="bg-current rounded-sm"></span>
+                  <span className="bg-current rounded-sm"></span>
+                  <span className="bg-current rounded-sm"></span>
+                </div>
+                Виджет
+              </button>
+              <button
+                onClick={() => setGradeInputMode('keyboard')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  gradeInputMode === 'keyboard'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="2" y="4" width="20" height="16" rx="2" />
+                  <line x1="6" y1="8" x2="6" y2="8" />
+                  <line x1="10" y1="8" x2="10" y2="8" />
+                  <line x1="14" y1="8" x2="14" y2="8" />
+                  <line x1="18" y1="8" x2="18" y2="8" />
+                  <line x1="6" y1="12" x2="6" y2="12" />
+                  <line x1="10" y1="12" x2="10" y2="12" />
+                  <line x1="14" y1="12" x2="14" y2="12" />
+                  <line x1="18" y1="12" x2="18" y2="12" />
+                  <line x1="8" y1="16" x2="16" y2="16" />
+                </svg>
+                Клавиатура
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {gradeInputMode === 'widget' 
+                ? 'При клике на клетку открывается всплывающий виджет с выбором оценки 2-5'
+                : 'При клике на клетку открывается поле для ввода. Нажмите 2-5 для оценки, Del для удаления, Esc для закрытия'
+              }
+            </p>
           </div>
         </div>
       )}
@@ -1443,7 +1625,11 @@ const Journal: React.FC = () => {
                               <button 
                                 onClick={e => {
                                   if (!isBlocked) {
-                                    setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, lessonNumber: sl.lessonNumber });
+                                    if (gradeInputMode === 'keyboard') {
+                                      setKeyboardInputState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, lessonNumber: sl.lessonNumber });
+                                    } else {
+                                      setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, lessonNumber: sl.lessonNumber });
+                                    }
                                   }
                                 }}
                                 disabled={isBlocked}
@@ -1462,7 +1648,11 @@ const Journal: React.FC = () => {
                                   <button 
                                     onClick={e => {
                                       if (!isBlocked) {
-                                        setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
+                                        if (gradeInputMode === 'keyboard') {
+                                          setKeyboardInputState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
+                                        } else {
+                                          setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
+                                        }
                                       }
                                     }}
                                     disabled={isBlocked}
@@ -1745,6 +1935,17 @@ const Journal: React.FC = () => {
           onSelect={v => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
           onDelete={() => { deleteGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
           onClose={() => setGradePickerState(null)}
+        />
+      )}
+
+      {/* Keyboard Grade Input */}
+      {keyboardInputState && (
+        <KeyboardGradeInputPortal
+          anchorRect={keyboardInputState.rect}
+          currentGrade={getGrade(keyboardInputState.studentId, keyboardInputState.date, keyboardInputState.columnId, keyboardInputState.lessonNumber)?.value}
+          onSelect={v => { setGrade(keyboardInputState.studentId, keyboardInputState.date, v, keyboardInputState.columnId, keyboardInputState.lessonNumber); setKeyboardInputState(null); }}
+          onDelete={() => { deleteGrade(keyboardInputState.studentId, keyboardInputState.date, keyboardInputState.columnId, keyboardInputState.lessonNumber); setKeyboardInputState(null); }}
+          onClose={() => setKeyboardInputState(null)}
         />
       )}
 
