@@ -10,7 +10,7 @@ import {
   Trash2, Edit2, Search, X, Save, ChevronDown, Eye, EyeOff,
   AlertTriangle, TrendingUp, TrendingDown, FileText,
   BarChart3, Award, ArrowLeft, RefreshCw, ChevronRight, Tag, Info,
-  Paperclip, Download, Keyboard
+  Paperclip, Download, Keyboard, MousePointer2
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
@@ -574,8 +574,8 @@ const Journal: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showTrend, setShowTrend] = useState(true);
   const [showNotAsked, setShowNotAsked] = useState(true);
-  const [gradeInputMode, setGradeInputMode] = useState<'widget' | 'keyboard'>('widget');
-  const [keyboardInputTarget, setKeyboardInputTarget] = useState<{ studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
+  const [inputMode, setInputMode] = useState<'widget' | 'keyboard'>('widget');
+  const [keyboardTarget, setKeyboardTarget] = useState<{ studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
   const [gradePickerState, setGradePickerState] = useState<{ rect: DOMRect; studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
   const [attendancePickerState, setAttendancePickerState] = useState<{ rect: DOMRect; studentId: string; date: string } | null>(null);
   const [popoverDate, setPopoverDate] = useState<string | null>(null);
@@ -583,6 +583,31 @@ const Journal: React.FC = () => {
   const [lessonPageDate, setLessonPageDate] = useState<string | null>(null);
   const [lessonPageLessonNum, setLessonPageLessonNum] = useState<number>(1);
   const popoverRef = useRef<HTMLDivElement>(null);
+
+  // Обработка ввода с клавиатуры
+  useEffect(() => {
+    if (inputMode !== 'keyboard' || !keyboardTarget) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const key = e.key;
+      if (['2', '3', '4', '5'].includes(key)) {
+        e.preventDefault();
+        const value = parseInt(key);
+        setGrade(keyboardTarget.studentId, keyboardTarget.date, value, keyboardTarget.columnId, keyboardTarget.lessonNumber);
+        setKeyboardTarget(null);
+      } else if (key === 'Backspace' || key === 'Delete' || key === '0') {
+        e.preventDefault();
+        deleteGrade(keyboardTarget.studentId, keyboardTarget.date, keyboardTarget.columnId, keyboardTarget.lessonNumber);
+        setKeyboardTarget(null);
+      } else if (key === 'Escape') {
+        e.preventDefault();
+        setKeyboardTarget(null);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [inputMode, keyboardTarget]);
 
   // Check for journal open parameters from schedule
   useEffect(() => {
@@ -601,42 +626,6 @@ const Journal: React.FC = () => {
       }
     }
   }, [setSelectedSubject, setLessonPageDate, setLessonPageLessonNum]);
-
-  // Обработка ввода оценок с клавиатуры
-  useEffect(() => {
-    if (gradeInputMode !== 'keyboard' || !keyboardInputTarget) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const key = e.key;
-      
-      // Цифры 2-5 для оценок
-      if (['2', '3', '4', '5'].includes(key)) {
-        e.preventDefault();
-        const gradeValue = parseInt(key);
-        setGrade(keyboardInputTarget.studentId, keyboardInputTarget.date, gradeValue, keyboardInputTarget.columnId, keyboardInputTarget.lessonNumber);
-        setKeyboardInputTarget(null);
-        return;
-      }
-      
-      // Backspace или Delete для удаления оценки
-      if (key === 'Backspace' || key === 'Delete') {
-        e.preventDefault();
-        deleteGrade(keyboardInputTarget.studentId, keyboardInputTarget.date, keyboardInputTarget.columnId, keyboardInputTarget.lessonNumber);
-        setKeyboardInputTarget(null);
-        return;
-      }
-      
-      // Escape для отмены выбора
-      if (key === 'Escape') {
-        e.preventDefault();
-        setKeyboardInputTarget(null);
-        return;
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [gradeInputMode, keyboardInputTarget, setGrade, deleteGrade]);
 
   const sortedStudents = useMemo(() =>
     [...students].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`)),
@@ -901,19 +890,6 @@ const Journal: React.FC = () => {
               <span className="hidden sm:inline">Следующий</span>
               <ChevronRight className="w-4 h-4" />
             </button>
-            <button 
-              onClick={() => setGradeInputMode(gradeInputMode === 'widget' ? 'keyboard' : 'widget')} 
-              className={`p-2 rounded-lg transition-colors ${gradeInputMode === 'keyboard' ? 'bg-primary-100 text-primary-600' : 'hover:bg-gray-100 text-gray-500'}`}
-              title={gradeInputMode === 'widget' ? 'Переключить на ввод с клавиатуры' : 'Переключить на виджет'}
-            >
-              {gradeInputMode === 'keyboard' ? <Keyboard className="w-5 h-5" /> : <Settings className="w-5 h-5" />}
-            </button>
-            {gradeInputMode === 'keyboard' && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-primary-50 text-primary-700 rounded-lg text-xs font-medium">
-                <Keyboard className="w-3 h-3" />
-                <span>2-5</span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -1168,23 +1144,26 @@ const Journal: React.FC = () => {
                           const showAttendance = !!att;
                           // Блокируем кнопку если есть посещаемость (нельзя ставить оценку)
                           const isBlocked = showAttendance;
-                          const isSelectedForKeyboard = keyboardInputTarget?.studentId === s.id && keyboardInputTarget?.date === lessonPageDate && !keyboardInputTarget?.columnId;
                           return (
                             <button
                               onClick={e => {
                                 if (!isBlocked) {
-                                  if (gradeInputMode === 'keyboard') {
-                                    setKeyboardInputTarget({ studentId: s.id, date: lessonPageDate, lessonNumber: lessonPageLessonNum });
+                                  if (inputMode === 'keyboard') {
+                                    setKeyboardTarget({ studentId: s.id, date: lessonPageDate, lessonNumber: lessonPageLessonNum });
                                   } else {
                                     setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, lessonNumber: lessonPageLessonNum });
                                   }
                                 }
                               }}
                               disabled={isBlocked}
-                              className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${isSelectedForKeyboard ? 'ring-2 ring-primary-500 ring-offset-1' : ''} ${showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
-                                (mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                                : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'}`}
-                              title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : (gradeInputMode === 'keyboard' ? 'Нажмите и введите 2-5' : '')}
+                              className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                inputMode === 'keyboard' && keyboardTarget?.studentId === s.id && keyboardTarget?.date === lessonPageDate && keyboardTarget?.lessonNumber === lessonPageLessonNum && !keyboardTarget?.columnId
+                                  ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
+                                  : showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
+                                    (mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'
+                              }`}
+                              title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                             >
                               {showAttendance ? att?.type : (mainGrade?.value || '')}
                             </button>
@@ -1197,23 +1176,26 @@ const Journal: React.FC = () => {
                           {(() => {
                             const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
                             const isBlocked = !!att;
-                            const isHwSelectedForKeyboard = keyboardInputTarget?.studentId === s.id && keyboardInputTarget?.date === lessonPageDate && keyboardInputTarget?.columnId === hwCol?.id;
                             return (
                               <button 
                                 onClick={e => {
                                   if (!isBlocked) {
-                                    if (gradeInputMode === 'keyboard') {
-                                      setKeyboardInputTarget({ studentId: s.id, date: lessonPageDate, columnId: hwCol?.id, lessonNumber: lessonPageLessonNum });
+                                    if (inputMode === 'keyboard') {
+                                      setKeyboardTarget({ studentId: s.id, date: lessonPageDate, columnId: hwCol?.id, lessonNumber: lessonPageLessonNum });
                                     } else {
                                       setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: hwCol?.id, lessonNumber: lessonPageLessonNum });
                                     }
                                   }
                                 }}
                                 disabled={isBlocked}
-                                className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${isHwSelectedForKeyboard ? 'ring-2 ring-primary-500 ring-offset-1' : ''} ${hwGrade ?
-                                  (hwGrade.value === 5 ? 'bg-green-100 text-green-700' : hwGrade.value === 4 ? 'bg-blue-100 text-blue-700' : hwGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                                  : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'}`}
-                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : (gradeInputMode === 'keyboard' ? 'Нажмите и введите 2-5' : '')}
+                                className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                  inputMode === 'keyboard' && keyboardTarget?.studentId === s.id && keyboardTarget?.date === lessonPageDate && keyboardTarget?.columnId === hwCol?.id && keyboardTarget?.lessonNumber === lessonPageLessonNum
+                                    ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
+                                    : hwGrade ?
+                                      (hwGrade.value === 5 ? 'bg-green-100 text-green-700' : hwGrade.value === 4 ? 'bg-blue-100 text-blue-700' : hwGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                                      : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'
+                                }`}
+                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                               >
                                 {hwGrade?.value || ''}
                               </button>
@@ -1226,24 +1208,27 @@ const Journal: React.FC = () => {
                         const g = getGrade(s.id, lessonPageDate, c.id, lessonPageLessonNum);
                         const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
                         const isBlocked = !!att;
-                        const isColSelectedForKeyboard = keyboardInputTarget?.studentId === s.id && keyboardInputTarget?.date === lessonPageDate && keyboardInputTarget?.columnId === c.id;
                         return (
                           <td key={c.id} className="px-1 py-2 text-center border-r border-gray-300">
                             <button
                               onClick={e => {
                                 if (!isBlocked) {
-                                  if (gradeInputMode === 'keyboard') {
-                                    setKeyboardInputTarget({ studentId: s.id, date: lessonPageDate, columnId: c.id, lessonNumber: lessonPageLessonNum });
+                                  if (inputMode === 'keyboard') {
+                                    setKeyboardTarget({ studentId: s.id, date: lessonPageDate, columnId: c.id, lessonNumber: lessonPageLessonNum });
                                   } else {
                                     setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: c.id, lessonNumber: lessonPageLessonNum });
                                   }
                                 }
                               }}
                               disabled={isBlocked}
-                              className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${isColSelectedForKeyboard ? 'ring-2 ring-primary-500 ring-offset-1' : ''} ${g ?
-                                (g.value === 5 ? 'bg-green-100 text-green-700' : g.value === 4 ? 'bg-blue-100 text-blue-700' : g.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                                : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'}`}
-                              title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : (gradeInputMode === 'keyboard' ? 'Нажмите и введите 2-5' : '')}
+                              className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                inputMode === 'keyboard' && keyboardTarget?.studentId === s.id && keyboardTarget?.date === lessonPageDate && keyboardTarget?.columnId === c.id && keyboardTarget?.lessonNumber === lessonPageLessonNum
+                                  ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
+                                  : g ?
+                                    (g.value === 5 ? 'bg-green-100 text-green-700' : g.value === 4 ? 'bg-blue-100 text-blue-700' : g.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'
+                              }`}
+                              title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                             >
                               {g?.value || ''}
                             </button>
@@ -1308,19 +1293,35 @@ const Journal: React.FC = () => {
           </div>
           {journalTab === 'grades' && (
             <>
-              <button 
-                onClick={() => setGradeInputMode(gradeInputMode === 'widget' ? 'keyboard' : 'widget')} 
-                className={`p-2 rounded-lg transition-colors ${gradeInputMode === 'keyboard' ? 'bg-primary-100 text-primary-600' : 'hover:bg-gray-100 text-gray-500'}`}
-                title={gradeInputMode === 'widget' ? 'Переключить на ввод с клавиатуры' : 'Переключить на виджет'}
-              >
-                {gradeInputMode === 'keyboard' ? <Keyboard className="w-5 h-5" /> : <Settings className="w-5 h-5" />}
+              <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1">
+                <button
+                  onClick={() => { setInputMode('widget'); setKeyboardTarget(null); }}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    inputMode === 'widget'
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                  title="Ввод виджетом"
+                >
+                  <MousePointer2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Виджет</span>
+                </button>
+                <button
+                  onClick={() => setInputMode('keyboard')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    inputMode === 'keyboard'
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                  title="Ввод с клавиатуры"
+                >
+                  <Keyboard className="w-4 h-4" />
+                  <span className="hidden sm:inline">Клавиатура</span>
+                </button>
+              </div>
+              <button onClick={() => setShowSettings(!showSettings)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <Settings className="w-5 h-5 text-gray-500" />
               </button>
-              {gradeInputMode === 'keyboard' && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-primary-50 text-primary-700 rounded-lg text-xs font-medium">
-                  <Keyboard className="w-3 h-3" />
-                  <span>Клавиши: 2-5</span>
-                </div>
-              )}
             </>
           )}
         </div>
@@ -1344,13 +1345,6 @@ const Journal: React.FC = () => {
                 <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all ${showNotAsked ? 'left-[18px]' : 'left-0.5'}`} />
               </div>
               <span className="text-sm text-gray-700">Давно не спрашивали</span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <div className={`w-10 h-6 rounded-full transition-all ${gradeInputMode === 'keyboard' ? 'bg-primary-600' : 'bg-gray-300'} relative`}
-                onClick={() => setGradeInputMode(gradeInputMode === 'widget' ? 'keyboard' : 'widget')}>
-                <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all ${gradeInputMode === 'keyboard' ? 'left-[18px]' : 'left-0.5'}`} />
-              </div>
-              <span className="text-sm text-gray-700">Ввод с клавиатуры</span>
             </label>
           </div>
         </div>
@@ -1452,49 +1446,55 @@ const Journal: React.FC = () => {
                         const showAttendance = !!att;
                         // Блокируем кнопку если есть посещаемость (нельзя ставить оценку)
                         const isBlocked = showAttendance;
-                        const isSelectedForKeyboard = keyboardInputTarget?.studentId === student.id && keyboardInputTarget?.date === sl.date && !keyboardInputTarget?.columnId;
                         return (
                           <React.Fragment key={sl.key}>
                             <td className="px-0.5 py-0.5 text-center border-r border-gray-300">
                               <button 
                                 onClick={e => {
                                   if (!isBlocked) {
-                                    if (gradeInputMode === 'keyboard') {
-                                      setKeyboardInputTarget({ studentId: student.id, date: sl.date, lessonNumber: sl.lessonNumber });
+                                    if (inputMode === 'keyboard') {
+                                      setKeyboardTarget({ studentId: student.id, date: sl.date, lessonNumber: sl.lessonNumber });
                                     } else {
                                       setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, lessonNumber: sl.lessonNumber });
                                     }
                                   }
                                 }}
                                 disabled={isBlocked}
-                                className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${isSelectedForKeyboard ? 'ring-2 ring-primary-500 ring-offset-1' : ''} ${showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
-                                  (mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                                  : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'}`}
-                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : (gradeInputMode === 'keyboard' ? 'Нажмите и введите 2-5' : '')}
+                                className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                  inputMode === 'keyboard' && keyboardTarget?.studentId === student.id && keyboardTarget?.date === sl.date && keyboardTarget?.lessonNumber === sl.lessonNumber && !keyboardTarget?.columnId
+                                    ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
+                                    : showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
+                                      (mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                                      : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'
+                                }`}
+                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                               >
                                 {showAttendance ? att?.type : (mainGrade?.value || '')}
                               </button>
                             </td>
                             {cols.map(c => {
                               const g = getGrade(student.id, sl.date, c.id, sl.lessonNumber);
-                              const isColSelectedForKeyboard = keyboardInputTarget?.studentId === student.id && keyboardInputTarget?.date === sl.date && keyboardInputTarget?.columnId === c.id;
                               return (
                                 <td key={c.id} className="px-0.5 py-0.5 text-center border-r border-gray-300">
                                   <button 
                                     onClick={e => {
                                       if (!isBlocked) {
-                                        if (gradeInputMode === 'keyboard') {
-                                          setKeyboardInputTarget({ studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
+                                        if (inputMode === 'keyboard') {
+                                          setKeyboardTarget({ studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
                                         } else {
                                           setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
                                         }
                                       }
                                     }}
                                     disabled={isBlocked}
-                                    className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${isColSelectedForKeyboard ? 'ring-2 ring-primary-500 ring-offset-1' : ''} ${g ?
-                                      (g.value === 5 ? 'bg-green-100 text-green-700' : g.value === 4 ? 'bg-blue-100 text-blue-700' : g.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                                      : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'}`}
-                                    title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : (gradeInputMode === 'keyboard' ? 'Нажмите и введите 2-5' : '')}
+                                    className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                      inputMode === 'keyboard' && keyboardTarget?.studentId === student.id && keyboardTarget?.date === sl.date && keyboardTarget?.columnId === c.id && keyboardTarget?.lessonNumber === sl.lessonNumber
+                                        ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
+                                        : g ?
+                                          (g.value === 5 ? 'bg-green-100 text-green-700' : g.value === 4 ? 'bg-blue-100 text-blue-700' : g.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                                          : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'
+                                    }`}
+                                    title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                                   >
                                     {g?.value || ''}
                                   </button>
