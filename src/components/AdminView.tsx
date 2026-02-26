@@ -10,7 +10,7 @@ import {
   Trash2, Edit2, Search, X, Save, ChevronDown, Eye, EyeOff,
   AlertTriangle, TrendingUp, TrendingDown, FileText,
   BarChart3, Award, ArrowLeft, RefreshCw, ChevronRight, Tag, Info,
-  Paperclip, Download
+  Paperclip, Download, Keyboard
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
@@ -462,115 +462,6 @@ const AdminDashboard: React.FC = () => {
   );
 };
 
-// ==================== KEYBOARD GRADE INPUT PORTAL ====================
-const KeyboardGradeInputPortal: React.FC<{
-  anchorRect: DOMRect;
-  currentGrade?: number;
-  onSelect: (v: number) => void;
-  onDelete?: () => void;
-  onClose: () => void;
-}> = ({ anchorRect, currentGrade, onSelect, onDelete, onClose }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [onClose]);
-
-  useEffect(() => {
-    // Фокус на инпуте при открытии
-    setTimeout(() => inputRef.current?.focus(), 0);
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key >= '2' && e.key <= '5') {
-        e.preventDefault();
-        onSelect(parseInt(e.key));
-        onClose();
-      } else if ((e.key === 'Delete' || e.key === 'Backspace') && currentGrade && onDelete) {
-        e.preventDefault();
-        onDelete();
-        onClose();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onSelect, onDelete, onClose, currentGrade]);
-
-  const widgetW = 180;
-  const widgetH = 70;
-  let top = anchorRect.bottom + 4;
-  let left = anchorRect.left + anchorRect.width / 2 - widgetW / 2;
-  if (top + widgetH > window.innerHeight) top = anchorRect.top - widgetH - 4;
-  if (left < 8) left = 8;
-  if (left + widgetW > window.innerWidth - 8) left = window.innerWidth - widgetW - 8;
-
-  return createPortal(
-    <div ref={ref} className="fixed z-[100] bg-white rounded-xl shadow-2xl border border-gray-200 p-3 animate-scaleIn"
-      style={{ top, left, width: widgetW }}>
-      <div className="flex items-center gap-2 mb-2">
-        <input
-          ref={inputRef}
-          type="text"
-          maxLength={1}
-          className="w-12 h-10 text-center text-lg font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          placeholder="?"
-          onKeyDown={(e) => {
-            if (e.key >= '2' && e.key <= '5') {
-              onSelect(parseInt(e.key));
-              onClose();
-            } else if (e.key === 'Enter') {
-              // Ничего не делаем при Enter, ждём пока пользователь введёт цифру
-            } else if (e.key === 'Escape') {
-              onClose();
-            }
-          }}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val >= '2' && val <= '5') {
-              onSelect(parseInt(val));
-              onClose();
-            }
-          }}
-        />
-        <div className="flex-1 text-xs text-gray-500">
-          {currentGrade ? 'Введите новую оценку' : 'Введите оценку 2-5'}
-        </div>
-      </div>
-      <div className="flex gap-1 justify-center">
-        {[5, 4, 3, 2].map(v => (
-          <button key={v} onClick={() => { onSelect(v); onClose(); }}
-            className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
-              v === 5 ? 'bg-green-100 text-green-700 hover:bg-green-200' :
-              v === 4 ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
-              v === 3 ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' :
-              'bg-red-100 text-red-700 hover:bg-red-200'
-            }`}>
-            {v}
-          </button>
-        ))}
-      </div>
-      {currentGrade && onDelete && (
-        <button onClick={() => { onDelete(); onClose(); }} className="w-full mt-2 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-1">
-          <Trash2 className="w-3 h-3" /> Удалить оценку
-        </button>
-      )}
-      <div className="mt-1.5 text-[10px] text-gray-400 text-center">
-        Клавиши: 2-5 — выбрать • Del — удалить • Esc — закрыть
-      </div>
-    </div>,
-    document.body
-  );
-};
-
 // ==================== GRADE PICKER PORTAL ====================
 const GradePickerPortal: React.FC<{
   anchorRect: DOMRect;
@@ -588,26 +479,6 @@ const GradePickerPortal: React.FC<{
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [onClose]);
-
-  // Обработка клавиатуры
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key >= '2' && e.key <= '5') {
-        e.preventDefault();
-        onSelect(parseInt(e.key));
-        onClose();
-      } else if ((e.key === 'Delete' || e.key === 'Backspace') && currentGrade && onDelete) {
-        e.preventDefault();
-        onDelete();
-        onClose();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onSelect, onDelete, onClose, currentGrade]);
 
   const widgetW = 200;
   const widgetH = currentGrade ? 90 : 60;
@@ -638,9 +509,6 @@ const GradePickerPortal: React.FC<{
           <Trash2 className="w-3 h-3" /> Удалить
         </button>
       )}
-      <div className="mt-1.5 text-[10px] text-gray-400 text-center">
-        Клавиши: 2-5 — выбрать оценку • Del — удалить • Esc — закрыть
-      </div>
     </div>,
     document.body
   );
@@ -662,40 +530,6 @@ const AttendancePickerPortal: React.FC<{
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [onClose]);
-
-  // Обработка клавиатуры
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const key = e.key.toLowerCase();
-      // Клавиши для выбора посещаемости: Н, У, Б, О или цифры 1-4
-      if (key === 'н' || key === '1') {
-        e.preventDefault();
-        onSelect('Н');
-        onClose();
-      } else if (key === 'у' || key === '2') {
-        e.preventDefault();
-        onSelect('УП');
-        onClose();
-      } else if (key === 'б' || key === '3') {
-        e.preventDefault();
-        onSelect('Б');
-        onClose();
-      } else if (key === 'о' || key === '4') {
-        e.preventDefault();
-        onSelect('ОП');
-        onClose();
-      } else if ((e.key === 'Delete' || e.key === 'Backspace') && currentType) {
-        e.preventDefault();
-        onDelete();
-        onClose();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onSelect, onDelete, onClose, currentType]);
 
   const widgetW = 220;
   let top = anchorRect.bottom + 4;
@@ -720,9 +554,6 @@ const AttendancePickerPortal: React.FC<{
           <Trash2 className="w-3 h-3" /> Удалить
         </button>
       )}
-      <div className="mt-1.5 text-[10px] text-gray-400 text-center">
-        Клавиши: Н/У/Б/О или 1-4 • Del — удалить • Esc — закрыть
-      </div>
     </div>,
     document.body
   );
@@ -743,9 +574,8 @@ const Journal: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showTrend, setShowTrend] = useState(true);
   const [showNotAsked, setShowNotAsked] = useState(true);
-  const [showFutureDates, setShowFutureDates] = useState(true);
   const [gradeInputMode, setGradeInputMode] = useState<'widget' | 'keyboard'>('widget');
-  const [keyboardInputState, setKeyboardInputState] = useState<{ rect: DOMRect; studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
+  const [keyboardInputTarget, setKeyboardInputTarget] = useState<{ studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
   const [gradePickerState, setGradePickerState] = useState<{ rect: DOMRect; studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
   const [attendancePickerState, setAttendancePickerState] = useState<{ rect: DOMRect; studentId: string; date: string } | null>(null);
   const [popoverDate, setPopoverDate] = useState<string | null>(null);
@@ -772,6 +602,42 @@ const Journal: React.FC = () => {
     }
   }, [setSelectedSubject, setLessonPageDate, setLessonPageLessonNum]);
 
+  // Обработка ввода оценок с клавиатуры
+  useEffect(() => {
+    if (gradeInputMode !== 'keyboard' || !keyboardInputTarget) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const key = e.key;
+      
+      // Цифры 2-5 для оценок
+      if (['2', '3', '4', '5'].includes(key)) {
+        e.preventDefault();
+        const gradeValue = parseInt(key);
+        setGrade(keyboardInputTarget.studentId, keyboardInputTarget.date, gradeValue, keyboardInputTarget.columnId, keyboardInputTarget.lessonNumber);
+        setKeyboardInputTarget(null);
+        return;
+      }
+      
+      // Backspace или Delete для удаления оценки
+      if (key === 'Backspace' || key === 'Delete') {
+        e.preventDefault();
+        deleteGrade(keyboardInputTarget.studentId, keyboardInputTarget.date, keyboardInputTarget.columnId, keyboardInputTarget.lessonNumber);
+        setKeyboardInputTarget(null);
+        return;
+      }
+      
+      // Escape для отмены выбора
+      if (key === 'Escape') {
+        e.preventDefault();
+        setKeyboardInputTarget(null);
+        return;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [gradeInputMode, keyboardInputTarget, setGrade, deleteGrade]);
+
   const sortedStudents = useMemo(() =>
     [...students].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`)),
     [students]
@@ -779,13 +645,11 @@ const Journal: React.FC = () => {
 
   // Each lesson = one slot in the journal (date + lessonNumber)
   const allSlots = useMemo(() => {
-    const today = formatDate(new Date());
     return lessons
       .filter(l => l.subject === selectedSubject)
-      .filter(l => showFutureDates || l.date <= today)
       .map(l => ({ date: l.date, lessonNumber: l.lessonNumber, key: `${l.date}_${l.lessonNumber}` }))
       .sort((a, b) => a.date.localeCompare(b.date) || a.lessonNumber - b.lessonNumber);
-  }, [lessons, selectedSubject, showFutureDates]);
+  }, [lessons, selectedSubject]);
 
   // For backward compatibility, unique dates list
   const allDates = useMemo(() => {
@@ -1037,6 +901,19 @@ const Journal: React.FC = () => {
               <span className="hidden sm:inline">Следующий</span>
               <ChevronRight className="w-4 h-4" />
             </button>
+            <button 
+              onClick={() => setGradeInputMode(gradeInputMode === 'widget' ? 'keyboard' : 'widget')} 
+              className={`p-2 rounded-lg transition-colors ${gradeInputMode === 'keyboard' ? 'bg-primary-100 text-primary-600' : 'hover:bg-gray-100 text-gray-500'}`}
+              title={gradeInputMode === 'widget' ? 'Переключить на ввод с клавиатуры' : 'Переключить на виджет'}
+            >
+              {gradeInputMode === 'keyboard' ? <Keyboard className="w-5 h-5" /> : <Settings className="w-5 h-5" />}
+            </button>
+            {gradeInputMode === 'keyboard' && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-primary-50 text-primary-700 rounded-lg text-xs font-medium">
+                <Keyboard className="w-3 h-3" />
+                <span>2-5</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1291,22 +1168,23 @@ const Journal: React.FC = () => {
                           const showAttendance = !!att;
                           // Блокируем кнопку если есть посещаемость (нельзя ставить оценку)
                           const isBlocked = showAttendance;
+                          const isSelectedForKeyboard = keyboardInputTarget?.studentId === s.id && keyboardInputTarget?.date === lessonPageDate && !keyboardInputTarget?.columnId;
                           return (
                             <button
                               onClick={e => {
                                 if (!isBlocked) {
                                   if (gradeInputMode === 'keyboard') {
-                                    setKeyboardInputState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, lessonNumber: lessonPageLessonNum });
+                                    setKeyboardInputTarget({ studentId: s.id, date: lessonPageDate, lessonNumber: lessonPageLessonNum });
                                   } else {
                                     setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, lessonNumber: lessonPageLessonNum });
                                   }
                                 }
                               }}
                               disabled={isBlocked}
-                              className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
+                              className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${isSelectedForKeyboard ? 'ring-2 ring-primary-500 ring-offset-1' : ''} ${showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
                                 (mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
                                 : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'}`}
-                              title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                              title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : (gradeInputMode === 'keyboard' ? 'Нажмите и введите 2-5' : '')}
                             >
                               {showAttendance ? att?.type : (mainGrade?.value || '')}
                             </button>
@@ -1319,22 +1197,23 @@ const Journal: React.FC = () => {
                           {(() => {
                             const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
                             const isBlocked = !!att;
+                            const isHwSelectedForKeyboard = keyboardInputTarget?.studentId === s.id && keyboardInputTarget?.date === lessonPageDate && keyboardInputTarget?.columnId === hwCol?.id;
                             return (
                               <button 
                                 onClick={e => {
                                   if (!isBlocked) {
                                     if (gradeInputMode === 'keyboard') {
-                                      setKeyboardInputState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: hwCol?.id, lessonNumber: lessonPageLessonNum });
+                                      setKeyboardInputTarget({ studentId: s.id, date: lessonPageDate, columnId: hwCol?.id, lessonNumber: lessonPageLessonNum });
                                     } else {
                                       setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: hwCol?.id, lessonNumber: lessonPageLessonNum });
                                     }
                                   }
                                 }}
                                 disabled={isBlocked}
-                                className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${hwGrade ?
+                                className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${isHwSelectedForKeyboard ? 'ring-2 ring-primary-500 ring-offset-1' : ''} ${hwGrade ?
                                   (hwGrade.value === 5 ? 'bg-green-100 text-green-700' : hwGrade.value === 4 ? 'bg-blue-100 text-blue-700' : hwGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
                                   : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'}`}
-                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : (gradeInputMode === 'keyboard' ? 'Нажмите и введите 2-5' : '')}
                               >
                                 {hwGrade?.value || ''}
                               </button>
@@ -1347,23 +1226,24 @@ const Journal: React.FC = () => {
                         const g = getGrade(s.id, lessonPageDate, c.id, lessonPageLessonNum);
                         const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
                         const isBlocked = !!att;
+                        const isColSelectedForKeyboard = keyboardInputTarget?.studentId === s.id && keyboardInputTarget?.date === lessonPageDate && keyboardInputTarget?.columnId === c.id;
                         return (
                           <td key={c.id} className="px-1 py-2 text-center border-r border-gray-300">
                             <button
                               onClick={e => {
                                 if (!isBlocked) {
                                   if (gradeInputMode === 'keyboard') {
-                                    setKeyboardInputState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: c.id, lessonNumber: lessonPageLessonNum });
+                                    setKeyboardInputTarget({ studentId: s.id, date: lessonPageDate, columnId: c.id, lessonNumber: lessonPageLessonNum });
                                   } else {
                                     setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: c.id, lessonNumber: lessonPageLessonNum });
                                   }
                                 }
                               }}
                               disabled={isBlocked}
-                              className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${g ?
+                              className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${isColSelectedForKeyboard ? 'ring-2 ring-primary-500 ring-offset-1' : ''} ${g ?
                                 (g.value === 5 ? 'bg-green-100 text-green-700' : g.value === 4 ? 'bg-blue-100 text-blue-700' : g.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
                                 : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'}`}
-                              title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                              title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : (gradeInputMode === 'keyboard' ? 'Нажмите и введите 2-5' : '')}
                             >
                               {g?.value || ''}
                             </button>
@@ -1403,16 +1283,6 @@ const Journal: React.FC = () => {
             onClose={() => setGradePickerState(null)}
           />
         )}
-
-        {keyboardInputState && (
-          <KeyboardGradeInputPortal
-            anchorRect={keyboardInputState.rect}
-            currentGrade={getGrade(keyboardInputState.studentId, keyboardInputState.date, keyboardInputState.columnId, keyboardInputState.lessonNumber)?.value}
-            onSelect={v => { setGrade(keyboardInputState.studentId, keyboardInputState.date, v, keyboardInputState.columnId, keyboardInputState.lessonNumber); setKeyboardInputState(null); }}
-            onDelete={() => { deleteGrade(keyboardInputState.studentId, keyboardInputState.date, keyboardInputState.columnId, keyboardInputState.lessonNumber); setKeyboardInputState(null); }}
-            onClose={() => setKeyboardInputState(null)}
-          />
-        )}
       </div>
     );
   }
@@ -1437,9 +1307,21 @@ const Journal: React.FC = () => {
             ))}
           </div>
           {journalTab === 'grades' && (
-            <button onClick={() => setShowSettings(!showSettings)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-              <Settings className="w-5 h-5 text-gray-500" />
-            </button>
+            <>
+              <button 
+                onClick={() => setGradeInputMode(gradeInputMode === 'widget' ? 'keyboard' : 'widget')} 
+                className={`p-2 rounded-lg transition-colors ${gradeInputMode === 'keyboard' ? 'bg-primary-100 text-primary-600' : 'hover:bg-gray-100 text-gray-500'}`}
+                title={gradeInputMode === 'widget' ? 'Переключить на ввод с клавиатуры' : 'Переключить на виджет'}
+              >
+                {gradeInputMode === 'keyboard' ? <Keyboard className="w-5 h-5" /> : <Settings className="w-5 h-5" />}
+              </button>
+              {gradeInputMode === 'keyboard' && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-primary-50 text-primary-700 rounded-lg text-xs font-medium">
+                  <Keyboard className="w-3 h-3" />
+                  <span>Клавиши: 2-5</span>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -1464,61 +1346,12 @@ const Journal: React.FC = () => {
               <span className="text-sm text-gray-700">Давно не спрашивали</span>
             </label>
             <label className="flex items-center gap-3 cursor-pointer">
-              <div className={`w-10 h-6 rounded-full transition-all ${showFutureDates ? 'bg-primary-600' : 'bg-gray-300'} relative`}
-                onClick={() => setShowFutureDates(!showFutureDates)}>
-                <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all ${showFutureDates ? 'left-[18px]' : 'left-0.5'}`} />
+              <div className={`w-10 h-6 rounded-full transition-all ${gradeInputMode === 'keyboard' ? 'bg-primary-600' : 'bg-gray-300'} relative`}
+                onClick={() => setGradeInputMode(gradeInputMode === 'widget' ? 'keyboard' : 'widget')}>
+                <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all ${gradeInputMode === 'keyboard' ? 'left-[18px]' : 'left-0.5'}`} />
               </div>
-              <span className="text-sm text-gray-700">Будущие даты</span>
+              <span className="text-sm text-gray-700">Ввод с клавиатуры</span>
             </label>
-          </div>
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <span className="text-sm text-gray-700 font-medium block mb-3">Способ ввода оценок:</span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setGradeInputMode('widget')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  gradeInputMode === 'widget'
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                <div className="w-5 h-5 grid grid-cols-2 gap-0.5">
-                  <span className="bg-current rounded-sm"></span>
-                  <span className="bg-current rounded-sm"></span>
-                  <span className="bg-current rounded-sm"></span>
-                  <span className="bg-current rounded-sm"></span>
-                </div>
-                Виджет
-              </button>
-              <button
-                onClick={() => setGradeInputMode('keyboard')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  gradeInputMode === 'keyboard'
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="2" y="4" width="20" height="16" rx="2" />
-                  <line x1="6" y1="8" x2="6" y2="8" />
-                  <line x1="10" y1="8" x2="10" y2="8" />
-                  <line x1="14" y1="8" x2="14" y2="8" />
-                  <line x1="18" y1="8" x2="18" y2="8" />
-                  <line x1="6" y1="12" x2="6" y2="12" />
-                  <line x1="10" y1="12" x2="10" y2="12" />
-                  <line x1="14" y1="12" x2="14" y2="12" />
-                  <line x1="18" y1="12" x2="18" y2="12" />
-                  <line x1="8" y1="16" x2="16" y2="16" />
-                </svg>
-                Клавиатура
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              {gradeInputMode === 'widget' 
-                ? 'При клике на клетку открывается всплывающий виджет с выбором оценки 2-5'
-                : 'При клике на клетку открывается поле для ввода. Нажмите 2-5 для оценки, Del для удаления, Esc для закрытия'
-              }
-            </p>
           </div>
         </div>
       )}
@@ -1619,6 +1452,7 @@ const Journal: React.FC = () => {
                         const showAttendance = !!att;
                         // Блокируем кнопку если есть посещаемость (нельзя ставить оценку)
                         const isBlocked = showAttendance;
+                        const isSelectedForKeyboard = keyboardInputTarget?.studentId === student.id && keyboardInputTarget?.date === sl.date && !keyboardInputTarget?.columnId;
                         return (
                           <React.Fragment key={sl.key}>
                             <td className="px-0.5 py-0.5 text-center border-r border-gray-300">
@@ -1626,40 +1460,41 @@ const Journal: React.FC = () => {
                                 onClick={e => {
                                   if (!isBlocked) {
                                     if (gradeInputMode === 'keyboard') {
-                                      setKeyboardInputState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, lessonNumber: sl.lessonNumber });
+                                      setKeyboardInputTarget({ studentId: student.id, date: sl.date, lessonNumber: sl.lessonNumber });
                                     } else {
                                       setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, lessonNumber: sl.lessonNumber });
                                     }
                                   }
                                 }}
                                 disabled={isBlocked}
-                                className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
+                                className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${isSelectedForKeyboard ? 'ring-2 ring-primary-500 ring-offset-1' : ''} ${showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
                                   (mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
                                   : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'}`}
-                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : (gradeInputMode === 'keyboard' ? 'Нажмите и введите 2-5' : '')}
                               >
                                 {showAttendance ? att?.type : (mainGrade?.value || '')}
                               </button>
                             </td>
                             {cols.map(c => {
                               const g = getGrade(student.id, sl.date, c.id, sl.lessonNumber);
+                              const isColSelectedForKeyboard = keyboardInputTarget?.studentId === student.id && keyboardInputTarget?.date === sl.date && keyboardInputTarget?.columnId === c.id;
                               return (
                                 <td key={c.id} className="px-0.5 py-0.5 text-center border-r border-gray-300">
                                   <button 
                                     onClick={e => {
                                       if (!isBlocked) {
                                         if (gradeInputMode === 'keyboard') {
-                                          setKeyboardInputState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
+                                          setKeyboardInputTarget({ studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
                                         } else {
                                           setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
                                         }
                                       }
                                     }}
                                     disabled={isBlocked}
-                                    className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${g ?
+                                    className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${isColSelectedForKeyboard ? 'ring-2 ring-primary-500 ring-offset-1' : ''} ${g ?
                                       (g.value === 5 ? 'bg-green-100 text-green-700' : g.value === 4 ? 'bg-blue-100 text-blue-700' : g.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
                                       : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'}`}
-                                    title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                                    title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : (gradeInputMode === 'keyboard' ? 'Нажмите и введите 2-5' : '')}
                                   >
                                     {g?.value || ''}
                                   </button>
@@ -1935,17 +1770,6 @@ const Journal: React.FC = () => {
           onSelect={v => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
           onDelete={() => { deleteGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
           onClose={() => setGradePickerState(null)}
-        />
-      )}
-
-      {/* Keyboard Grade Input */}
-      {keyboardInputState && (
-        <KeyboardGradeInputPortal
-          anchorRect={keyboardInputState.rect}
-          currentGrade={getGrade(keyboardInputState.studentId, keyboardInputState.date, keyboardInputState.columnId, keyboardInputState.lessonNumber)?.value}
-          onSelect={v => { setGrade(keyboardInputState.studentId, keyboardInputState.date, v, keyboardInputState.columnId, keyboardInputState.lessonNumber); setKeyboardInputState(null); }}
-          onDelete={() => { deleteGrade(keyboardInputState.studentId, keyboardInputState.date, keyboardInputState.columnId, keyboardInputState.lessonNumber); setKeyboardInputState(null); }}
-          onClose={() => setKeyboardInputState(null)}
         />
       )}
 
