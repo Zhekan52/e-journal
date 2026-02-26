@@ -1,47 +1,4 @@
-import React, { 23:50:58.355 Running build in Washington, D.C., USA (East) – iad1
-23:50:58.355 Build machine configuration: 2 cores, 8 GB
-23:50:58.516 Cloning github.com/Zhekan52/e-journal (Branch: main, Commit: 122c6fe)
-23:50:59.574 Cloning completed: 1.058s
-23:50:59.783 Restored build cache from previous deployment (7qofDjraAuX2qfm7SPb5JDEvyhQg)
-23:51:01.237 Running "vercel build"
-23:51:01.892 Vercel CLI 50.23.2
-23:51:03.085 Installing dependencies...
-23:51:04.364 
-23:51:04.365 up to date in 921ms
-23:51:04.365 
-23:51:04.365 19 packages are looking for funding
-23:51:04.366   run `npm fund` for details
-23:51:04.397 Running "npm run build"
-23:51:04.493 
-23:51:04.493 > react-vite-tailwind@0.0.0 build
-23:51:04.493 > vite build
-23:51:04.494 
-23:51:04.967 [36mvite v7.2.4 [32mbuilding client environment for production...[36m[39m
-23:51:05.065 transforming...
-23:51:05.772 [32m✓[39m 12 modules transformed.
-23:51:05.783 [31m✗[39m Build failed in 775ms
-23:51:05.784 [31merror during build:
-23:51:05.784 [31m[vite:esbuild] Transform failed with 1 error:
-23:51:05.784 /vercel/path0/src/components/AdminView.tsx:1:19: ERROR: Expected "}" but found "eState"[31m
-23:51:05.784 file: [36m/vercel/path0/src/components/AdminView.tsx:1:19[31m
-23:51:05.784 [33m
-23:51:05.784 [33mExpected "}" but found "eState"[33m
-23:51:05.784 1  |  import React, { us eState, useMemo, useEffect, useRef } from 'react';
-23:51:05.784    |                     ^
-23:51:05.784 2  |  import { createPortal } from 'react-dom';
-23:51:05.784 3  |  import { useAuth, useData } from '../context';
-23:51:05.784 [31m
-23:51:05.784     at failureErrorWithLog (/vercel/path0/node_modules/esbuild/lib/main.js:1467:15)
-23:51:05.784     at /vercel/path0/node_modules/esbuild/lib/main.js:736:50
-23:51:05.785     at responseCallbacks.<computed> (/vercel/path0/node_modules/esbuild/lib/main.js:603:9)
-23:51:05.785     at handleIncomingPacket (/vercel/path0/node_modules/esbuild/lib/main.js:658:12)
-23:51:05.785     at Socket.readFromStdout (/vercel/path0/node_modules/esbuild/lib/main.js:581:7)
-23:51:05.785     at Socket.emit (node:events:508:28)
-23:51:05.785     at addChunk (node:internal/streams/readable:559:12)
-23:51:05.785     at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
-23:51:05.785     at Readable.push (node:internal/streams/readable:390:5)
-23:51:05.785     at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)[39m
-23:51:05.814 Error: Command "npm run build" exited with 1useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
@@ -618,7 +575,6 @@ const Journal: React.FC = () => {
   const [showTrend, setShowTrend] = useState(true);
   const [showNotAsked, setShowNotAsked] = useState(true);
   const [showFutureDates, setShowFutureDates] = useState(true);
-  const [highlightToday, setHighlightToday] = useState(true);
   const [inputMode, setInputMode] = useState<'widget' | 'keyboard'>('widget');
   const [keyboardTarget, setKeyboardTarget] = useState<{ studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
 
@@ -635,7 +591,6 @@ const Journal: React.FC = () => {
         if (settings.showTrend !== undefined) setShowTrend(settings.showTrend);
         if (settings.showNotAsked !== undefined) setShowNotAsked(settings.showNotAsked);
         if (settings.showFutureDates !== undefined) setShowFutureDates(settings.showFutureDates);
-        if (settings.highlightToday !== undefined) setHighlightToday(settings.highlightToday);
         if (settings.inputMode !== undefined) setInputMode(settings.inputMode);
       } catch (e) {
         console.error('Error loading journal settings:', e);
@@ -656,7 +611,6 @@ const Journal: React.FC = () => {
       showTrend,
       showNotAsked,
       showFutureDates,
-      highlightToday,
       inputMode,
     };
     localStorage.setItem(settingsKey, JSON.stringify(settings));
@@ -717,16 +671,15 @@ const Journal: React.FC = () => {
     [students]
   );
 
-  const today = new Date().toISOString().split('T')[0];
-
   // Each lesson = one slot in the journal (date + lessonNumber)
   const allSlots = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
     return lessons
       .filter(l => l.subject === selectedSubject)
       .filter(l => showFutureDates || l.date <= today)
       .map(l => ({ date: l.date, lessonNumber: l.lessonNumber, key: `${l.date}_${l.lessonNumber}` }))
       .sort((a, b) => a.date.localeCompare(b.date) || a.lessonNumber - b.lessonNumber);
-  }, [lessons, selectedSubject, showFutureDates, today]);
+  }, [lessons, selectedSubject, showFutureDates]);
 
   // For backward compatibility, unique dates list
   const allDates = useMemo(() => {
@@ -1441,13 +1394,6 @@ const Journal: React.FC = () => {
               </div>
               <span className="text-sm text-gray-700">Будущие даты</span>
             </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <div className={`w-10 h-6 rounded-full transition-all ${highlightToday ? 'bg-primary-600' : 'bg-gray-300'} relative`}
-                onClick={() => setHighlightToday(!highlightToday)}>
-                <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all ${highlightToday ? 'left-[18px]' : 'left-0.5'}`} />
-              </div>
-              <span className="text-sm text-gray-700">Подсветка сегодня</span>
-            </label>
           </div>
         </div>
       )}
@@ -1488,9 +1434,8 @@ const Journal: React.FC = () => {
                     // Count how many slots share same date
                     const slotsOnDate = allSlots.filter(s => s.date === sl.date);
                     const showLessonNum = slotsOnDate.length > 1;
-                    const isTodayCol = highlightToday && sl.date === today;
                     return (
-                      <th key={sl.key} colSpan={totalCols} className={`px-1 py-1 text-center border-b border-r border-gray-300 min-w-[44px] relative ${isTodayCol ? 'bg-green-100' : ''}`}>
+                      <th key={sl.key} colSpan={totalCols} className="px-1 py-1 text-center border-b border-r border-gray-300 min-w-[44px] relative">
                         <button onClick={(e) => {
                           if (popoverDate === sl.key) {
                             setPopoverDate(null);
@@ -1549,10 +1494,9 @@ const Journal: React.FC = () => {
                         const showAttendance = !!att;
                         // Блокируем кнопку если есть посещаемость (нельзя ставить оценку)
                         const isBlocked = showAttendance;
-                        const isTodayCol = highlightToday && sl.date === today;
                         return (
                           <React.Fragment key={sl.key}>
-                            <td className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isTodayCol ? 'bg-green-50' : ''}`}>
+                            <td className="px-0.5 py-0.5 text-center border-r border-gray-300">
                               <button 
                                 onClick={e => {
                                   if (!isBlocked) {
@@ -1578,9 +1522,8 @@ const Journal: React.FC = () => {
                             </td>
                             {cols.map(c => {
                               const g = getGrade(student.id, sl.date, c.id, sl.lessonNumber);
-                              const isTodayCol = highlightToday && sl.date === today;
                               return (
-                                <td key={c.id} className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isTodayCol ? 'bg-green-50' : ''}`}>
+                                <td key={c.id} className="px-0.5 py-0.5 text-center border-r border-gray-300">
                                   <button 
                                     onClick={e => {
                                       if (!isBlocked) {
@@ -1648,7 +1591,7 @@ const Journal: React.FC = () => {
               <tr className="bg-gray-100 border-b border-gray-300 text-xs text-gray-700">
                 <th className="px-3 py-2 text-left w-10">№</th>
                 <th className="px-3 py-2 text-left w-28">Дата</th>
-                <th className="px-3 py-2 text-left w-40">Тип урока</th>
+                <th className="px-3 py-2 text-left w-28">Тип урока</th>
                 <th className="px-3 py-2 text-left">Тема урока</th>
                 <th className="px-3 py-2 text-left">Домашнее задание</th>
                 <th className="px-3 py-2 text-center w-16">Пров. ДЗ</th>
@@ -1681,7 +1624,7 @@ const Journal: React.FC = () => {
                           if (existing) return prev.map(l => l.id === existing.id ? { ...l, type: e.target.value, lessonNumber: sl.lessonNumber } : l);
                           return [...prev, { id: `lt${Date.now()}`, date: sl.date, subject: selectedSubject, type: e.target.value, lessonNumber: sl.lessonNumber }];
                         });
-                      }} className="w-full min-w-[140px] px-2 py-1.5 text-xs border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500">
+                      }} className="w-full px-2 py-1.5 text-xs border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500">
                         <option value="">—</option>
                         {customLessonTypes && Array.isArray(customLessonTypes) && customLessonTypes.map(clt => <option key={clt.id} value={clt.value}>{clt.label}</option>)}
                       </select>
@@ -1819,9 +1762,8 @@ const Journal: React.FC = () => {
                   <th className="sticky left-[48px] z-20 bg-gray-100 px-3 py-2 text-left text-xs font-medium text-gray-600 border-b border-r border-gray-300 min-w-[140px]">ФИ</th>
                   {allSlots.map(sl => {
                     const slotsOnDate = allSlots.filter(s => s.date === sl.date);
-                    const isTodayCol = highlightToday && sl.date === today;
                     return (
-                      <th key={sl.key} className={`px-1 py-2 text-center text-xs font-medium text-gray-700 border-b border-r border-gray-300 min-w-[44px] ${isTodayCol ? 'bg-green-100' : ''}`}>
+                      <th key={sl.key} className="px-1 py-2 text-center text-xs font-medium text-gray-700 border-b border-r border-gray-300 min-w-[44px]">
                         <div>{parseInt(sl.date.split('-')[2])}</div>
                         {slotsOnDate.length > 1 && <div className="text-[9px] text-primary-600">Ур.{sl.lessonNumber}</div>}
                       </th>
@@ -1842,10 +1784,8 @@ const Journal: React.FC = () => {
                       {allSlots.map(sl => {
                         const mark = getAttendanceMark(student.id, sl.date);
                         const at = mark ? ATTENDANCE_TYPES.find(a => a.value === mark.type) : null;
-                        const isTodayCol = highlightToday && sl.date === today;
                         return (
                           <td key={sl.key} className="px-0.5 py-0.5 text-center border-r border-gray-300">
-                          <td key={sl.key} className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isTodayCol ? 'bg-green-50' : ''}`}>
                             <button onClick={e => setAttendancePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date })}
                               className={`w-8 h-8 rounded-md text-[10px] font-bold transition-all ${at ? `${at.bgColor} ${at.color}` : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'}`}>
                               {mark?.type || ''}
