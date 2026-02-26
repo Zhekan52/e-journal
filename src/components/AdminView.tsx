@@ -577,6 +577,44 @@ const Journal: React.FC = () => {
   const [showFutureDates, setShowFutureDates] = useState(true);
   const [inputMode, setInputMode] = useState<'widget' | 'keyboard'>('widget');
   const [keyboardTarget, setKeyboardTarget] = useState<{ studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
+
+  // Функция для получения ключа localStorage для настроек предмета
+  const getSettingsKey = (subject: string) => `journal_settings_${subject}`;
+
+  // Загрузка настроек при смене предмета
+  useEffect(() => {
+    const settingsKey = getSettingsKey(selectedSubject);
+    const saved = localStorage.getItem(settingsKey);
+    if (saved) {
+      try {
+        const settings = JSON.parse(saved);
+        if (settings.showTrend !== undefined) setShowTrend(settings.showTrend);
+        if (settings.showNotAsked !== undefined) setShowNotAsked(settings.showNotAsked);
+        if (settings.showFutureDates !== undefined) setShowFutureDates(settings.showFutureDates);
+        if (settings.inputMode !== undefined) setInputMode(settings.inputMode);
+      } catch (e) {
+        console.error('Error loading journal settings:', e);
+      }
+    } else {
+      // Сбросить на значения по умолчанию если нет сохранённых настроек
+      setShowTrend(true);
+      setShowNotAsked(true);
+      setShowFutureDates(true);
+      setInputMode('widget');
+    }
+  }, [selectedSubject]);
+
+  // Сохранение настроек при их изменении
+  useEffect(() => {
+    const settingsKey = getSettingsKey(selectedSubject);
+    const settings = {
+      showTrend,
+      showNotAsked,
+      showFutureDates,
+      inputMode,
+    };
+    localStorage.setItem(settingsKey, JSON.stringify(settings));
+  }, [selectedSubject, showTrend, showNotAsked, showFutureDates, inputMode]);
   const [gradePickerState, setGradePickerState] = useState<{ rect: DOMRect; studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
   const [attendancePickerState, setAttendancePickerState] = useState<{ rect: DOMRect; studentId: string; date: string } | null>(null);
   const [popoverDate, setPopoverDate] = useState<string | null>(null);
