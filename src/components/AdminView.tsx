@@ -586,28 +586,119 @@ const Journal: React.FC = () => {
 
   // Обработка ввода с клавиатуры
   useEffect(() => {
-    if (inputMode !== 'keyboard' || !keyboardTarget) return;
+    if (inputMode !== 'keyboard') return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key;
-      if (['2', '3', '4', '5'].includes(key)) {
-        e.preventDefault();
-        const value = parseInt(key);
-        setGrade(keyboardTarget.studentId, keyboardTarget.date, value, keyboardTarget.columnId, keyboardTarget.lessonNumber);
-        setKeyboardTarget(null);
-      } else if (key === 'Backspace' || key === 'Delete' || key === '0') {
-        e.preventDefault();
-        deleteGrade(keyboardTarget.studentId, keyboardTarget.date, keyboardTarget.columnId, keyboardTarget.lessonNumber);
-        setKeyboardTarget(null);
-      } else if (key === 'Escape') {
-        e.preventDefault();
-        setKeyboardTarget(null);
+      
+      // Если есть активная ячейка - обрабатываем ввод оценок и навигацию
+      if (keyboardTarget) {
+        if (['2', '3', '4', '5'].includes(key)) {
+          e.preventDefault();
+          const value = parseInt(key);
+          setGrade(keyboardTarget.studentId, keyboardTarget.date, value, keyboardTarget.columnId, keyboardTarget.lessonNumber);
+          // Переходим к следующему ученику (вниз)
+          const currentStudentIdx = sortedStudents.findIndex(s => s.id === keyboardTarget.studentId);
+          if (currentStudentIdx < sortedStudents.length - 1) {
+            const nextStudent = sortedStudents[currentStudentIdx + 1];
+            setKeyboardTarget({
+              studentId: nextStudent.id,
+              date: keyboardTarget.date,
+              columnId: keyboardTarget.columnId,
+              lessonNumber: keyboardTarget.lessonNumber
+            });
+          } else {
+            setKeyboardTarget(null);
+          }
+        } else if (key === 'Backspace' || key === 'Delete' || key === '0') {
+          e.preventDefault();
+          deleteGrade(keyboardTarget.studentId, keyboardTarget.date, keyboardTarget.columnId, keyboardTarget.lessonNumber);
+          // Переходим к следующему ученику (вниз)
+          const currentStudentIdx = sortedStudents.findIndex(s => s.id === keyboardTarget.studentId);
+          if (currentStudentIdx < sortedStudents.length - 1) {
+            const nextStudent = sortedStudents[currentStudentIdx + 1];
+            setKeyboardTarget({
+              studentId: nextStudent.id,
+              date: keyboardTarget.date,
+              columnId: keyboardTarget.columnId,
+              lessonNumber: keyboardTarget.lessonNumber
+            });
+          } else {
+            setKeyboardTarget(null);
+          }
+        } else if (key === 'Enter') {
+          e.preventDefault();
+          // Переходим к следующему ученику (вниз)
+          const currentStudentIdx = sortedStudents.findIndex(s => s.id === keyboardTarget.studentId);
+          if (currentStudentIdx < sortedStudents.length - 1) {
+            const nextStudent = sortedStudents[currentStudentIdx + 1];
+            setKeyboardTarget({
+              studentId: nextStudent.id,
+              date: keyboardTarget.date,
+              columnId: keyboardTarget.columnId,
+              lessonNumber: keyboardTarget.lessonNumber
+            });
+          }
+        } else if (key === 'Escape') {
+          e.preventDefault();
+          setKeyboardTarget(null);
+        } else if (key === 'ArrowDown') {
+          e.preventDefault();
+          const currentStudentIdx = sortedStudents.findIndex(s => s.id === keyboardTarget.studentId);
+          if (currentStudentIdx < sortedStudents.length - 1) {
+            const nextStudent = sortedStudents[currentStudentIdx + 1];
+            setKeyboardTarget({
+              ...keyboardTarget,
+              studentId: nextStudent.id
+            });
+          }
+        } else if (key === 'ArrowUp') {
+          e.preventDefault();
+          const currentStudentIdx = sortedStudents.findIndex(s => s.id === keyboardTarget.studentId);
+          if (currentStudentIdx > 0) {
+            const prevStudent = sortedStudents[currentStudentIdx - 1];
+            setKeyboardTarget({
+              ...keyboardTarget,
+              studentId: prevStudent.id
+            });
+          }
+        } else if (key === 'ArrowRight') {
+          e.preventDefault();
+          // Переход к следующей колонке (следующий урок/дата)
+          const currentSlotIdx = allSlots.findIndex(
+            sl => sl.date === keyboardTarget.date && sl.lessonNumber === keyboardTarget.lessonNumber
+          );
+          if (currentSlotIdx < allSlots.length - 1) {
+            const nextSlot = allSlots[currentSlotIdx + 1];
+            setKeyboardTarget({
+              studentId: keyboardTarget.studentId,
+              date: nextSlot.date,
+              columnId: undefined,
+              lessonNumber: nextSlot.lessonNumber
+            });
+          }
+        } else if (key === 'ArrowLeft') {
+          e.preventDefault();
+          // Переход к предыдущей колонке (предыдущий урок/дата)
+          const currentSlotIdx = allSlots.findIndex(
+            sl => sl.date === keyboardTarget.date && sl.lessonNumber === keyboardTarget.lessonNumber
+          );
+          if (currentSlotIdx > 0) {
+            const prevSlot = allSlots[currentSlotIdx - 1];
+            setKeyboardTarget({
+              studentId: keyboardTarget.studentId,
+              date: prevSlot.date,
+              columnId: undefined,
+              lessonNumber: prevSlot.lessonNumber
+            });
+          }
+        }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [inputMode, keyboardTarget]);
+  }, [inputMode, keyboardTarget, sortedStudents, allSlots]);
 
   // Check for journal open parameters from schedule
   useEffect(() => {
@@ -892,6 +983,22 @@ const Journal: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Keyboard mode hint for lesson page */}
+        {inputMode === 'keyboard' && (
+          <div className="px-4 py-2.5 bg-primary-50 border border-primary-200 rounded-xl flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2 text-sm text-primary-700">
+              <Keyboard className="w-4 h-4" />
+              <span className="font-medium">Режим клавиатуры:</span>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-primary-600">
+              <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-white rounded border border-primary-300 font-mono">2-5</kbd> оценка</span>
+              <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-white rounded border border-primary-300 font-mono">↑↓←→</kbd> навигация</span>
+              <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-white rounded border border-primary-300 font-mono">Enter</kbd> следующий</span>
+              <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-white rounded border border-primary-300 font-mono">Esc</kbd> отмена</span>
+            </div>
+          </div>
+        )}
 
         <div className="glass rounded-3xl p-6 text-gray-900 shadow-soft-xl">
           <div className="flex items-start justify-between">
@@ -1326,6 +1433,22 @@ const Journal: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Keyboard mode hint */}
+      {inputMode === 'keyboard' && journalTab === 'grades' && (
+        <div className="mb-4 px-4 py-2.5 bg-primary-50 border border-primary-200 rounded-xl flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-sm text-primary-700">
+            <Keyboard className="w-4 h-4" />
+            <span className="font-medium">Режим клавиатуры:</span>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-primary-600">
+            <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-white rounded border border-primary-300 font-mono">2-5</kbd> оценка</span>
+            <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-white rounded border border-primary-300 font-mono">↑↓←→</kbd> навигация</span>
+            <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-white rounded border border-primary-300 font-mono">Enter</kbd> следующий</span>
+            <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-white rounded border border-primary-300 font-mono">Esc</kbd> отмена</span>
+          </div>
+        </div>
+      )}
 
       {/* Settings only for grades tab */}
       {showSettings && journalTab === 'grades' && (
