@@ -14,8 +14,7 @@ import {
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
-  type Student, type Test, type TestQuestion, type CustomLessonType, type AttendanceRecord,
-  formatDate
+  type Student, type Test, type TestQuestion, type CustomLessonType, type AttendanceRecord
 } from '../data';
 
 type Tab = 'dashboard' | 'schedule' | 'journal' | 'tests' | 'students' | 'lessonTypes';
@@ -248,8 +247,8 @@ const LessonTypesManager: React.FC = () => {
 // ==================== DASHBOARD ====================
 const AdminDashboard: React.FC = () => {
   const { students, grades, lessons, tests, attendance } = useData();
-  const today = formatDate(new Date());
-  const todayLessons = lessons.filter(l => l.date === today).sort((a, b) => a.lessonNumber - b.lessonNumber);
+  const todayStr = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+  const todayLessons = lessons.filter(l => l.date === todayStr).sort((a, b) => a.lessonNumber - b.lessonNumber);
 
   const existingStudentIds = new Set(students.map(s => s.id));
   const filteredGrades = grades.filter(g => existingStudentIds.has(g.studentId));
@@ -726,10 +725,10 @@ const Journal: React.FC = () => {
 
   // Each lesson = one slot in the journal (date + lessonNumber)
   const allSlots = useMemo(() => {
-    const today = formatDate(new Date());
+    const todayStr = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
     return lessons
       .filter(l => l.subject === selectedSubject)
-      .filter(l => showFutureDates || l.date <= today)
+      .filter(l => showFutureDates || l.date <= todayStr)
       .map(l => ({ date: l.date, lessonNumber: l.lessonNumber, key: `${l.date}_${l.lessonNumber}` }))
       .sort((a, b) => a.date.localeCompare(b.date) || a.lessonNumber - b.lessonNumber);
   }, [lessons, selectedSubject, showFutureDates]);
