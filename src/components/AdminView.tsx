@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { us eState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
@@ -575,6 +575,7 @@ const Journal: React.FC = () => {
   const [showTrend, setShowTrend] = useState(true);
   const [showNotAsked, setShowNotAsked] = useState(true);
   const [showFutureDates, setShowFutureDates] = useState(true);
+  const [highlightToday, setHighlightToday] = useState(true);
   const [inputMode, setInputMode] = useState<'widget' | 'keyboard'>('widget');
   const [keyboardTarget, setKeyboardTarget] = useState<{ studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
 
@@ -591,6 +592,7 @@ const Journal: React.FC = () => {
         if (settings.showTrend !== undefined) setShowTrend(settings.showTrend);
         if (settings.showNotAsked !== undefined) setShowNotAsked(settings.showNotAsked);
         if (settings.showFutureDates !== undefined) setShowFutureDates(settings.showFutureDates);
+        if (settings.highlightToday !== undefined) setHighlightToday(settings.highlightToday);
         if (settings.inputMode !== undefined) setInputMode(settings.inputMode);
       } catch (e) {
         console.error('Error loading journal settings:', e);
@@ -611,6 +613,7 @@ const Journal: React.FC = () => {
       showTrend,
       showNotAsked,
       showFutureDates,
+      highlightToday,
       inputMode,
     };
     localStorage.setItem(settingsKey, JSON.stringify(settings));
@@ -671,15 +674,16 @@ const Journal: React.FC = () => {
     [students]
   );
 
+  const today = new Date().toISOString().split('T')[0];
+
   // Each lesson = one slot in the journal (date + lessonNumber)
   const allSlots = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
     return lessons
       .filter(l => l.subject === selectedSubject)
       .filter(l => showFutureDates || l.date <= today)
       .map(l => ({ date: l.date, lessonNumber: l.lessonNumber, key: `${l.date}_${l.lessonNumber}` }))
       .sort((a, b) => a.date.localeCompare(b.date) || a.lessonNumber - b.lessonNumber);
-  }, [lessons, selectedSubject, showFutureDates]);
+  }, [lessons, selectedSubject, showFutureDates, today]);
 
   // For backward compatibility, unique dates list
   const allDates = useMemo(() => {
@@ -1394,6 +1398,13 @@ const Journal: React.FC = () => {
               </div>
               <span className="text-sm text-gray-700">Будущие даты</span>
             </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <div className={`w-10 h-6 rounded-full transition-all ${highlightToday ? 'bg-primary-600' : 'bg-gray-300'} relative`}
+                onClick={() => setHighlightToday(!highlightToday)}>
+                <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all ${highlightToday ? 'left-[18px]' : 'left-0.5'}`} />
+              </div>
+              <span className="text-sm text-gray-700">Подсветка сегодня</span>
+            </label>
           </div>
         </div>
       )}
@@ -1434,8 +1445,9 @@ const Journal: React.FC = () => {
                     // Count how many slots share same date
                     const slotsOnDate = allSlots.filter(s => s.date === sl.date);
                     const showLessonNum = slotsOnDate.length > 1;
+                    const isTodayCol = highlightToday && sl.date === today;
                     return (
-                      <th key={sl.key} colSpan={totalCols} className="px-1 py-1 text-center border-b border-r border-gray-300 min-w-[44px] relative">
+                      <th key={sl.key} colSpan={totalCols} className={`px-1 py-1 text-center border-b border-r border-gray-300 min-w-[44px] relative ${isTodayCol ? 'bg-green-100' : ''}`}>
                         <button onClick={(e) => {
                           if (popoverDate === sl.key) {
                             setPopoverDate(null);
@@ -1494,9 +1506,10 @@ const Journal: React.FC = () => {
                         const showAttendance = !!att;
                         // Блокируем кнопку если есть посещаемость (нельзя ставить оценку)
                         const isBlocked = showAttendance;
+                        const isTodayCol = highlightToday && sl.date === today;
                         return (
                           <React.Fragment key={sl.key}>
-                            <td className="px-0.5 py-0.5 text-center border-r border-gray-300">
+                            <td className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isTodayCol ? 'bg-green-50' : ''}`}>
                               <button 
                                 onClick={e => {
                                   if (!isBlocked) {
@@ -1522,8 +1535,9 @@ const Journal: React.FC = () => {
                             </td>
                             {cols.map(c => {
                               const g = getGrade(student.id, sl.date, c.id, sl.lessonNumber);
+                              const isTodayCol = highlightToday && sl.date === today;
                               return (
-                                <td key={c.id} className="px-0.5 py-0.5 text-center border-r border-gray-300">
+                                <td key={c.id} className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isTodayCol ? 'bg-green-50' : ''}`}>
                                   <button 
                                     onClick={e => {
                                       if (!isBlocked) {
@@ -1762,8 +1776,9 @@ const Journal: React.FC = () => {
                   <th className="sticky left-[48px] z-20 bg-gray-100 px-3 py-2 text-left text-xs font-medium text-gray-600 border-b border-r border-gray-300 min-w-[140px]">ФИ</th>
                   {allSlots.map(sl => {
                     const slotsOnDate = allSlots.filter(s => s.date === sl.date);
+                    const isTodayCol = highlightToday && sl.date === today;
                     return (
-                      <th key={sl.key} className="px-1 py-2 text-center text-xs font-medium text-gray-700 border-b border-r border-gray-300 min-w-[44px]">
+                      <th key={sl.key} className={`px-1 py-2 text-center text-xs font-medium text-gray-700 border-b border-r border-gray-300 min-w-[44px] ${isTodayCol ? 'bg-green-100' : ''}`}>
                         <div>{parseInt(sl.date.split('-')[2])}</div>
                         {slotsOnDate.length > 1 && <div className="text-[9px] text-primary-600">Ур.{sl.lessonNumber}</div>}
                       </th>
@@ -1784,8 +1799,10 @@ const Journal: React.FC = () => {
                       {allSlots.map(sl => {
                         const mark = getAttendanceMark(student.id, sl.date);
                         const at = mark ? ATTENDANCE_TYPES.find(a => a.value === mark.type) : null;
+                        const isTodayCol = highlightToday && sl.date === today;
                         return (
                           <td key={sl.key} className="px-0.5 py-0.5 text-center border-r border-gray-300">
+                          <td key={sl.key} className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isTodayCol ? 'bg-green-50' : ''}`}>
                             <button onClick={e => setAttendancePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date })}
                               className={`w-8 h-8 rounded-md text-[10px] font-bold transition-all ${at ? `${at.bgColor} ${at.color}` : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'}`}>
                               {mark?.type || ''}
