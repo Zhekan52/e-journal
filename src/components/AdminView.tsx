@@ -588,12 +588,22 @@ const Journal: React.FC = () => {
   useEffect(() => {
     if (inputMode !== 'keyboard') return;
 
+    // Защита от быстрых нажатий
+    let isProcessing = false;
+
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Защита от повторных вызовов
+      if (isProcessing) return;
+      
       const key = e.key;
+      
+      // Проверяем что данные готовы
+      if (!sortedStudents || sortedStudents.length === 0 || !allSlots || allSlots.length === 0) return;
       
       // Если есть активная ячейка - обрабатываем ввод оценок и навигацию
       if (keyboardTarget) {
         if (['2', '3', '4', '5'].includes(key)) {
+          isProcessing = true;
           e.preventDefault();
           const value = parseInt(key);
           setGrade(keyboardTarget.studentId, keyboardTarget.date, value, keyboardTarget.columnId, keyboardTarget.lessonNumber);
