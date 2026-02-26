@@ -480,6 +480,26 @@ const GradePickerPortal: React.FC<{
     return () => document.removeEventListener('mousedown', handler);
   }, [onClose]);
 
+  // Обработка клавиатуры
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key >= '2' && e.key <= '5') {
+        e.preventDefault();
+        onSelect(parseInt(e.key));
+        onClose();
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && currentGrade && onDelete) {
+        e.preventDefault();
+        onDelete();
+        onClose();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onSelect, onDelete, onClose, currentGrade]);
+
   const widgetW = 200;
   const widgetH = currentGrade ? 90 : 60;
   let top = anchorRect.bottom + 4;
@@ -509,6 +529,9 @@ const GradePickerPortal: React.FC<{
           <Trash2 className="w-3 h-3" /> Удалить
         </button>
       )}
+      <div className="mt-1.5 text-[10px] text-gray-400 text-center">
+        Клавиши: 2-5 — выбрать оценку • Del — удалить • Esc — закрыть
+      </div>
     </div>,
     document.body
   );
@@ -530,6 +553,40 @@ const AttendancePickerPortal: React.FC<{
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [onClose]);
+
+  // Обработка клавиатуры
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      // Клавиши для выбора посещаемости: Н, У, Б, О или цифры 1-4
+      if (key === 'н' || key === '1') {
+        e.preventDefault();
+        onSelect('Н');
+        onClose();
+      } else if (key === 'у' || key === '2') {
+        e.preventDefault();
+        onSelect('УП');
+        onClose();
+      } else if (key === 'б' || key === '3') {
+        e.preventDefault();
+        onSelect('Б');
+        onClose();
+      } else if (key === 'о' || key === '4') {
+        e.preventDefault();
+        onSelect('ОП');
+        onClose();
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && currentType) {
+        e.preventDefault();
+        onDelete();
+        onClose();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onSelect, onDelete, onClose, currentType]);
 
   const widgetW = 220;
   let top = anchorRect.bottom + 4;
@@ -554,6 +611,9 @@ const AttendancePickerPortal: React.FC<{
           <Trash2 className="w-3 h-3" /> Удалить
         </button>
       )}
+      <div className="mt-1.5 text-[10px] text-gray-400 text-center">
+        Клавиши: Н/У/Б/О или 1-4 • Del — удалить • Esc — закрыть
+      </div>
     </div>,
     document.body
   );
