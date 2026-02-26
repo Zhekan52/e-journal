@@ -574,6 +574,7 @@ const Journal: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showTrend, setShowTrend] = useState(true);
   const [showNotAsked, setShowNotAsked] = useState(true);
+  const [showFutureDates, setShowFutureDates] = useState(true);
   const [inputMode, setInputMode] = useState<'widget' | 'keyboard'>('widget');
   const [keyboardTarget, setKeyboardTarget] = useState<{ studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
   const [gradePickerState, setGradePickerState] = useState<{ rect: DOMRect; studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
@@ -725,11 +726,13 @@ const Journal: React.FC = () => {
 
   // Each lesson = one slot in the journal (date + lessonNumber)
   const allSlots = useMemo(() => {
+    const today = formatDate(new Date());
     return lessons
       .filter(l => l.subject === selectedSubject)
+      .filter(l => showFutureDates || l.date <= today)
       .map(l => ({ date: l.date, lessonNumber: l.lessonNumber, key: `${l.date}_${l.lessonNumber}` }))
       .sort((a, b) => a.date.localeCompare(b.date) || a.lessonNumber - b.lessonNumber);
-  }, [lessons, selectedSubject]);
+  }, [lessons, selectedSubject, showFutureDates]);
 
   // For backward compatibility, unique dates list
   const allDates = useMemo(() => {
@@ -1468,6 +1471,13 @@ const Journal: React.FC = () => {
                 <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all ${showNotAsked ? 'left-[18px]' : 'left-0.5'}`} />
               </div>
               <span className="text-sm text-gray-700">Давно не спрашивали</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <div className={`w-10 h-6 rounded-full transition-all ${showFutureDates ? 'bg-primary-600' : 'bg-gray-300'} relative`}
+                onClick={() => setShowFutureDates(!showFutureDates)}>
+                <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all ${showFutureDates ? 'left-[18px]' : 'left-0.5'}`} />
+              </div>
+              <span className="text-sm text-gray-700">Будущие даты</span>
             </label>
           </div>
         </div>
