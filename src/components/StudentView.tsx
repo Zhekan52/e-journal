@@ -95,7 +95,9 @@ export const StudentView: React.FC = () => {
 const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons }) => {
   const today = formatDate(new Date());
   const todayLessons = lessons.filter((l: any) => l.date === today).sort((a: any, b: any) => a.lessonNumber - b.lessonNumber);
-  const avgGrade = myGrades.length > 0 ? (myGrades.reduce((s: number, g: any) => s + g.value, 0) / myGrades.length).toFixed(2) : '—';
+  // Фильтруем оценки, исключая те, которые не учитываются в среднем балле
+  const gradesForAvg = myGrades.filter((g: any) => !g.excludeFromAverage);
+  const avgGrade = gradesForAvg.length > 0 ? (gradesForAvg.reduce((s: number, g: any) => s + g.value, 0) / gradesForAvg.length).toFixed(2) : '—';
 
   return (
     <div className="animate-fadeIn space-y-8">
@@ -144,14 +146,15 @@ const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons
 // ==================== GRADES ====================
 const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }> = ({ myGrades, attendance, studentId }) => {
   const gradesBySubject = useMemo(() => {
-    const map: Record<string, { dates: Record<string, number[]>; allGrades: number[]; hasAttendance: Set<string> }> = {};
+    const map: Record<string, { dates: Record<string, { value: number; excludeFromAverage?: boolean }[]>; allGrades: number[]; hasAttendance: Set<string> }> = {};
     SUBJECTS.forEach(s => { map[s] = { dates: {}, allGrades: [], hasAttendance: new Set() }; });
     
-    // Добавляем оценки
+    // Добавляем оценки (включая информацию о excludeFromAverage)
     myGrades.forEach(g => {
       if (!map[g.subject]) map[g.subject] = { dates: {}, allGrades: [], hasAttendance: new Set() };
       if (!map[g.subject].dates[g.date]) map[g.subject].dates[g.date] = [];
-      map[g.subject].dates[g.date].push(g.value);
+      map[g.subject].dates[g.date].push({ value: g.value, excludeFromAverage: g.excludeFromAverage });
+      // Включаем все оценки в общий список для отображения
       map[g.subject].allGrades.push(g.value);
     });
     
@@ -192,7 +195,10 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
     return groups;
   }, [allDates]);
 
-  const gradeColor = (v: number) => v === 5 ? 'bg-green-100 text-green-700' : v === 4 ? 'bg-blue-100 text-blue-700' : v === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700';
+  const gradeColor = (v: number, excludeFromAverage?: boolean) => {
+    if (excludeFromAverage) return 'bg-gray-200 text-gray-500'; // Серый цвет для оценок, не учитываемых в среднем
+    return v === 5 ? 'bg-green-100 text-green-700' : v === 4 ? 'bg-blue-100 text-blue-700' : v === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700';
+  };
 
   return (
     <div className="animate-fadeIn">
@@ -225,8 +231,10 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
                 const data = gradesBySubject[subject];
                 // Показываем предмет если у него есть оценки или посещаемость
                 if (!data || (data.allGrades.length === 0 && data.hasAttendance.size === 0)) return null;
-                const avg = data.allGrades.length > 0 
-                  ? data.allGrades.reduce((a, b) => a + b, 0) / data.allGrades.length 
+                // Фильтруем оценки для расчёта среднего (исключаем те, которые не учитываются)
+                const gradesForAvg = myGrades.filter((g: any) => g.subject === subject && !g.excludeFromAverage);
+                const avg = gradesForAvg.length > 0 
+                  ? gradesForAvg.reduce((a: number, b: any) => a + b.value, 0) / gradesForAvg.length 
                   : null;
                 return (
                   <tr key={subject} className="border-b border-gray-200 hover:bg-white/50 transition-colors">
@@ -253,8 +261,8 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
                       return (
                         <td key={d} className="px-1.5 py-2 text-center border-r border-gray-200">
                           <div className="flex flex-wrap gap-1 justify-center">
-                            {vals.map((v, i) => (
-                              <span key={i} className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold ${gradeColor(v)}`}>{v}</span>
+                            {vals.map((gradeObj: any, i: number) => (
+                              <span key={i} className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold ${gradeColor(gradeObj.value, gradeObj.excludeFromAverage)}`} title={gradeObj.excludeFromAverage ? 'Не учитывается в среднем балле' : ''}>{gradeObj.value}</span>
                             ))}
                           </div>
                         </td>
@@ -820,7 +828,7 @@ const Diary: React.FC<DiaryProps> = ({
 
           return (
             <div key={dayIdx} className="glass rounded-2xl overflow-hidden shadow-soft">
-              <div className="px-6 py-4 bg-gradient-to-r from-primary-50 to-primary-100/50 border-b border-primary-100">
+               <div className="px-6 py-4 bg-gradient-to-r from-primary-50 to-primary-100/50 border-b border-primary-100">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-gray-900">{DAY_NAMES[dayNameIdx]}</h3>
                   <span className="text-sm font-semibold text-primary-700">{date.getDate()} {MONTH_NAMES_GEN[date.getMonth()]}</span>
@@ -940,11 +948,12 @@ const Diary: React.FC<DiaryProps> = ({
                               <div className="flex flex-wrap gap-1.5 justify-center">
                                 {dayGrades.map((g: any, i: number) => (
                                   <span key={i} className={`inline-flex items-center justify-center w-9 h-9 rounded-xl text-sm font-bold ${
+                                    g.excludeFromAverage ? 'bg-gray-200 text-gray-500' :
                                     g.value === 5 ? 'bg-success-100 text-success-700' :
                                     g.value === 4 ? 'bg-primary-100 text-primary-700' :
                                     g.value === 3 ? 'bg-warning-100 text-warning-700' :
                                     'bg-danger-100 text-danger-700'
-                                  }`}>{g.value}</span>
+                                  }`} title={g.excludeFromAverage ? 'Не учитывается в среднем балле' : ''}>{g.value}</span>
                                 ))}
                                 {dayGrades.length === 0 && <span className="text-gray-400">—</span>}
                               </div>
@@ -976,11 +985,12 @@ const Statistics: React.FC<StatisticsProps> = ({ studentId, grades, lessons, stu
   // Используем все оценки без фильтрации по урокам, чтобы совпадало с расчётами админа
   const allGrades = grades;
 
-  // Средний балл текущего ученика по всем предметам
+  // Средний балл текущего ученика по всем предметам (исключая оценки с excludeFromAverage)
   const myGrades = useMemo(() => allGrades.filter(g => g.studentId === studentId), [allGrades, studentId]);
   const myOverallAvg = useMemo(() => {
-    if (myGrades.length === 0) return 0;
-    return myGrades.reduce((sum, g) => sum + g.value, 0) / myGrades.length;
+    const gradesForAvg = myGrades.filter(g => !g.excludeFromAverage);
+    if (gradesForAvg.length === 0) return 0;
+    return gradesForAvg.reduce((sum, g) => sum + g.value, 0) / gradesForAvg.length;
   }, [myGrades]);
 
   // Вычисляем статистику по каждому предмету
@@ -1001,16 +1011,19 @@ const Statistics: React.FC<StatisticsProps> = ({ studentId, grades, lessons, stu
     subjects.forEach(subject => {
       // Оценки текущего ученика по предмету
       const subjectMyGrades = myGrades.filter(g => g.subject === subject);
-      const myAvg = subjectMyGrades.length > 0
-        ? subjectMyGrades.reduce((sum, g) => sum + g.value, 0) / subjectMyGrades.length
+      // Фильтруем оценки ученика (исключая те, которые не учитываются в среднем)
+      const subjectMyGradesForAvg = subjectMyGrades.filter(g => !g.excludeFromAverage);
+      const myAvg = subjectMyGradesForAvg.length > 0
+        ? subjectMyGradesForAvg.reduce((sum, g) => sum + g.value, 0) / subjectMyGradesForAvg.length
         : 0;
 
       // Оценки всех учеников по предмету
       const subjectAllGrades = allGrades.filter(g => g.subject === subject);
 
-      // Средний балл класса по предмету - считаем как среднее всех оценок (как в AdminView)
-      const classAvg = subjectAllGrades.length > 0
-        ? subjectAllGrades.reduce((sum, g) => sum + g.value, 0) / subjectAllGrades.length
+      // Средний балл класса по предмету - исключаем оценки с excludeFromAverage (как в AdminView)
+      const subjectAllGradesForAvg = subjectAllGrades.filter(g => !g.excludeFromAverage);
+      const classAvg = subjectAllGradesForAvg.length > 0
+        ? subjectAllGradesForAvg.reduce((sum, g) => sum + g.value, 0) / subjectAllGradesForAvg.length
         : 0;
 
       // Вычисляем средний балл для каждого ученика по предмету (для определения позиции)

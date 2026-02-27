@@ -554,11 +554,13 @@ const AdminDashboard: React.FC = () => {
 const GradePickerPortal: React.FC<{
   anchorRect: DOMRect;
   currentGrade?: number;
-  onSelect: (v: number) => void;
+  currentExcludeFromAverage?: boolean;
+  onSelect: (v: number, excludeFromAverage?: boolean) => void;
   onDelete?: () => void;
   onClose: () => void;
-}> = ({ anchorRect, currentGrade, onSelect, onDelete, onClose }) => {
+}> = ({ anchorRect, currentGrade, currentExcludeFromAverage, onSelect, onDelete, onClose }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const [excludeFromAverage, setExcludeFromAverage] = useState(currentExcludeFromAverage || false);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -568,8 +570,12 @@ const GradePickerPortal: React.FC<{
     return () => document.removeEventListener('mousedown', handler);
   }, [onClose]);
 
-  const widgetW = 200;
-  const widgetH = currentGrade ? 90 : 60;
+  useEffect(() => {
+    setExcludeFromAverage(currentExcludeFromAverage || false);
+  }, [currentExcludeFromAverage]);
+
+  const widgetW = 220;
+  const widgetH = currentGrade ? 130 : 90;
   let top = anchorRect.bottom + 4;
   let left = anchorRect.left + anchorRect.width / 2 - widgetW / 2;
   if (top + widgetH > window.innerHeight) top = anchorRect.top - widgetH - 4;
@@ -581,7 +587,7 @@ const GradePickerPortal: React.FC<{
       style={{ top, left, width: widgetW }}>
       <div className="flex gap-1.5 justify-center">
         {[5, 4, 3, 2].map(v => (
-          <button key={v} onClick={() => onSelect(v)}
+          <button key={v} onClick={() => onSelect(v, excludeFromAverage)}
             className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${
               v === 5 ? 'bg-green-100 text-green-700 hover:bg-green-200' :
               v === 4 ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
@@ -592,6 +598,15 @@ const GradePickerPortal: React.FC<{
           </button>
         ))}
       </div>
+      <label className="flex items-center gap-2 mt-2 px-1 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={excludeFromAverage}
+          onChange={(e) => setExcludeFromAverage(e.target.checked)}
+          className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+        />
+        <span className="text-xs text-gray-600">Не учитывать в среднем</span>
+      </label>
       {currentGrade && onDelete && (
         <button onClick={onDelete} className="w-full mt-1.5 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-1">
           <Trash2 className="w-3 h-3" /> Удалить
@@ -825,13 +840,13 @@ const Journal: React.FC = () => {
     return result;
   };
 
-  const setGrade = (studentId: string, date: string, value: number, columnId?: string, lessonNumber?: number) => {
+  const setGrade = (studentId: string, date: string, value: number, columnId?: string, lessonNumber?: number, excludeFromAverage?: boolean) => {
     setGrades(prev => {
       const existing = prev.find(g => g.studentId === studentId && g.date === date && g.subject === selectedSubject
         && (columnId ? g.columnId === columnId : !g.columnId)
         && (lessonNumber !== undefined ? g.lessonNumber === lessonNumber : true));
-      if (existing) return prev.map(g => g.id === existing.id ? { ...g, value } : g);
-      return [...prev, { id: `g${Date.now()}${Math.random().toString(36).slice(2, 6)}`, studentId, subject: selectedSubject, value, date, lessonNumber, columnId }];
+      if (existing) return prev.map(g => g.id === existing.id ? { ...g, value, excludeFromAverage } : g);
+      return [...prev, { id: `g${Date.now()}${Math.random().toString(36).slice(2, 6)}`, studentId, subject: selectedSubject, value, date, lessonNumber, columnId, excludeFromAverage }];
     });
   };
 
@@ -868,6 +883,7 @@ const Journal: React.FC = () => {
     const sg = grades.filter(g =>
       g.studentId === studentId &&
       g.subject === selectedSubject &&
+      !g.excludeFromAverage && // Исключаем оценки, не учитываемые в среднем балле
       lessons.some(l => l.date === g.date && l.subject === selectedSubject)
     );
     return sg.length > 0 ? sg.reduce((a, g) => a + g.value, 0) / sg.length : 0;
@@ -1294,7 +1310,7 @@ const Journal: React.FC = () => {
                                 inputMode === 'keyboard' && keyboardTarget?.studentId === s.id && keyboardTarget?.date === lessonPageDate && keyboardTarget?.lessonNumber === lessonPageLessonNum && !keyboardTarget?.columnId
                                   ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
                                   : showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
-                                    (mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                                    (mainGrade.excludeFromAverage ? 'bg-gray-200 text-gray-500' : mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
                                     : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'
                               }`}
                               title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
@@ -1397,7 +1413,8 @@ const Journal: React.FC = () => {
           <GradePickerPortal
             anchorRect={gradePickerState.rect}
             currentGrade={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.value}
-            onSelect={v => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
+            currentExcludeFromAverage={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.excludeFromAverage}
+            onSelect={(v, excludeFromAverage) => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber, excludeFromAverage); setGradePickerState(null); }}
             onDelete={() => { deleteGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
             onClose={() => setGradePickerState(null)}
           />
@@ -1617,7 +1634,7 @@ const Journal: React.FC = () => {
                                   inputMode === 'keyboard' && keyboardTarget?.studentId === student.id && keyboardTarget?.date === sl.date && keyboardTarget?.lessonNumber === sl.lessonNumber && !keyboardTarget?.columnId
                                     ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
                                     : showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
-                                      (mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                                      (mainGrade.excludeFromAverage ? 'bg-gray-200 text-gray-500' : mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
                                       : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'
                                 }`}
                                 title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
@@ -1926,7 +1943,8 @@ const Journal: React.FC = () => {
         <GradePickerPortal
           anchorRect={gradePickerState.rect}
           currentGrade={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.value}
-          onSelect={v => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
+          currentExcludeFromAverage={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.excludeFromAverage}
+          onSelect={(v, excludeFromAverage) => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber, excludeFromAverage); setGradePickerState(null); }}
           onDelete={() => { deleteGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
           onClose={() => setGradePickerState(null)}
         />
