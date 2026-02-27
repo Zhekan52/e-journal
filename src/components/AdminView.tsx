@@ -615,12 +615,31 @@ const GradePickerPortal: React.FC<{
   anchorRect: DOMRect;
   currentGrade?: number;
   currentExcludeFromAverage?: boolean;
+  currentIsPendingPoint?: boolean;
+  currentPendingPointConfig?: { targetDate: string; targetGrade: number; testId?: string };
   onSelect: (v: number, excludeFromAverage?: boolean) => void;
+  onCreatePendingPoint?: (targetDate: string, targetGrade: number, testId?: string) => void;
+  onUpdatePendingPoint?: (targetDate: string, targetGrade: number) => void;
   onDelete?: () => void;
   onClose: () => void;
-}> = ({ anchorRect, currentGrade, currentExcludeFromAverage, onSelect, onDelete, onClose }) => {
+}> = ({ 
+  anchorRect, 
+  currentGrade, 
+  currentExcludeFromAverage, 
+  currentIsPendingPoint, 
+  currentPendingPointConfig,
+  onSelect, 
+  onCreatePendingPoint,
+  onUpdatePendingPoint,
+  onDelete, 
+  onClose 
+}) => {
   const ref = useRef<HTMLDivElement>(null);
   const [excludeFromAverage, setExcludeFromAverage] = useState(currentExcludeFromAverage || false);
+  const [showPointModal, setShowPointModal] = useState(false);
+  const [pointTargetDate, setPointTargetDate] = useState('');
+  const [pointTargetGrade, setPointTargetGrade] = useState(2);
+  const [pointDaysAfter, setPointDaysAfter] = useState(7);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -634,8 +653,43 @@ const GradePickerPortal: React.FC<{
     setExcludeFromAverage(currentExcludeFromAverage || false);
   }, [currentExcludeFromAverage]);
 
+  useEffect(() => {
+    if (currentPendingPointConfig) {
+      setPointTargetDate(currentPendingPointConfig.targetDate);
+      setPointTargetGrade(currentPendingPointConfig.targetGrade);
+    } else {
+      // По умолчанию - через 7 дней
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() + 7);
+      setPointTargetDate(defaultDate.toISOString().split('T')[0]);
+      setPointTargetGrade(2);
+    }
+  }, [currentPendingPointConfig]);
+
+  const handleCreatePoint = () => {
+    const targetDate = pointTargetDate || (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + pointDaysAfter);
+      return d.toISOString().split('T')[0];
+    })();
+    if (onCreatePendingPoint) {
+      onCreatePendingPoint(targetDate, pointTargetGrade);
+    }
+    setShowPointModal(false);
+    onClose();
+  };
+
+  const handleUpdatePoint = () => {
+    if (onUpdatePendingPoint) {
+      onUpdatePendingPoint(pointTargetDate, pointTargetGrade);
+    }
+    setShowPointModal(false);
+    onClose();
+  };
+
   const widgetW = 220;
-  const widgetH = currentGrade ? 130 : 90;
+  const isPoint = currentIsPendingPoint;
+  const widgetH = currentGrade || isPoint ? 160 : 110;
   let top = anchorRect.bottom + 4;
   let left = anchorRect.left + anchorRect.width / 2 - widgetW / 2;
   if (top + widgetH > window.innerHeight) top = anchorRect.top - widgetH - 4;
@@ -643,36 +697,166 @@ const GradePickerPortal: React.FC<{
   if (left + widgetW > window.innerWidth - 8) left = window.innerWidth - widgetW - 8;
 
   return createPortal(
-    <div ref={ref} className="fixed z-[100] bg-white rounded-xl shadow-2xl border border-gray-200 p-2 animate-scaleIn"
-      style={{ top, left, width: widgetW }}>
-      <div className="flex gap-1.5 justify-center">
-        {[5, 4, 3, 2].map(v => (
-          <button key={v} onClick={() => onSelect(v, excludeFromAverage)}
-            className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${
-              v === 5 ? 'bg-green-100 text-green-700 hover:bg-green-200' :
-              v === 4 ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
-              v === 3 ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' :
-              'bg-red-100 text-red-700 hover:bg-red-200'
-            } ${currentGrade === v ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}>
-            {v}
-          </button>
-        ))}
+    <>
+      <div ref={ref} className="fixed z-[100] bg-white rounded-xl shadow-2xl border border-gray-200 p-2 animate-scaleIn"
+        style={{ top, left, width: widgetW }}>
+        {isPoint ? (
+          // Режим отображения точки
+          <div className="space-y-2">
+            <div className="flex items-center justify-center py-1">
+              <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-lg font-bold border-2 border-purple-300">
+                •
+              </div>
+            </div>
+            <div className="text-xs text-center text-gray-600 px-2">
+              Превратится в <span className="font-bold text-purple-700">{currentPendingPointConfig?.targetGrade}</span>
+              {currentPendingPointConfig?.targetDate && (
+                <span> до {new Date(currentPendingPointConfig.targetDate + 'T00:00').getLocaleDateString('ru-RU')}</span>
+              )}
+            </div>
+            <div className="flex gap-1.5 justify-center pt-1">
+              <button onClick={() => setShowPointModal(true)}
+                className="flex-1 px-2 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors">
+                Изменить
+              </button>
+              <button onClick={onDelete}
+                className="px-2 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                Удалить
+              </button>
+            </div>
+          </div>
+        ) : (
+          // Обычный режим выбора оценки
+          <>
+            <div className="flex gap-1.5 justify-center">
+              {[5, 4, 3, 2].map(v => (
+                <button key={v} onClick={() => onSelect(v, excludeFromAverage)}
+                  className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${
+                    v === 5 ? 'bg-green-100 text-green-700 hover:bg-green-200' :
+                    v === 4 ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
+                    v === 3 ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' :
+                    'bg-red-100 text-red-700 hover:bg-red-200'
+                  } ${currentGrade === v ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}>
+                  {v}
+                </button>
+              ))}
+            </div>
+            <label className="flex items-center gap-2 mt-2 px-1 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={excludeFromAverage}
+                onChange={(e) => setExcludeFromAverage(e.target.checked)}
+                className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+              />
+              <span className="text-xs text-gray-600">Не учитывать в среднем</span>
+            </label>
+            {onCreatePendingPoint && (
+              <button 
+                onClick={() => setShowPointModal(true)}
+                className="w-full mt-1.5 py-1.5 text-xs text-purple-600 hover:bg-purple-50 rounded-lg transition-colors flex items-center justify-center gap-1"
+              >
+                <div className="w-3 h-3 rounded-full bg-purple-400" />
+                Создать точку
+              </button>
+            )}
+            {currentGrade && onDelete && (
+              <button onClick={onDelete} className="w-full mt-1 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-1">
+                <Trash2 className="w-3 h-3" /> Удалить
+              </button>
+            )}
+          </>
+        )}
       </div>
-      <label className="flex items-center gap-2 mt-2 px-1 cursor-pointer select-none">
-        <input
-          type="checkbox"
-          checked={excludeFromAverage}
-          onChange={(e) => setExcludeFromAverage(e.target.checked)}
-          className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
-        />
-        <span className="text-xs text-gray-600">Не учитывать в среднем</span>
-      </label>
-      {currentGrade && onDelete && (
-        <button onClick={onDelete} className="w-full mt-1.5 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-1">
-          <Trash2 className="w-3 h-3" /> Удалить
-        </button>
+
+      {/* Модальное окно для настройки точки */}
+      {showPointModal && createPortal(
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={() => setShowPointModal(false)}>
+          <div className="bg-white/95 backdrop-blur-xl rounded-2xl border border-white/50 shadow-2xl w-full max-w-sm p-5 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {isPoint ? 'Изменить точку' : 'Создать точку'}
+              </h3>
+              <button onClick={() => setShowPointModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Итоговая оценка</label>
+                <div className="flex gap-2">
+                  {[5, 4, 3, 2].map(v => (
+                    <button 
+                      key={v} 
+                      onClick={() => setPointTargetGrade(v)}
+                      className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                        pointTargetGrade === v
+                          ? v === 5 ? 'bg-green-500 text-white' :
+                            v === 4 ? 'bg-blue-500 text-white' :
+                            v === 3 ? 'bg-yellow-500 text-white' :
+                            'bg-red-500 text-white'
+                          : v === 5 ? 'bg-green-100 text-green-700' :
+                            v === 4 ? 'bg-blue-100 text-blue-700' :
+                            v === 3 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                      }`}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Дата превращения</label>
+                <input 
+                  type="date" 
+                  value={pointTargetDate}
+                  onChange={e => setPointTargetDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Или через (дней)</label>
+                <select 
+                  value={pointDaysAfter}
+                  onChange={e => {
+                    const days = parseInt(e.target.value);
+                    setPointDaysAfter(days);
+                    const d = new Date();
+                    d.setDate(d.getDate() + days);
+                    setPointTargetDate(d.toISOString().split('T')[0]);
+                  }}
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value={3}>3 дня</option>
+                  <option value={7}>7 дней</option>
+                  <option value={14}>14 дней</option>
+                  <option value={30}>30 дней</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button 
+                onClick={() => setShowPointModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+              >
+                Отмена
+              </button>
+              <button 
+                onClick={isPoint ? handleUpdatePoint : handleCreatePoint}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+              >
+                {isPoint ? 'Сохранить' : 'Создать'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
-    </div>,
+    </>,
     document.body
   );
 };
@@ -833,6 +1017,68 @@ const Journal: React.FC = () => {
       }
     }
   }, [setSelectedSubject, setLessonPageDate, setLessonPageLessonNum]);
+
+  // Автоматическое превращение точек в оценки при наступлении даты
+  useEffect(() => {
+    if (!grades || !setGrades) return;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split('T')[0];
+    
+    let hasChanges = false;
+    const updatedGrades = grades.map(grade => {
+      if (!grade.isPendingPoint || !grade.pendingPointConfig) return grade;
+      
+      const { targetDate, targetGrade, testId } = grade.pendingPointConfig;
+      
+      // Проверяем, наступила ли дата превращения
+      if (targetDate && targetDate <= todayStr) {
+        hasChanges = true;
+        console.log('Превращаем точку в оценку:', { studentId: grade.studentId, date: grade.date, targetGrade, testId });
+        return {
+          ...grade,
+          value: targetGrade,
+          isPendingPoint: false,
+          pendingPointConfig: undefined
+        };
+      }
+      
+      // Для точек из тестов без явной даты - проверяем deadlineDate из назначения теста
+      if (testId && testAssignments) {
+        const assignment = testAssignments.find((a: any) => 
+          a.studentId === grade.studentId && 
+          a.testId === testId &&
+          a.deadlineDate
+        );
+        
+        if (assignment && assignment.deadlineDate <= todayStr) {
+          // Если срок выполнения теста истёк и нет попытки - ставим "2"
+          const hasAttempt = testAttempts?.some((a: any) => 
+            a.studentId === grade.studentId && 
+            a.testId === testId
+          );
+          
+          if (!hasAttempt) {
+            hasChanges = true;
+            console.log('Превращаем точку теста в "2" (срок истёк):', { studentId: grade.studentId, testId, deadlineDate: assignment.deadlineDate });
+            return {
+              ...grade,
+              value: 2,
+              isPendingPoint: false,
+              pendingPointConfig: undefined
+            };
+          }
+        }
+      }
+      
+      return grade;
+    });
+    
+    if (hasChanges) {
+      setGrades(updatedGrades);
+    }
+  }, [grades, setGrades, testAssignments, testAttempts]);
 
   const sortedStudents = useMemo(() =>
     [...students].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`)),
@@ -1215,12 +1461,50 @@ const Journal: React.FC = () => {
                   const prevTestId = ent.testId;
                   setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, testId: e.target.value || undefined, testType: e.target.value ? 'real' as const : undefined } : de));
                   
-                  // При назначении теста создаем колонку, при удалении - удаляем
+                  // При назначении теста создаем колонку и точки для всех учеников
                   if (e.target.value && !prevTestId) {
                     const hasCol = journalColumns.some(c => c.date === lessonPageDate && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === lessonPageLessonNum || (!c.lessonNumber && lessonPageLessonNum === 0)));
                     if (!hasCol) {
                       const newCol = { id: `jc${Date.now()}`, date: lessonPageDate, subject: selectedSubject, lessonNumber: lessonPageLessonNum, type: 'test' };
                       setJournalColumns(prev => [...prev, newCol]);
+                      
+                      // Создаем точки для всех учеников в колонке теста
+                      const testColId = newCol.id;
+                      const newTestId = e.target.value;
+                      
+                      // Находим дедлайн из назначений теста (если есть)
+                      const testAssignmentsForTest = testAssignments?.filter((a: any) => a.testId === newTestId) || [];
+                      const defaultDeadline = testAssignmentsForTest.length > 0 && testAssignmentsForTest[0]?.deadlineDate 
+                        ? testAssignmentsForTest[0].deadlineDate 
+                        : null;
+                      
+                      // Создаем точки для всех учеников
+                      setTimeout(() => {
+                        if (sortedStudents && setGrades) {
+                          const pointsToAdd = sortedStudents.map(student => ({
+                            id: `g${Date.now()}${Math.random().toString(36).slice(2, 6)}_${student.id}`,
+                            studentId: student.id,
+                            subject: selectedSubject,
+                            value: 0,
+                            date: lessonPageDate,
+                            lessonNumber: lessonPageLessonNum,
+                            columnId: testColId,
+                            isPendingPoint: true,
+                            pendingPointConfig: {
+                              targetDate: defaultDeadline || (() => {
+                                const d = new Date(lessonPageDate);
+                                d.setDate(d.getDate() + 14);
+                                return d.toISOString().split('T')[0];
+                              })(),
+                              targetGrade: 2,
+                              testId: newTestId
+                            }
+                          }));
+                          
+                          setGrades((prev: any) => [...prev, ...pointsToAdd]);
+                          console.log('Созданы точки для теста:', { testId: newTestId, count: pointsToAdd.length, deadline: defaultDeadline });
+                        }
+                      }, 100);
                     }
                   } else if (!e.target.value && prevTestId) {
                     // Удаляем колонку теста и связанные оценки
@@ -1381,9 +1665,11 @@ const Journal: React.FC = () => {
                                     (mainGrade.excludeFromAverage ? 'bg-gray-200 text-gray-500' : mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
                                     : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'
                               }`}
-                              title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                              title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : mainGrade?.isPendingPoint ? `Точка: превратится в ${mainGrade.pendingPointConfig?.targetGrade} ${mainGrade.pendingPointConfig?.targetDate ? 'до ' + new Date(mainGrade.pendingPointConfig.targetDate + 'T00:00').toLocaleDateString('ru-RU') : ''}` : ''}
                             >
-                              {showAttendance ? att?.type : (mainGrade?.value || '')}
+                              {showAttendance ? att?.type : mainGrade?.isPendingPoint ? (
+                                <span className="text-purple-600 text-lg">•</span>
+                              ) : (mainGrade?.value || '')}
                             </button>
                           );
                         })()}
@@ -1482,7 +1768,44 @@ const Journal: React.FC = () => {
             anchorRect={gradePickerState.rect}
             currentGrade={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.value}
             currentExcludeFromAverage={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.excludeFromAverage}
+            currentIsPendingPoint={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.isPendingPoint}
+            currentPendingPointConfig={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.pendingPointConfig}
             onSelect={(v, excludeFromAverage) => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber, excludeFromAverage); setGradePickerState(null); }}
+            onCreatePendingPoint={(targetDate, targetGrade, testId) => {
+              setGrades(prev => {
+                const existing = prev.find(g => g.studentId === gradePickerState.studentId && g.date === gradePickerState.date && g.subject === selectedSubject
+                  && (gradePickerState.columnId ? g.columnId === gradePickerState.columnId : !g.columnId)
+                  && (gradePickerState.lessonNumber !== undefined ? g.lessonNumber === gradePickerState.lessonNumber : true));
+                if (existing) return prev.map(g => g.id === existing.id ? { 
+                  ...g, 
+                  value: 0, 
+                  isPendingPoint: true, 
+                  pendingPointConfig: { targetDate, targetGrade, testId } 
+                } : g);
+                return [...prev, { 
+                  id: `g${Date.now()}${Math.random().toString(36).slice(2, 6)}`, 
+                  studentId: gradePickerState.studentId, 
+                  subject: selectedSubject, 
+                  value: 0, 
+                  date: gradePickerState.date, 
+                  lessonNumber: gradePickerState.lessonNumber, 
+                  columnId: gradePickerState.columnId,
+                  isPendingPoint: true,
+                  pendingPointConfig: { targetDate, targetGrade, testId }
+                }];
+              });
+            }}
+            onUpdatePendingPoint={(targetDate, targetGrade) => {
+              setGrades(prev => prev.map(g => {
+                const match = g.studentId === gradePickerState.studentId && g.date === gradePickerState.date && g.subject === selectedSubject
+                  && (gradePickerState.columnId ? g.columnId === gradePickerState.columnId : !g.columnId)
+                  && (gradePickerState.lessonNumber !== undefined ? g.lessonNumber === gradePickerState.lessonNumber : true);
+                if (match && g.isPendingPoint) {
+                  return { ...g, pendingPointConfig: { ...g.pendingPointConfig, targetDate, targetGrade } };
+                }
+                return g;
+              }));
+            }}
             onDelete={() => { deleteGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
             onClose={() => setGradePickerState(null)}
           />
@@ -1705,9 +2028,11 @@ const Journal: React.FC = () => {
                                       (mainGrade.excludeFromAverage ? 'bg-gray-200 text-gray-500' : mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
                                       : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'
                                 }`}
-                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : mainGrade?.isPendingPoint ? `Точка: превратится в ${mainGrade.pendingPointConfig?.targetGrade} ${mainGrade.pendingPointConfig?.targetDate ? 'до ' + new Date(mainGrade.pendingPointConfig.targetDate + 'T00:00').toLocaleDateString('ru-RU') : ''}` : ''}
                               >
-                                {showAttendance ? att?.type : (mainGrade?.value || '')}
+                                {showAttendance ? att?.type : mainGrade?.isPendingPoint ? (
+                                  <span className="text-purple-600 text-lg">•</span>
+                                ) : (mainGrade?.value || '')}
                               </button>
                             </td>
                             {cols.map(c => {
@@ -1933,12 +2258,50 @@ const Journal: React.FC = () => {
                           const prevTestId = ent.testId;
                           setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, testId: e.target.value || undefined, testType: e.target.value ? 'real' as const : undefined } : de));
                           
-                          // При назначении теста создаем колонку, при удалении - удаляем
+                          // При назначении теста создаем колонку и точки для всех учеников
                           if (e.target.value && !prevTestId) {
                             const hasCol = journalColumns.some(c => c.date === sl.date && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber));
                             if (!hasCol) {
                               const newCol = { id: `jc${Date.now()}`, date: sl.date, subject: selectedSubject, lessonNumber: sl.lessonNumber, type: 'test' };
                               setJournalColumns(prev => [...prev, newCol]);
+                              
+                              // Создаем точки для всех учеников в колонке теста
+                              const testColId = newCol.id;
+                              const newTestId = e.target.value;
+                              
+                              // Находим дедлайн из назначений теста (если есть)
+                              const testAssignmentsForTest = testAssignments?.filter((a: any) => a.testId === newTestId) || [];
+                              const defaultDeadline = testAssignmentsForTest.length > 0 && testAssignmentsForTest[0]?.deadlineDate 
+                                ? testAssignmentsForTest[0].deadlineDate 
+                                : null;
+                              
+                              // Создаем точки для всех учеников
+                              setTimeout(() => {
+                                if (sortedStudents && setGrades) {
+                                  const pointsToAdd = sortedStudents.map(student => ({
+                                    id: `g${Date.now()}${Math.random().toString(36).slice(2, 6)}_${student.id}`,
+                                    studentId: student.id,
+                                    subject: selectedSubject,
+                                    value: 0,
+                                    date: sl.date,
+                                    lessonNumber: sl.lessonNumber,
+                                    columnId: testColId,
+                                    isPendingPoint: true,
+                                    pendingPointConfig: {
+                                      targetDate: defaultDeadline || (() => {
+                                        const d = new Date(sl.date);
+                                        d.setDate(d.getDate() + 14);
+                                        return d.toISOString().split('T')[0];
+                                      })(),
+                                      targetGrade: 2,
+                                      testId: newTestId
+                                    }
+                                  }));
+                                  
+                                  setGrades((prev: any) => [...prev, ...pointsToAdd]);
+                                  console.log('Созданы точки для теста:', { testId: newTestId, count: pointsToAdd.length, deadline: defaultDeadline });
+                                }
+                              }, 100);
                             }
                           } else if (!e.target.value && prevTestId) {
                             // Удаляем колонку теста и связанные оценки
@@ -2052,7 +2415,44 @@ const Journal: React.FC = () => {
           anchorRect={gradePickerState.rect}
           currentGrade={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.value}
           currentExcludeFromAverage={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.excludeFromAverage}
+          currentIsPendingPoint={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.isPendingPoint}
+          currentPendingPointConfig={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.pendingPointConfig}
           onSelect={(v, excludeFromAverage) => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber, excludeFromAverage); setGradePickerState(null); }}
+          onCreatePendingPoint={(targetDate, targetGrade, testId) => {
+            setGrades(prev => {
+              const existing = prev.find(g => g.studentId === gradePickerState.studentId && g.date === gradePickerState.date && g.subject === selectedSubject
+                && (gradePickerState.columnId ? g.columnId === gradePickerState.columnId : !g.columnId)
+                && (gradePickerState.lessonNumber !== undefined ? g.lessonNumber === gradePickerState.lessonNumber : true));
+              if (existing) return prev.map(g => g.id === existing.id ? { 
+                ...g, 
+                value: 0, 
+                isPendingPoint: true, 
+                pendingPointConfig: { targetDate, targetGrade, testId } 
+              } : g);
+              return [...prev, { 
+                id: `g${Date.now()}${Math.random().toString(36).slice(2, 6)}`, 
+                studentId: gradePickerState.studentId, 
+                subject: selectedSubject, 
+                value: 0, 
+                date: gradePickerState.date, 
+                lessonNumber: gradePickerState.lessonNumber, 
+                columnId: gradePickerState.columnId,
+                isPendingPoint: true,
+                pendingPointConfig: { targetDate, targetGrade, testId }
+              }];
+            });
+          }}
+          onUpdatePendingPoint={(targetDate, targetGrade) => {
+            setGrades(prev => prev.map(g => {
+              const match = g.studentId === gradePickerState.studentId && g.date === gradePickerState.date && g.subject === selectedSubject
+                && (gradePickerState.columnId ? g.columnId === gradePickerState.columnId : !g.columnId)
+                && (gradePickerState.lessonNumber !== undefined ? g.lessonNumber === gradePickerState.lessonNumber : true);
+              if (match && g.isPendingPoint) {
+                return { ...g, pendingPointConfig: { ...g.pendingPointConfig, targetDate, targetGrade } };
+              }
+              return g;
+            }));
+          }}
           onDelete={() => { deleteGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
           onClose={() => setGradePickerState(null)}
         />

@@ -26,6 +26,12 @@ export interface Grade {
   lessonNumber?: number;
   columnId?: string;
   excludeFromAverage?: boolean; // Если true — не учитывается при расчёте среднего балла
+  isPendingPoint?: boolean; // Если true — это "точка", которая превратится в оценку
+  pendingPointConfig?: {
+    targetDate: string; // Дата превращения в оценку (YYYY-MM-DD)
+    targetGrade: number; // Итоговая оценка
+    testId?: string; // ID теста, если точка создана из теста
+  };
 }
 
 export interface DiaryEntryAttachment {
