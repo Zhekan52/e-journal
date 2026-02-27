@@ -710,6 +710,7 @@ const Journal: React.FC = () => {
   const [lessonPageDate, setLessonPageDate] = useState<string | null>(null);
   const [lessonPageLessonNum, setLessonPageLessonNum] = useState<number>(1);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const today = new Date().toISOString().split('T')[0];
 
   // Обработка ввода с клавиатуры
   useEffect(() => {
@@ -1522,8 +1523,9 @@ const Journal: React.FC = () => {
                     // Count how many slots share same date
                     const slotsOnDate = allSlots.filter(s => s.date === sl.date);
                     const showLessonNum = slotsOnDate.length > 1;
+                    const isToday = sl.date === today;
                     return (
-                      <th key={sl.key} colSpan={totalCols} className="px-1 py-1 text-center border-b border-r border-gray-300 min-w-[44px] relative">
+                      <th key={sl.key} colSpan={totalCols} className={`px-1 py-1 text-center border-b border-r border-gray-300 min-w-[44px] relative ${isToday ? 'bg-green-100' : ''}`}>
                         <button onClick={(e) => {
                           if (popoverDate === sl.key) {
                             setPopoverDate(null);
@@ -1533,17 +1535,20 @@ const Journal: React.FC = () => {
                             setPopoverRect(e.currentTarget.getBoundingClientRect());
                           }
                         }}
-                          className="text-xs font-medium text-gray-700 hover:text-primary-600 transition-colors">
+                          className={`text-xs font-medium transition-colors ${isToday ? 'text-green-700 font-bold' : 'text-gray-700 hover:text-primary-600'}`}>
                           {parseInt(sl.date.split('-')[2])}
                           <ChevronDown className={`w-3 h-3 inline ml-0.5 transition-transform ${popoverDate === sl.key ? 'rotate-180' : ''}`} />
                         </button>
                         {showLessonNum && (
-                          <div className="text-[9px] font-bold text-primary-600 bg-primary-100 rounded px-1 mt-0.5">
+                          <div className={`text-[9px] font-bold rounded px-1 mt-0.5 ${isToday ? 'bg-green-200 text-green-800' : 'bg-primary-100 text-primary-600'}`}>
                             Ур. {sl.lessonNumber}
                           </div>
                         )}
                         {ltType && (
                           <div className={`text-[9px] font-bold rounded px-1 mt-0.5 ${ltType.color}`}>{ltType.short}</div>
+                        )}
+                        {isToday && (
+                          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                         )}
                       </th>
                     );
@@ -1582,9 +1587,10 @@ const Journal: React.FC = () => {
                         const showAttendance = !!att;
                         // Блокируем кнопку если есть посещаемость (нельзя ставить оценку)
                         const isBlocked = showAttendance;
+                        const isToday = sl.date === today;
                         return (
                           <React.Fragment key={sl.key}>
-                            <td className="px-0.5 py-0.5 text-center border-r border-gray-300">
+                            <td className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isToday ? 'bg-green-50' : ''}`}>
                               <button 
                                 onClick={e => {
                                   if (!isBlocked) {
@@ -1610,8 +1616,9 @@ const Journal: React.FC = () => {
                             </td>
                             {cols.map(c => {
                               const g = getGrade(student.id, sl.date, c.id, sl.lessonNumber);
+                              const isToday = sl.date === today;
                               return (
-                                <td key={c.id} className="px-0.5 py-0.5 text-center border-r border-gray-300">
+                                <td key={c.id} className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isToday ? 'bg-green-50' : ''}`}>
                                   <button 
                                     onClick={e => {
                                       if (!isBlocked) {
@@ -1699,11 +1706,12 @@ const Journal: React.FC = () => {
                 const slotsOnDate = allSlots.filter(s => s.date === sl.date);
 
                 return (
-                  <tr key={sl.key} className="border-b border-gray-300 hover:bg-gray-50">
+                  <tr key={sl.key} className={`border-b border-gray-300 hover:bg-gray-50 ${sl.date === today ? 'bg-green-50' : ''}`}>
                     <td className="px-3 py-2 text-gray-500">{idx + 1}</td>
-                    <td className="px-3 py-2 text-gray-700 font-medium">
+                    <td className={`px-3 py-2 font-medium ${sl.date === today ? 'text-green-700' : 'text-gray-700'}`}>
                       {parseInt(sl.date.split('-')[2])} {MONTH_NAMES_GEN[parseInt(sl.date.split('-')[1]) - 1]?.slice(0, 3)}
                       {slotsOnDate.length > 1 && <span className="text-primary-600 text-[10px] ml-1">(Ур.{sl.lessonNumber})</span>}
+                      {sl.date === today && <span className="ml-1 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Сегодня</span>}
                     </td>
                     <td className="px-3 py-2">
                       <select value={lt?.type || ''} onChange={e => {
@@ -1850,10 +1858,12 @@ const Journal: React.FC = () => {
                   <th className="sticky left-[48px] z-20 bg-gray-100 px-3 py-2 text-left text-xs font-medium text-gray-600 border-b border-r border-gray-300 min-w-[140px]">ФИ</th>
                   {allSlots.map(sl => {
                     const slotsOnDate = allSlots.filter(s => s.date === sl.date);
+                    const isToday = sl.date === today;
                     return (
-                      <th key={sl.key} className="px-1 py-2 text-center text-xs font-medium text-gray-700 border-b border-r border-gray-300 min-w-[44px]">
-                        <div>{parseInt(sl.date.split('-')[2])}</div>
-                        {slotsOnDate.length > 1 && <div className="text-[9px] text-primary-600">Ур.{sl.lessonNumber}</div>}
+                      <th key={sl.key} className={`px-1 py-2 text-center text-xs font-medium border-b border-r border-gray-300 min-w-[44px] ${isToday ? 'bg-green-100' : 'text-gray-700'}`}>
+                        <div className={isToday ? 'text-green-700 font-bold' : ''}>{parseInt(sl.date.split('-')[2])}</div>
+                        {slotsOnDate.length > 1 && <div className={`text-[9px] ${isToday ? 'text-green-700' : 'text-primary-600'}`}>Ур.{sl.lessonNumber}</div>}
+                        {isToday && <div className="w-1 h-1 bg-green-500 rounded-full mx-auto mt-0.5"></div>}
                       </th>
                     );
                   })}
@@ -1872,8 +1882,9 @@ const Journal: React.FC = () => {
                       {allSlots.map(sl => {
                         const mark = getAttendanceMark(student.id, sl.date);
                         const at = mark ? ATTENDANCE_TYPES.find(a => a.value === mark.type) : null;
+                        const isToday = sl.date === today;
                         return (
-                          <td key={sl.key} className="px-0.5 py-0.5 text-center border-r border-gray-300">
+                          <td key={sl.key} className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isToday ? 'bg-green-50' : ''}`}>
                             <button onClick={e => setAttendancePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date })}
                               className={`w-8 h-8 rounded-md text-[10px] font-bold transition-all ${at ? `${at.bgColor} ${at.color}` : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'}`}>
                               {mark?.type || ''}
