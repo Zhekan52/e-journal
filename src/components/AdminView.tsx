@@ -340,7 +340,8 @@ const AdminDashboard: React.FC = () => {
   const todayLessons = lessons.filter(l => l.date === today).sort((a, b) => a.lessonNumber - b.lessonNumber);
 
   const existingStudentIds = new Set(students.map(s => s.id));
-  const filteredGrades = grades.filter(g => existingStudentIds.has(g.studentId));
+  // Фильтруем оценки: только для существующих учеников и учитываемые в среднем балле
+  const filteredGrades = grades.filter(g => existingStudentIds.has(g.studentId) && !g.excludeFromAverage);
   const avgGrade = filteredGrades.length > 0 ? (filteredGrades.reduce((s, g) => s + g.value, 0) / filteredGrades.length).toFixed(2) : '—';
   const absentCount = attendance.filter(a => a.type === 'Н' && existingStudentIds.has(a.studentId)).length;
 
@@ -894,6 +895,7 @@ const Journal: React.FC = () => {
     const sg = grades.filter(g =>
       g.studentId === studentId &&
       g.subject === selectedSubject &&
+      !g.excludeFromAverage && // Исключаем оценки, не учитываемые в среднем балле
       lessons.some(l => l.date === g.date && l.subject === selectedSubject)
     ).sort((a, b) => a.date.localeCompare(b.date));
     if (sg.length < 2) return 0;
@@ -912,6 +914,7 @@ const Journal: React.FC = () => {
     const sg = grades.filter(g =>
       g.studentId === studentId &&
       g.subject === selectedSubject &&
+      !g.excludeFromAverage && // Исключаем оценки, не учитываемые в среднем балле
       lessons.some(l => l.date === g.date && l.subject === selectedSubject)
     ).sort((a, b) => b.date.localeCompare(a.date));
     return sg.length > 0 ? sg[0].date : null;

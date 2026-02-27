@@ -1027,10 +1027,13 @@ const Statistics: React.FC<StatisticsProps> = ({ studentId, grades, lessons, stu
         : 0;
 
       // Вычисляем средний балл для каждого ученика по предмету (для определения позиции)
+      // Фильтруем оценки - исключаем те, которые не учитываются в среднем балле
+      const subjectAllGradesForPosition = subjectAllGrades.filter(g => !g.excludeFromAverage);
+      
       const studentAvgs: { studentId: string; avg: number; count: number }[] = [];
       const studentGradesMap: Record<string, number[]> = {};
 
-      subjectAllGrades.forEach(g => {
+      subjectAllGradesForPosition.forEach(g => {
         if (!studentGradesMap[g.studentId]) studentGradesMap[g.studentId] = [];
         studentGradesMap[g.studentId].push(g.value);
       });
@@ -1046,8 +1049,8 @@ const Statistics: React.FC<StatisticsProps> = ({ studentId, grades, lessons, stu
       // Сортируем по среднему баллу (от большего к меньшему)
       studentAvgs.sort((a, b) => b.avg - a.avg);
 
-      // Находим позицию текущего ученика
-      const myPosition = studentAvgs.findIndex(s => s.studentId === studentId) + 1;
+      // Находим позицию текущего ученика (только если есть оценки для расчёта)
+      const myPosition = subjectMyGradesForAvg.length > 0 ? studentAvgs.findIndex(s => s.studentId === studentId) + 1 : 0;
 
       stats.push({
         subject,
@@ -1064,10 +1067,11 @@ const Statistics: React.FC<StatisticsProps> = ({ studentId, grades, lessons, stu
     return stats.sort((a, b) => a.subject.localeCompare(b.subject));
   }, [allGrades, myGrades, studentId]);
 
-  // Средний балл класса по всем предметам
+  // Средний балл класса по всем предметам (исключая оценки с excludeFromAverage)
   const classOverallAvg = useMemo(() => {
-    if (allGrades.length === 0) return 0;
-    return allGrades.reduce((sum, g) => sum + g.value, 0) / allGrades.length;
+    const gradesForAvg = allGrades.filter(g => !g.excludeFromAverage);
+    if (gradesForAvg.length === 0) return 0;
+    return gradesForAvg.reduce((sum, g) => sum + g.value, 0) / gradesForAvg.length;
   }, [allGrades]);
 
   // Количество учеников в классе
