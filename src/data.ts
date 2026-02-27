@@ -126,7 +126,7 @@ export interface TestAssignment {
   lessonNumber: number;
   assigned: boolean; // true = тест назначен, false = не назначен (например, болеет)
   variantId?: string; // Назначенный вариант (если используются варианты)
-  deadlineLessonNumber?: number; // Номер урока, до которого нужно пройти тест (если установлен - тест с дедлайном)
+  deadlineDate?: string; // Дата, до которой нужно пройти тест (если установлен - тест с дедлайном)
 }
 
 // Notifications removed

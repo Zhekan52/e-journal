@@ -2157,7 +2157,7 @@ const TestResultsSection: React.FC<{
   };
 
   // Создать или обновить назначение теста
-  const setAssignment = (studentId: string, updates: { assigned?: boolean; variantId?: string; deadlineLessonNumber?: number | null }) => {
+  const setAssignment = (studentId: string, updates: { assigned?: boolean; variantId?: string; deadlineDate?: string | null }) => {
     console.log('setAssignment called:', { studentId, updates, testId: test.id, date, subject, lessonNumber });
 
     setTestAssignments((prev: any[]) => {
@@ -2199,16 +2199,16 @@ const TestResultsSection: React.FC<{
       if (existing && updates.assigned !== false) {
         console.log('Updating assignment (assigned = true)');
         // Удаляем запись если она была с assigned: false
-        if (existing.assigned === false && !updates.variantId && updates.deadlineLessonNumber === undefined) {
+        if (existing.assigned === false && !updates.variantId && updates.deadlineDate === undefined) {
           return prev.filter((a: any) => a.id !== existing.id);
         }
         // Иначе обновляем
         return prev.map((a: any) => {
           if (a.id !== existing.id) return a;
           const updated = { ...a, ...updates, assigned: true };
-          // Если deadlineLessonNumber явно установлен в null - удаляем поле
-          if (updates.deadlineLessonNumber === null) {
-            delete updated.deadlineLessonNumber;
+          // Если deadlineDate явно установлен в null - удаляем поле
+          if (updates.deadlineDate === null) {
+            delete updated.deadlineDate;
           }
           return updated;
         });
@@ -2217,7 +2217,7 @@ const TestResultsSection: React.FC<{
       // Если назначаем и назначение не существует
       if (!existing && updates.assigned !== false) {
         // Если есть вариант или дедлайн - создаём запись
-        if (updates.variantId || updates.deadlineLessonNumber) {
+        if (updates.variantId || updates.deadlineDate) {
           console.log('Creating assignment with variant/deadline');
           const newAssignment = {
             id: `ta_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -2228,7 +2228,7 @@ const TestResultsSection: React.FC<{
             lessonNumber,
             assigned: true,
             variantId: updates.variantId,
-            ...(updates.deadlineLessonNumber ? { deadlineLessonNumber: updates.deadlineLessonNumber } : {}),
+            ...(updates.deadlineDate ? { deadlineDate: updates.deadlineDate } : {}),
           };
           return [...prev, newAssignment];
         }
@@ -2622,18 +2622,25 @@ const TestResultsSection: React.FC<{
                     </td>
                     <td className="px-3 py-2 text-center">
                       {sr.assignment?.assigned !== false ? (
-                        <select
-                          value={sr.assignment?.deadlineLessonNumber || ''}
-                          onChange={(e) => setAssignment(sr.student.id, { deadlineLessonNumber: e.target.value ? parseInt(e.target.value) : null })}
-                          className={`px-2 py-1 text-xs border rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 ${
-                            sr.assignment?.deadlineLessonNumber ? 'border-amber-300 text-amber-700 bg-amber-50' : 'border-gray-200 text-gray-600'
-                          }`}
-                        >
-                          <option value="">∞</option>
-                          {[1,2,3,4,5,6,7,8].map(n => (
-                            <option key={n} value={n}>до урока {n}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center justify-center gap-1">
+                          <input
+                            type="date"
+                            value={sr.assignment?.deadlineDate || ''}
+                            onChange={(e) => setAssignment(sr.student.id, { deadlineDate: e.target.value || null })}
+                            className={`px-2 py-1 text-xs border rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 ${
+                              sr.assignment?.deadlineDate ? 'border-amber-300 text-amber-700 bg-amber-50' : 'border-gray-200 text-gray-600'
+                            }`}
+                          />
+                          {sr.assignment?.deadlineDate && (
+                            <button
+                              onClick={() => setAssignment(sr.student.id, { deadlineDate: null })}
+                              className="p-1 text-gray-400 hover:text-red-500"
+                              title="Убрать срок"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
                       ) : (
                         <span className="text-gray-400">—</span>
                       )}
