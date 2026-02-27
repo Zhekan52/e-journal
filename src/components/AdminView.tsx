@@ -663,6 +663,7 @@ const Journal: React.FC = () => {
   const [showTrend, setShowTrend] = useState(true);
   const [showNotAsked, setShowNotAsked] = useState(true);
   const [showFutureDates, setShowFutureDates] = useState(true);
+  const [highlightToday, setHighlightToday] = useState(true);
   const [inputMode, setInputMode] = useState<'widget' | 'keyboard'>('widget');
   const [keyboardTarget, setKeyboardTarget] = useState<{ studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
 
@@ -679,6 +680,7 @@ const Journal: React.FC = () => {
         if (settings.showTrend !== undefined) setShowTrend(settings.showTrend);
         if (settings.showNotAsked !== undefined) setShowNotAsked(settings.showNotAsked);
         if (settings.showFutureDates !== undefined) setShowFutureDates(settings.showFutureDates);
+        if (settings.highlightToday !== undefined) setHighlightToday(settings.highlightToday);
         if (settings.inputMode !== undefined) setInputMode(settings.inputMode);
       } catch (e) {
         console.error('Error loading journal settings:', e);
@@ -688,6 +690,7 @@ const Journal: React.FC = () => {
       setShowTrend(true);
       setShowNotAsked(true);
       setShowFutureDates(true);
+      setHighlightToday(true);
       setInputMode('widget');
     }
   }, [selectedSubject]);
@@ -699,10 +702,11 @@ const Journal: React.FC = () => {
       showTrend,
       showNotAsked,
       showFutureDates,
+      highlightToday,
       inputMode,
     };
     localStorage.setItem(settingsKey, JSON.stringify(settings));
-  }, [selectedSubject, showTrend, showNotAsked, showFutureDates, inputMode]);
+  }, [selectedSubject, showTrend, showNotAsked, showFutureDates, highlightToday, inputMode]);
   const [gradePickerState, setGradePickerState] = useState<{ rect: DOMRect; studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
   const [attendancePickerState, setAttendancePickerState] = useState<{ rect: DOMRect; studentId: string; date: string } | null>(null);
   const [popoverDate, setPopoverDate] = useState<string | null>(null);
@@ -1483,6 +1487,13 @@ const Journal: React.FC = () => {
               </div>
               <span className="text-sm text-gray-700">Будущие даты</span>
             </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <div className={`w-10 h-6 rounded-full transition-all ${highlightToday ? 'bg-primary-600' : 'bg-gray-300'} relative`}
+                onClick={() => setHighlightToday(!highlightToday)}>
+                <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all ${highlightToday ? 'left-[18px]' : 'left-0.5'}`} />
+              </div>
+              <span className="text-sm text-gray-700">Подсветка сегодня</span>
+            </label>
           </div>
         </div>
       )}
@@ -1523,7 +1534,7 @@ const Journal: React.FC = () => {
                     // Count how many slots share same date
                     const slotsOnDate = allSlots.filter(s => s.date === sl.date);
                     const showLessonNum = slotsOnDate.length > 1;
-                    const isToday = sl.date === today;
+                    const isToday = highlightToday && sl.date === today;
                     return (
                       <th key={sl.key} colSpan={totalCols} className={`px-1 py-1 text-center border-b border-r border-gray-300 min-w-[44px] relative ${isToday ? 'bg-green-100' : ''}`}>
                         <button onClick={(e) => {
@@ -1587,7 +1598,7 @@ const Journal: React.FC = () => {
                         const showAttendance = !!att;
                         // Блокируем кнопку если есть посещаемость (нельзя ставить оценку)
                         const isBlocked = showAttendance;
-                        const isToday = sl.date === today;
+                        const isToday = highlightToday && sl.date === today;
                         return (
                           <React.Fragment key={sl.key}>
                             <td className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isToday ? 'bg-green-50' : ''}`}>
@@ -1616,7 +1627,7 @@ const Journal: React.FC = () => {
                             </td>
                             {cols.map(c => {
                               const g = getGrade(student.id, sl.date, c.id, sl.lessonNumber);
-                              const isToday = sl.date === today;
+                              const isToday = highlightToday && sl.date === today;
                               return (
                                 <td key={c.id} className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isToday ? 'bg-green-50' : ''}`}>
                                   <button 
@@ -1705,13 +1716,14 @@ const Journal: React.FC = () => {
                   : null;
                 const slotsOnDate = allSlots.filter(s => s.date === sl.date);
 
+                const isToday = highlightToday && sl.date === today;
                 return (
-                  <tr key={sl.key} className={`border-b border-gray-300 hover:bg-gray-50 ${sl.date === today ? 'bg-green-50' : ''}`}>
+                  <tr key={sl.key} className={`border-b border-gray-300 hover:bg-gray-50 ${isToday ? 'bg-green-50' : ''}`}>
                     <td className="px-3 py-2 text-gray-500">{idx + 1}</td>
-                    <td className={`px-3 py-2 font-medium ${sl.date === today ? 'text-green-700' : 'text-gray-700'}`}>
+                    <td className={`px-3 py-2 font-medium ${isToday ? 'text-green-700' : 'text-gray-700'}`}>
                       {parseInt(sl.date.split('-')[2])} {MONTH_NAMES_GEN[parseInt(sl.date.split('-')[1]) - 1]?.slice(0, 3)}
                       {slotsOnDate.length > 1 && <span className="text-primary-600 text-[10px] ml-1">(Ур.{sl.lessonNumber})</span>}
-                      {sl.date === today && <span className="ml-1 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Сегодня</span>}
+                      {isToday && <span className="ml-1 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Сегодня</span>}
                     </td>
                     <td className="px-3 py-2">
                       <select value={lt?.type || ''} onChange={e => {
@@ -1858,7 +1870,7 @@ const Journal: React.FC = () => {
                   <th className="sticky left-[48px] z-20 bg-gray-100 px-3 py-2 text-left text-xs font-medium text-gray-600 border-b border-r border-gray-300 min-w-[140px]">ФИ</th>
                   {allSlots.map(sl => {
                     const slotsOnDate = allSlots.filter(s => s.date === sl.date);
-                    const isToday = sl.date === today;
+                    const isToday = highlightToday && sl.date === today;
                     return (
                       <th key={sl.key} className={`px-1 py-2 text-center text-xs font-medium border-b border-r border-gray-300 min-w-[44px] ${isToday ? 'bg-green-100' : 'text-gray-700'}`}>
                         <div className={isToday ? 'text-green-700 font-bold' : ''}>{parseInt(sl.date.split('-')[2])}</div>
@@ -1882,7 +1894,7 @@ const Journal: React.FC = () => {
                       {allSlots.map(sl => {
                         const mark = getAttendanceMark(student.id, sl.date);
                         const at = mark ? ATTENDANCE_TYPES.find(a => a.value === mark.type) : null;
-                        const isToday = sl.date === today;
+                        const isToday = highlightToday && sl.date === today;
                         return (
                           <td key={sl.key} className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isToday ? 'bg-green-50' : ''}`}>
                             <button onClick={e => setAttendancePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date })}
