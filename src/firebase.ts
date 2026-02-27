@@ -25,11 +25,13 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
  * Возвращает постоянный URL для скачивания
  */
 export async function uploadHomeworkFile(file: File): Promise<{ name: string; url: string }> {
-  const fileName = `${Date.now()}_${file.name}`;
+  // Экранируем имя файла - убираем русские буквы и спецсимволы
+  const ext = file.name.split('.').pop() || 'bin';
+  const safeName = `${Date.now()}_file.${ext}`;
   
   const { data, error } = await supabase.storage
     .from('homework')
-    .upload(fileName, file);
+    .upload(safeName, file);
 
   if (error) {
     console.error('Supabase upload error:', error);
@@ -38,7 +40,7 @@ export async function uploadHomeworkFile(file: File): Promise<{ name: string; ur
 
   const { data: urlData } = supabase.storage
     .from('homework')
-    .getPublicUrl(fileName);
+    .getPublicUrl(safeName);
 
   return { name: file.name, url: urlData.publicUrl };
 }
