@@ -5,7 +5,7 @@ import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import {
   BookOpen, Calendar, ClipboardList, BarChart3, LogOut, ChevronLeft, ChevronRight,
-  FileText, Clock, CheckCircle, AlertCircle, Play, ArrowLeft, ArrowRight
+  FileText, Clock, CheckCircle, AlertCircle, Play, ArrowLeft, ArrowRight, Download
 } from 'lucide-react';
 import { SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, DAY_NAMES, getWeekDates, formatDate, ATTENDANCE_TYPES } from '../data';
 
@@ -874,6 +874,16 @@ const Diary: React.FC<DiaryProps> = ({
                         <td className="px-5 py-3">
                           {entry?.homework && (
                             <p className="text-gray-600 mb-2">{entry.homework}</p>
+                          )}
+                          {entry?.attachment && (
+                            <a
+                              href={entry.attachment.url}
+                              download={entry.attachment.name}
+                              className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg transition-colors"
+                            >
+                              <Download className="w-4 h-4" />
+                              <span className="truncate">{entry.attachment.name}</span>
+                            </a>
                           )}
                           {testObj && (
                             <div className="mt-2">
