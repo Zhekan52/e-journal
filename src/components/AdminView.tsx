@@ -1178,9 +1178,9 @@ const Journal: React.FC = () => {
                             if (ent) {
                               setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, attachment: { name, url } } : de));
                             }
-                          } catch (error) {
-                            console.error('Error uploading file:', error);
-                            alert('Ошибка при загрузке файла');
+                          } catch (err) {
+                            console.error('Upload error:', err);
+                            alert('Ошибка загрузки файла');
                           }
                         }
                         e.target.value = '';
@@ -1911,9 +1911,9 @@ const Journal: React.FC = () => {
                                     if (ent) {
                                       setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, attachment: { name, url } } : de));
                                     }
-                                  } catch (error) {
-                                    console.error('Error uploading file:', error);
-                                    alert('Ошибка при загрузке файла');
+                                  } catch (err) {
+                                    console.error('Upload error:', err);
+                                    alert('Ошибка загрузки файла');
                                   }
                                 }
                                 e.target.value = '';

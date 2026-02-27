@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDVRCxHtphiiu2wcuyn0R5VaWe3L5RJoHE",
@@ -14,14 +14,31 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
-export const storage = getStorage(app);
+
+// Supabase
+const supabaseUrl = 'https://fdianjqnmkskuzqlhevo.supabase.co';
+const supabaseKey = 'sb_secret_ZlNmGRSLGFHRUG_0b815jw_KvpCJmWq';
+export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 /**
- * Загружает файл в Firebase Storage и возвращает постоянный URL для скачивания
+ * Загружает файл в Supabase Storage
+ * Возвращает постоянный URL для скачивания
  */
 export async function uploadHomeworkFile(file: File): Promise<{ name: string; url: string }> {
-  const storageRef = ref(storage, `homework/${Date.now()}_${file.name}`);
-  await uploadBytes(storageRef, file);
-  const downloadURL = await getDownloadURL(storageRef);
-  return { name: file.name, url: downloadURL };
+  const fileName = `${Date.now()}_${file.name}`;
+  
+  const { data, error } = await supabase.storage
+    .from('homework')
+    .upload(fileName, file);
+
+  if (error) {
+    console.error('Supabase upload error:', error);
+    throw new Error('Upload failed');
+  }
+
+  const { data: urlData } = supabase.storage
+    .from('homework')
+    .getPublicUrl(fileName);
+
+  return { name: file.name, url: urlData.publicUrl };
 }
