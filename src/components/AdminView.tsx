@@ -1668,7 +1668,7 @@ const Journal: React.FC = () => {
                           <div className={`text-[9px] font-bold rounded px-1 mt-0.5 ${ltType.color}`}>{ltType.short}</div>
                         )}
                         {isToday && (
-                          <div className="absolute top-1/2 left-1/2 -translate-y-1/2 translate-x-[2px] w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                          <div className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-2 w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                         )}
                       </th>
                     );
