@@ -152,7 +152,7 @@ interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
-  updateUser: (updates: Partial<Pick<User, 'username' | 'password' | 'name'>>) => void;
+  updateUser: (username: string, password: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType>(null!);
@@ -199,14 +199,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('auth_user');
   }, []);
 
-  const updateUser = useCallback((updates: Partial<Pick<User, 'username' | 'password' | 'name'>>) => {
-    setUser(prev => {
-      if (!prev) return null;
-      const updated = { ...prev, ...updates };
-      localStorage.setItem('auth_user', JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
+  const updateUser = useCallback((username: string, password: string) => {
+    if (user) {
+      const updatedUser = { ...user, username, password };
+      setUser(updatedUser);
+      localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+    }
+  }, [user]);
 
   return <AuthContext.Provider value={{ user, login, logout, updateUser }}>{children}</AuthContext.Provider>;
 };

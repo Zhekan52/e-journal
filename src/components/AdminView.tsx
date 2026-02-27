@@ -21,10 +21,11 @@ import {
 type Tab = 'dashboard' | 'schedule' | 'journal' | 'tests' | 'students' | 'lessonTypes';
 
 export const AdminView: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [scheduleEditMode, setScheduleEditMode] = useState(false);
   const [lessonPageParams, setLessonPageParams] = useState<{ subject: string; date: string; lessonNumber: number } | null>(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'Сводка', icon: <BarChart3 className="w-5 h-5" /> },
@@ -63,12 +64,13 @@ export const AdminView: React.FC = () => {
               ))}
             </nav>
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-gray-100/50 rounded-xl">
+              <button onClick={() => setShowSettingsModal(true)} className="hidden sm:flex items-center gap-2 px-3 py-2 bg-gray-100/50 rounded-xl hover:bg-gray-200 transition-colors cursor-pointer">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
                   {user?.name?.charAt(0)}
                 </div>
                 <span className="text-sm text-gray-700 font-medium">{user?.name}</span>
-              </div>
+                <Settings className="w-4 h-4 text-gray-400" />
+              </button>
               <button onClick={logout} className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-red-500">
                 <LogOut className="w-5 h-5" />
               </button>
@@ -85,7 +87,93 @@ export const AdminView: React.FC = () => {
         {activeTab === 'students' && <StudentsManager />}
         {activeTab === 'lessonTypes' && <LessonTypesManager />}
       </main>
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <AdminSettingsModal user={user} onClose={() => setShowSettingsModal(false)} onSave={updateUser} />
+      )}
     </div>
+  );
+};
+
+// ==================== ADMIN SETTINGS MODAL ====================
+const AdminSettingsModal: React.FC<{
+  user: User | null;
+  onClose: () => void;
+  onSave: (username: string, password: string) => void;
+}> = ({ user, onClose, onSave }) => {
+  const [username, setUsername] = useState(user?.username || '');
+  const [password, setPassword] = useState(user?.password || '');
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleSave = () => {
+    if (!username.trim() || !password.trim()) {
+      alert('Заполните все поля');
+      return;
+    }
+    onSave(username.trim(), password.trim());
+    onClose();
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={onClose}>
+      <div className="bg-white/95 backdrop-blur-xl rounded-2xl border border-white/50 shadow-2xl w-full max-w-md p-7 space-y-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-semibold text-gray-900">Настройки администратора</h3>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+        
+        <div className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Логин</label>
+            <input 
+              type="text" 
+              value={username} 
+              onChange={e => setUsername(e.target.value)}
+              placeholder="Введите логин"
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Пароль</label>
+            <div className="relative">
+              <input 
+                type={showPassword ? 'text' : 'password'} 
+                value={password} 
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Введите пароль"
+                className="w-full px-4 py-2.5 pr-12 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+              />
+              <button 
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex gap-3 pt-2">
+          <button 
+            onClick={onClose}
+            className="flex-1 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+          >
+            Отмена
+          </button>
+          <button 
+            onClick={handleSave}
+            className="flex-1 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/20 font-medium"
+          >
+            Сохранить
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 };
 
