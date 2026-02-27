@@ -919,6 +919,9 @@ const Diary: React.FC<DiaryProps> = ({
                                           ? `${testObj.variants.length} вариант${testObj.variants.length === 1 ? '' : testObj.variants.length > 1 && testObj.variants.length < 5 ? 'а' : 'ов'}`
                                           : `${testObj.questions.length} вопр.`}{testObj.timeLimit > 0 ? ` · ${testObj.timeLimit} мин` : ''}
                                     </div>
+                                    {assignment?.deadlineLessonNumber && (
+                                      <div className="text-[10px] text-amber-600 font-medium">⏰ Сдать до урока {assignment.deadlineLessonNumber}</div>
+                                    )}
                                   </div>
                                 </button>
                               )}

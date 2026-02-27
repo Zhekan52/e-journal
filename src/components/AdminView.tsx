@@ -2157,7 +2157,7 @@ const TestResultsSection: React.FC<{
   };
 
   // Создать или обновить назначение теста
-  const setAssignment = (studentId: string, updates: { assigned?: boolean; variantId?: string }) => {
+  const setAssignment = (studentId: string, updates: { assigned?: boolean; variantId?: string; deadlineLessonNumber?: number | null }) => {
     console.log('setAssignment called:', { studentId, updates, testId: test.id, date, subject, lessonNumber });
 
     setTestAssignments((prev: any[]) => {
@@ -2199,31 +2199,40 @@ const TestResultsSection: React.FC<{
       if (existing && updates.assigned !== false) {
         console.log('Updating assignment (assigned = true)');
         // Удаляем запись если она была с assigned: false
-        if (existing.assigned === false && !updates.variantId) {
+        if (existing.assigned === false && !updates.variantId && updates.deadlineLessonNumber === undefined) {
           return prev.filter((a: any) => a.id !== existing.id);
         }
         // Иначе обновляем
-        return prev.map((a: any) => a.id === existing.id ? { ...a, ...updates, assigned: true } : a);
+        return prev.map((a: any) => {
+          if (a.id !== existing.id) return a;
+          const updated = { ...a, ...updates, assigned: true };
+          // Если deadlineLessonNumber явно установлен в null - удаляем поле
+          if (updates.deadlineLessonNumber === null) {
+            delete updated.deadlineLessonNumber;
+          }
+          return updated;
+        });
       }
 
-      // Если назначаем и назначение не существует, но указан вариант
-      if (!existing && updates.variantId) {
-        console.log('Creating assignment with variant');
-        const newAssignment = {
-          id: `ta_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-          studentId,
-          testId: test.id,
-          date,
-          subject,
-          lessonNumber,
-          assigned: true,
-          variantId: updates.variantId,
-        };
-        return [...prev, newAssignment];
-      }
-
-      // Если назначаем без варианта - просто удаляем запись (возвращаемся к дефолту)
-      if (!existing && updates.assigned !== false && !updates.variantId) {
+      // Если назначаем и назначение не существует
+      if (!existing && updates.assigned !== false) {
+        // Если есть вариант или дедлайн - создаём запись
+        if (updates.variantId || updates.deadlineLessonNumber) {
+          console.log('Creating assignment with variant/deadline');
+          const newAssignment = {
+            id: `ta_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            studentId,
+            testId: test.id,
+            date,
+            subject,
+            lessonNumber,
+            assigned: true,
+            variantId: updates.variantId,
+            ...(updates.deadlineLessonNumber ? { deadlineLessonNumber: updates.deadlineLessonNumber } : {}),
+          };
+          return [...prev, newAssignment];
+        }
+        // Если назначаем без варианта и без дедлайна - просто удаляем запись (возвращаемся к дефолту)
         console.log('Removing record (back to default assigned)');
         return prev;
       }
@@ -2584,6 +2593,7 @@ const TestResultsSection: React.FC<{
                   <th className="px-3 py-2 text-left">№</th>
                   <th className="px-3 py-2 text-left">ФИ</th>
                   <th className="px-3 py-2 text-center">Назначен</th>
+                  <th className="px-3 py-2 text-center">Срок</th>
                   {test.useVariants && <th className="px-3 py-2 text-center">Вариант</th>}
                   <th className="px-3 py-2 text-center">Статус</th>
                   <th className="px-3 py-2 text-center">Результат</th>
@@ -2609,6 +2619,24 @@ const TestResultsSection: React.FC<{
                       >
                         {sr.assignment?.assigned !== false ? 'Да' : 'Нет'}
                       </button>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      {sr.assignment?.assigned !== false ? (
+                        <select
+                          value={sr.assignment?.deadlineLessonNumber || ''}
+                          onChange={(e) => setAssignment(sr.student.id, { deadlineLessonNumber: e.target.value ? parseInt(e.target.value) : null })}
+                          className={`px-2 py-1 text-xs border rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 ${
+                            sr.assignment?.deadlineLessonNumber ? 'border-amber-300 text-amber-700 bg-amber-50' : 'border-gray-200 text-gray-600'
+                          }`}
+                        >
+                          <option value="">∞</option>
+                          {[1,2,3,4,5,6,7,8].map(n => (
+                            <option key={n} value={n}>до урока {n}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
                     </td>
                     {test.useVariants && (
                       <td className="px-3 py-2 text-center">
