@@ -666,6 +666,7 @@ const Journal: React.FC = () => {
   const [highlightToday, setHighlightToday] = useState(true);
   const [inputMode, setInputMode] = useState<'widget' | 'keyboard'>('widget');
   const [keyboardTarget, setKeyboardTarget] = useState<{ studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
+  const [keyboardPosition, setKeyboardPosition] = useState<{ studentIndex: number; slotIndex: number } | null>(null);
 
   // Функция для получения ключа localStorage для настроек предмета
   const getSettingsKey = (subject: string) => `journal_settings_${subject}`;
@@ -718,28 +719,73 @@ const Journal: React.FC = () => {
 
   // Обработка ввода с клавиатуры
   useEffect(() => {
-    if (inputMode !== 'keyboard' || !keyboardTarget) return;
+    if (inputMode !== 'keyboard') return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Функция для перехода к следующей позиции
+      const moveToPosition = (studentIndex: number, slotIndex: number) => {
+        if (studentIndex >= 0 && studentIndex < sortedStudents.length && slotIndex >= 0 && slotIndex < allSlots.length) {
+          const student = sortedStudents[studentIndex];
+          const slot = allSlots[slotIndex];
+          setKeyboardPosition({ studentIndex, slotIndex });
+          setKeyboardTarget({ studentId: student.id, date: slot.date, lessonNumber: slot.lessonNumber });
+        }
+      };
+
+      // Если есть активная позиция, обрабатываем навигацию
+      if (keyboardPosition) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          moveToPosition(keyboardPosition.studentIndex + 1, keyboardPosition.slotIndex);
+          return;
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          moveToPosition(keyboardPosition.studentIndex - 1, keyboardPosition.slotIndex);
+          return;
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          moveToPosition(keyboardPosition.studentIndex, keyboardPosition.slotIndex + 1);
+          return;
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          moveToPosition(keyboardPosition.studentIndex, keyboardPosition.slotIndex - 1);
+          return;
+        }
+      }
+
+      // Обработка ввода оценок только если есть keyboardTarget
+      if (!keyboardTarget) return;
+
       const key = e.key;
       if (['2', '3', '4', '5'].includes(key)) {
         e.preventDefault();
         const value = parseInt(key);
         setGrade(keyboardTarget.studentId, keyboardTarget.date, value, keyboardTarget.columnId, keyboardTarget.lessonNumber);
-        setKeyboardTarget(null);
+        // После ввода оценки - переход к следующему ученику
+        if (keyboardPosition) {
+          moveToPosition(keyboardPosition.studentIndex + 1, keyboardPosition.slotIndex);
+        } else {
+          setKeyboardTarget(null);
+        }
       } else if (key === 'Backspace' || key === 'Delete' || key === '0') {
         e.preventDefault();
         deleteGrade(keyboardTarget.studentId, keyboardTarget.date, keyboardTarget.columnId, keyboardTarget.lessonNumber);
-        setKeyboardTarget(null);
+      } else if (key === 'Enter') {
+        e.preventDefault();
+        // При Enter - переход к следующему ученику (как при вводе оценки)
+        if (keyboardPosition) {
+          moveToPosition(keyboardPosition.studentIndex + 1, keyboardPosition.slotIndex);
+        }
       } else if (key === 'Escape') {
         e.preventDefault();
         setKeyboardTarget(null);
+        setKeyboardPosition(null);
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [inputMode, keyboardTarget]);
+  }, [inputMode, keyboardTarget, keyboardPosition, sortedStudents, allSlots]);
 
   // Check for journal open parameters from schedule
   useEffect(() => {
@@ -1606,6 +1652,11 @@ const Journal: React.FC = () => {
                                 onClick={e => {
                                   if (!isBlocked) {
                                     if (inputMode === 'keyboard') {
+                                      const slotIndex = allSlots.findIndex(s => s.key === sl.key);
+                                      const studentIndex = sortedStudents.findIndex(s => s.id === student.id);
+                                      if (slotIndex >= 0 && studentIndex >= 0) {
+                                        setKeyboardPosition({ studentIndex, slotIndex });
+                                      }
                                       setKeyboardTarget({ studentId: student.id, date: sl.date, lessonNumber: sl.lessonNumber });
                                     } else {
                                       setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, lessonNumber: sl.lessonNumber });
@@ -1634,6 +1685,11 @@ const Journal: React.FC = () => {
                                     onClick={e => {
                                       if (!isBlocked) {
                                         if (inputMode === 'keyboard') {
+                                          const slotIndex = allSlots.findIndex(s => s.key === sl.key);
+                                          const studentIndex = sortedStudents.findIndex(s => s.id === student.id);
+                                          if (slotIndex >= 0 && studentIndex >= 0) {
+                                            setKeyboardPosition({ studentIndex, slotIndex });
+                                          }
                                           setKeyboardTarget({ studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
                                         } else {
                                           setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
