@@ -7,7 +7,7 @@ import {
   BookOpen, Calendar, ClipboardList, BarChart3, LogOut, ChevronLeft, ChevronRight,
   FileText, Clock, CheckCircle, AlertCircle, Play, ArrowLeft, ArrowRight, Download
 } from 'lucide-react';
-import { SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, DAY_NAMES, getWeekDates, formatDate, ATTENDANCE_TYPES } from '../data';
+import { SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, DAY_NAMES, getWeekDates, formatDate, ATTENDANCE_TYPES, getTodayString, getTodayDate } from '../data';
 
 type Tab = 'home' | 'schedule' | 'grades' | 'diary' | 'statistics';
 
@@ -93,7 +93,7 @@ export const StudentView: React.FC = () => {
 
 // ==================== HOME ====================
 const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons }) => {
-  const today = formatDate(new Date());
+  const today = getTodayString();
   const todayLessons = lessons.filter((l: any) => l.date === today).sort((a: any, b: any) => a.lessonNumber - b.lessonNumber);
   // Фильтруем оценки, исключая те, которые не учитываются в среднем балле
   const gradesForAvg = myGrades.filter((g: any) => !g.excludeFromAverage);
@@ -103,7 +103,7 @@ const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons
     <div className="animate-fadeIn space-y-8">
       <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-8 text-white shadow-xl shadow-blue-500/20">
         <h1 className="text-2xl font-semibold mb-2">Добро пожаловать!</h1>
-        <p className="text-blue-100">Сегодня {new Date().getDate()} {MONTH_NAMES_GEN[new Date().getMonth()]}</p>
+        <p className="text-blue-100">Сегодня {getTodayDate().getDate()} {MONTH_NAMES_GEN[getTodayDate().getMonth()]}</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">

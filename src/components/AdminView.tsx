@@ -16,7 +16,7 @@ import {
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
   type Student, type Test, type TestQuestion, type CustomLessonType, type AttendanceRecord,
-  formatDate
+  formatDate, getTodayString, getTodayDate
 } from '../data';
 
 type Tab = 'dashboard' | 'schedule' | 'journal' | 'tests' | 'students' | 'lessonTypes';
@@ -396,7 +396,7 @@ const LessonTypesManager: React.FC = () => {
 // ==================== DASHBOARD ====================
 const AdminDashboard: React.FC = () => {
   const { students, grades, lessons, tests, attendance } = useData();
-  const today = formatDate(new Date());
+  const today = getTodayString();
   const todayLessons = lessons.filter(l => l.date === today).sort((a, b) => a.lessonNumber - b.lessonNumber);
 
   const existingStudentIds = new Set(students.map(s => s.id));
@@ -443,7 +443,7 @@ const AdminDashboard: React.FC = () => {
       <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-8 text-white shadow-xl shadow-blue-500/20">
         <h1 className="text-2xl font-semibold mb-2">Добро пожаловать!</h1>
         <p className="text-blue-100">
-          {new Date().getDate()} {MONTH_NAMES_GEN[new Date().getMonth()]} · {students.length} учеников · {todayLessons.length} уроков сегодня
+          {getTodayDate().getDate()} {MONTH_NAMES_GEN[getTodayDate().getMonth()]} · {students.length} учеников · {todayLessons.length} уроков сегодня
         </p>
       </div>
 
@@ -803,7 +803,7 @@ const Journal: React.FC = () => {
   const [lessonPageDate, setLessonPageDate] = useState<string | null>(null);
   const [lessonPageLessonNum, setLessonPageLessonNum] = useState<number>(1);
   const popoverRef = useRef<HTMLDivElement>(null);
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayString();
 
   // Обработка ввода с клавиатуры
   useEffect(() => {
@@ -855,7 +855,7 @@ const Journal: React.FC = () => {
 
   // Each lesson = one slot in the journal (date + lessonNumber)
   const allSlots = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayString();
     return lessons
       .filter(l => l.subject === selectedSubject)
       .filter(l => showFutureDates || l.date <= today)

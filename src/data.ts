@@ -262,3 +262,21 @@ export function getMonthDays(year: number, month: number): (Date | null)[] {
   while (cells.length % 7 !== 0) cells.push(null);
   return cells;
 }
+
+// Получение текущей даты с учетом часового пояса UTC+7
+export function getTodayDate(): Date {
+  const now = new Date();
+  // Создаем дату с учетом смещения UTC+7
+  const offset = 7 * 60; // UTC+7 в минутах
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  return new Date(utc + (offset * 60000));
+}
+
+// Получение строки даты "YYYY-MM-DD" с учетом часового пояса UTC+7
+export function getTodayString(): string {
+  const today = getTodayDate();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
