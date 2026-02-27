@@ -717,7 +717,58 @@ const Journal: React.FC = () => {
   const popoverRef = useRef<HTMLDivElement>(null);
   const today = new Date().toISOString().split('T')[0];
 
-  // Обработка ввода с клавиатуры
+  // Check for journal open parameters from schedule
+  useEffect(() => {
+    const params = localStorage.getItem('open_journal_params');
+    if (params) {
+      try {
+        const { subject, date, lessonNumber } = JSON.parse(params);
+        localStorage.removeItem('open_journal_params');
+        if (subject && date) {
+          setSelectedSubject(subject);
+          setLessonPageDate(date);
+          setLessonPageLessonNum(lessonNumber || 1);
+        }
+      } catch (e) {
+        console.error('Error parsing journal params:', e);
+      }
+    }
+  }, [setSelectedSubject, setLessonPageDate, setLessonPageLessonNum]);
+
+  const sortedStudents = useMemo(() =>
+    [...students].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`)),
+    [students]
+  );
+
+  // Each lesson = one slot in the journal (date + lessonNumber)
+  const allSlots = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return lessons
+      .filter(l => l.subject === selectedSubject)
+      .filter(l => showFutureDates || l.date <= today)
+      .map(l => ({ date: l.date, lessonNumber: l.lessonNumber, key: `${l.date}_${l.lessonNumber}` }))
+      .sort((a, b) => a.date.localeCompare(b.date) || a.lessonNumber - b.lessonNumber);
+  }, [lessons, selectedSubject, showFutureDates]);
+
+  // For backward compatibility, unique dates list
+  const allDates = useMemo(() => {
+    const s = new Set<string>();
+    allSlots.forEach(sl => s.add(sl.date));
+    return Array.from(s).sort();
+  }, [allSlots]);
+
+  const monthGroups = useMemo(() => {
+    const groups: { month: string; slots: typeof allSlots }[] = [];
+    let currentMonth = '';
+    allSlots.forEach(sl => {
+      const m = MONTH_NAMES[parseInt(sl.date.split('-')[1]) - 1]?.slice(0, 3) || '';
+      if (m !== currentMonth) { currentMonth = m; groups.push({ month: m, slots: [sl] }); }
+      else { groups[groups.length - 1].slots.push(sl); }
+    });
+    return groups;
+  }, [allSlots]);
+
+  // Обработка ввода с клавиатуры - после sortedStudents и allSlots
   useEffect(() => {
     if (inputMode !== 'keyboard') return;
 
@@ -785,58 +836,7 @@ const Journal: React.FC = () => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [inputMode, keyboardTarget, keyboardPosition, sortedStudents, allSlots]);
-
-  // Check for journal open parameters from schedule
-  useEffect(() => {
-    const params = localStorage.getItem('open_journal_params');
-    if (params) {
-      try {
-        const { subject, date, lessonNumber } = JSON.parse(params);
-        localStorage.removeItem('open_journal_params');
-        if (subject && date) {
-          setSelectedSubject(subject);
-          setLessonPageDate(date);
-          setLessonPageLessonNum(lessonNumber || 1);
-        }
-      } catch (e) {
-        console.error('Error parsing journal params:', e);
-      }
-    }
-  }, [setSelectedSubject, setLessonPageDate, setLessonPageLessonNum]);
-
-  const sortedStudents = useMemo(() =>
-    [...students].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`)),
-    [students]
-  );
-
-  // Each lesson = one slot in the journal (date + lessonNumber)
-  const allSlots = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return lessons
-      .filter(l => l.subject === selectedSubject)
-      .filter(l => showFutureDates || l.date <= today)
-      .map(l => ({ date: l.date, lessonNumber: l.lessonNumber, key: `${l.date}_${l.lessonNumber}` }))
-      .sort((a, b) => a.date.localeCompare(b.date) || a.lessonNumber - b.lessonNumber);
-  }, [lessons, selectedSubject, showFutureDates]);
-
-  // For backward compatibility, unique dates list
-  const allDates = useMemo(() => {
-    const s = new Set<string>();
-    allSlots.forEach(sl => s.add(sl.date));
-    return Array.from(s).sort();
-  }, [allSlots]);
-
-  const monthGroups = useMemo(() => {
-    const groups: { month: string; slots: typeof allSlots }[] = [];
-    let currentMonth = '';
-    allSlots.forEach(sl => {
-      const m = MONTH_NAMES[parseInt(sl.date.split('-')[1]) - 1]?.slice(0, 3) || '';
-      if (m !== currentMonth) { currentMonth = m; groups.push({ month: m, slots: [sl] }); }
-      else { groups[groups.length - 1].slots.push(sl); }
-    });
-    return groups;
-  }, [allSlots]);
+  }, [inputMode, keyboardTarget, keyboardPosition, sortedStudents, allSlots, setGrade, deleteGrade]);
 
   // unused removed
 
