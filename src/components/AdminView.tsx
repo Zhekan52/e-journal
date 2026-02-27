@@ -1088,33 +1088,39 @@ const Journal: React.FC = () => {
                 }} className="w-full px-4 py-3 pr-12 bg-white border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all placeholder-gray-400" placeholder="ДЗ..." />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                   {entry?.attachment && (
-                    <a href={entry.attachment.url} download={entry.attachment.name} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Скачать файл">
-                      <Download className="w-4 h-4" />
-                    </a>
+                    <>
+                      <div className="bg-white p-1 rounded-lg">
+                        <a href={entry.attachment.url} download={entry.attachment.name} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg block transition-colors" title="Скачать файл">
+                          <Download className="w-4 h-4" />
+                        </a>
+                      </div>
+                      <div className="bg-white p-1 rounded-lg">
+                        <button onClick={() => {
+                          const ent = getOrCreateDiaryEntry(lessonPageDate, lessonPageLessonNum);
+                          if (ent) {
+                            setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, attachment: undefined } : de));
+                          }
+                        }} className="p-1 text-red-500 hover:bg-red-50 rounded-lg block transition-colors" title="Удалить файл">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </>
                   )}
-                  <label className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer" title="Прикрепить файл">
-                    <Paperclip className="w-4 h-4" />
-                    <input type="file" className="hidden" onChange={e => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const url = URL.createObjectURL(file);
-                        const ent = getOrCreateDiaryEntry(lessonPageDate, lessonPageLessonNum);
-                        if (ent) {
-                          setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, attachment: { name: file.name, url } } : de));
+                  {!entry?.attachment && (
+                    <label className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer bg-white" title="Прикрепить файл">
+                      <Paperclip className="w-4 h-4" />
+                      <input type="file" className="hidden" onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const url = URL.createObjectURL(file);
+                          const ent = getOrCreateDiaryEntry(lessonPageDate, lessonPageLessonNum);
+                          if (ent) {
+                            setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, attachment: { name: file.name, url } } : de));
+                          }
                         }
-                      }
-                      e.target.value = '';
-                    }} />
-                  </label>
-                  {entry?.attachment && (
-                    <button onClick={() => {
-                      const ent = getOrCreateDiaryEntry(lessonPageDate, lessonPageLessonNum);
-                      if (ent) {
-                        setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, attachment: undefined } : de));
-                      }
-                    }} className="p-1 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Удалить файл">
-                      <X className="w-4 h-4" />
-                    </button>
+                        e.target.value = '';
+                      }} />
+                    </label>
                   )}
                 </div>
               </div>
@@ -1808,13 +1814,28 @@ const Journal: React.FC = () => {
                             setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, homework: e.target.value } : de));
                           }
                         }} placeholder="ДЗ..." className="w-full px-2 py-1.5 pr-8 text-xs border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500" />
-                        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
-                          {entry?.attachment ? (
-                            <a href={entry.attachment.url} download={entry.attachment.name} className="p-1 text-blue-600 hover:bg-blue-50 rounded" title="Скачать">
-                              <Download className="w-3 h-3" />
-                            </a>
-                          ) : (
-                            <label className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded cursor-pointer" title="Прикрепить файл">
+                        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                          {entry?.attachment && (
+                            <>
+                              <div className="bg-white p-1 rounded">
+                                <a href={entry.attachment.url} download={entry.attachment.name} className="text-blue-600 hover:bg-blue-50 rounded block" title="Скачать">
+                                  <Download className="w-3 h-3" />
+                                </a>
+                              </div>
+                              <div className="bg-white p-1 rounded">
+                                <button onClick={() => {
+                                  const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
+                                  if (ent) {
+                                    setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, attachment: undefined } : de));
+                                  }
+                                }} className="text-red-500 hover:bg-red-50 rounded block" title="Удалить">
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </>
+                          )}
+                          {!entry?.attachment && (
+                            <label className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded cursor-pointer bg-white" title="Прикрепить файл">
                               <Paperclip className="w-3 h-3" />
                               <input type="file" className="hidden" onChange={e => {
                                 const file = e.target.files?.[0];
@@ -1828,16 +1849,6 @@ const Journal: React.FC = () => {
                                 e.target.value = '';
                               }} />
                             </label>
-                          )}
-                          {entry?.attachment && (
-                            <button onClick={() => {
-                              const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
-                              if (ent) {
-                                setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, attachment: undefined } : de));
-                              }
-                            }} className="p-1 text-red-500 hover:bg-red-50 rounded" title="Удалить">
-                              <X className="w-3 h-3" />
-                            </button>
                           )}
                         </div>
                       </div>
