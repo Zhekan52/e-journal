@@ -7,10 +7,10 @@ import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import {
   BookOpen, Calendar, ClipboardList, Users, LogOut, Settings, Plus,
-  Trash2, Edit2, Search, X, Save, ChevronDown, Eye, EyeOff,
+  Trash2, Edit2, Search, X, Save, ChevronDown, ChevronLeft, Eye, EyeOff,
   AlertTriangle, TrendingUp, TrendingDown, FileText,
   BarChart3, Award, ArrowLeft, RefreshCw, ChevronRight, Tag, Info,
-  Paperclip, Download, Keyboard, MousePointer2
+  Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
@@ -23,6 +23,7 @@ type Tab = 'dashboard' | 'schedule' | 'journal' | 'tests' | 'students' | 'lesson
 export const AdminView: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [scheduleEditMode, setScheduleEditMode] = useState(false);
   const [lessonPageParams, setLessonPageParams] = useState<{ subject: string; date: string; lessonNumber: number } | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -44,50 +45,108 @@ export const AdminView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <BookOpen className="w-5 h-5 text-white" />
+    <div className="min-h-screen flex">
+      {/* Sidebar */}
+      <aside className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 z-40 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-56'}`}>
+        {/* Logo */}
+        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
+          {!sidebarCollapsed && (
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                <BookOpen className="w-4 h-4 text-white" />
               </div>
-              <span className="font-semibold text-gray-900 text-lg">Панель управления</span>
+              <span className="font-semibold text-gray-900 text-sm">Электронный журнал</span>
             </div>
-            <nav className="flex items-center gap-1 bg-gray-100/50 rounded-xl p-1">
-              {tabs.map(tab => (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'}`}>
-                  {tab.icon}
-                  <span className="hidden lg:inline">{tab.label}</span>
+          )}
+          {sidebarCollapsed && (
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto">
+              <BookOpen className="w-4 h-4 text-white" />
+            </div>
+          )}
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 py-4 px-2 space-y-1">
+          {tabs.map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                activeTab === tab.id 
+                  ? 'bg-blue-50 text-blue-600' 
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}>
+              <span className={activeTab === tab.id ? 'text-blue-600' : 'text-gray-400'}>{tab.icon}</span>
+              {!sidebarCollapsed && <span>{tab.label}</span>}
+            </button>
+          ))}
+        </nav>
+
+        {/* User section */}
+        <div className="p-2 border-t border-gray-100">
+          {!sidebarCollapsed ? (
+            <button onClick={() => setShowSettingsModal(true)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
+                {user?.name?.charAt(0)}
+              </div>
+              <div className="flex-1 text-left">
+                <div className="text-sm font-medium text-gray-900">{user?.name}</div>
+                <div className="text-xs text-gray-500">Администратор</div>
+              </div>
+            </button>
+          ) : (
+            <button onClick={() => setShowSettingsModal(true)} className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
+                {user?.name?.charAt(0)}
+              </div>
+            </button>
+          )}
+          <button onClick={logout} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors ${sidebarCollapsed ? 'justify-center' : ''}`}>
+            <LogOut className="w-5 h-5" />
+            {!sidebarCollapsed && <span className="text-sm">Выход</span>}
+          </button>
+        </div>
+
+        {/* Collapse button */}
+        <button 
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="absolute -right-3 top-20 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors"
+        >
+          {sidebarCollapsed ? (
+            <ChevronRight className="w-4 h-4 text-gray-500" />
+          ) : (
+            <ChevronLeft className="w-4 h-4 text-gray-500" />
+          )}
+        </button>
+      </aside>
+
+      {/* Main content */}
+      <main className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-56'}`}>
+        <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-30">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center gap-3">
+                <span className="font-semibold text-gray-900 text-lg">{tabs.find(t => t.id === activeTab)?.label}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={() => setShowSettingsModal(true)} className="sm:hidden flex items-center gap-2 px-3 py-2 bg-gray-100/50 rounded-xl hover:bg-gray-200 transition-colors cursor-pointer">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
+                    {user?.name?.charAt(0)}
+                  </div>
                 </button>
-              ))}
-            </nav>
-            <div className="flex items-center gap-3">
-              <button onClick={() => setShowSettingsModal(true)} className="hidden sm:flex items-center gap-2 px-3 py-2 bg-gray-100/50 rounded-xl hover:bg-gray-200 transition-colors cursor-pointer">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
-                  {user?.name?.charAt(0)}
-                </div>
-                <span className="text-sm text-gray-700 font-medium">{user?.name}</span>
-                <Settings className="w-4 h-4 text-gray-400" />
-              </button>
-              <button onClick={logout} className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-red-500">
-                <LogOut className="w-5 h-5" />
-              </button>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4 py-8">
         {activeTab === 'dashboard' && <AdminDashboard />}
         {activeTab === 'schedule' && <Schedule editable={scheduleEditMode} onEditModeChange={setScheduleEditMode} onOpenLessonPage={handleOpenLessonPage} />}
         {activeTab === 'journal' && <Journal />}
         {activeTab === 'tests' && <TestsManager />}
         {activeTab === 'students' && <StudentsManager />}
         {activeTab === 'lessonTypes' && <LessonTypesManager />}
+        </div>
       </main>
-
+        
       {/* Settings Modal */}
       {showSettingsModal && (
         <AdminSettingsModal user={user} onClose={() => setShowSettingsModal(false)} onSave={updateUser} />
