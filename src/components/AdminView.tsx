@@ -616,10 +616,12 @@ const GradePickerPortal: React.FC<{
   anchorRect: DOMRect;
   currentGrade?: number;
   currentExcludeFromAverage?: boolean;
+  studentName?: string;
+  date?: string;
   onSelect: (v: number, excludeFromAverage?: boolean) => void;
   onDelete?: () => void;
   onClose: () => void;
-}> = ({ anchorRect, currentGrade, currentExcludeFromAverage, onSelect, onDelete, onClose }) => {
+}> = ({ anchorRect, currentGrade, currentExcludeFromAverage, studentName, date, onSelect, onDelete, onClose }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [excludeFromAverage, setExcludeFromAverage] = useState(currentExcludeFromAverage || false);
 
@@ -635,8 +637,13 @@ const GradePickerPortal: React.FC<{
     setExcludeFromAverage(currentExcludeFromAverage || false);
   }, [currentExcludeFromAverage]);
 
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00');
+    return `${d.getDate()} ${MONTH_NAMES_GEN[d.getMonth()]}`;
+  };
+
   const widgetW = 220;
-  const widgetH = currentGrade ? 130 : 90;
+  const widgetH = currentGrade ? 160 : 120;
   let top = anchorRect.bottom + 4;
   let left = anchorRect.left + anchorRect.width / 2 - widgetW / 2;
   if (top + widgetH > window.innerHeight) top = anchorRect.top - widgetH - 4;
@@ -646,6 +653,12 @@ const GradePickerPortal: React.FC<{
   return createPortal(
     <div ref={ref} className="fixed z-[100] bg-white rounded-xl shadow-2xl border border-gray-200 p-2 animate-scaleIn"
       style={{ top, left, width: widgetW }}>
+      {(studentName || date) && (
+        <div className="text-xs text-gray-500 border-b border-gray-100 pb-1.5 mb-2">
+          {date && <div className="font-medium text-gray-700">{formatDate(date)}</div>}
+          {studentName && <div className="truncate">{studentName}</div>}
+        </div>
+      )}
       <div className="flex gap-1.5 justify-center">
         {[5, 4, 3, 2].map(v => (
           <button key={v} onClick={() => onSelect(v, excludeFromAverage)}
@@ -1483,16 +1496,21 @@ const Journal: React.FC = () => {
           </div>
         </div>
 
-        {gradePickerState && (
-          <GradePickerPortal
-            anchorRect={gradePickerState.rect}
-            currentGrade={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.value}
-            currentExcludeFromAverage={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.excludeFromAverage}
-            onSelect={(v, excludeFromAverage) => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber, excludeFromAverage); setGradePickerState(null); }}
-            onDelete={() => { deleteGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
-            onClose={() => setGradePickerState(null)}
-          />
-        )}
+        {gradePickerState && (() => {
+          const student = students.find(s => s.id === gradePickerState.studentId);
+          return (
+            <GradePickerPortal
+              anchorRect={gradePickerState.rect}
+              currentGrade={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.value}
+              currentExcludeFromAverage={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.excludeFromAverage}
+              studentName={student ? `${student.lastName} ${student.firstName}` : undefined}
+              date={gradePickerState.date}
+              onSelect={(v, excludeFromAverage) => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber, excludeFromAverage); setGradePickerState(null); }}
+              onDelete={() => { deleteGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
+              onClose={() => setGradePickerState(null)}
+            />
+          );
+        })()}
       </div>
     );
   }
@@ -1650,7 +1668,7 @@ const Journal: React.FC = () => {
                           <div className={`text-[9px] font-bold rounded px-1 mt-0.5 ${ltType.color}`}>{ltType.short}</div>
                         )}
                         {isToday && (
-                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                          <div className="absolute top-1/2 left-1/2 -translate-y-1/2 translate-x-[2px] w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                         )}
                       </th>
                     );
@@ -2058,16 +2076,21 @@ const Journal: React.FC = () => {
       )}
 
       {/* Grade Picker */}
-      {gradePickerState && (
-        <GradePickerPortal
-          anchorRect={gradePickerState.rect}
-          currentGrade={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.value}
-          currentExcludeFromAverage={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.excludeFromAverage}
-          onSelect={(v, excludeFromAverage) => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber, excludeFromAverage); setGradePickerState(null); }}
-          onDelete={() => { deleteGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
-          onClose={() => setGradePickerState(null)}
-        />
-      )}
+      {gradePickerState && (() => {
+        const student = students.find(s => s.id === gradePickerState.studentId);
+        return (
+          <GradePickerPortal
+            anchorRect={gradePickerState.rect}
+            currentGrade={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.value}
+            currentExcludeFromAverage={getGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber)?.excludeFromAverage}
+            studentName={student ? `${student.lastName} ${student.firstName}` : undefined}
+            date={gradePickerState.date}
+            onSelect={(v, excludeFromAverage) => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber, excludeFromAverage); setGradePickerState(null); }}
+            onDelete={() => { deleteGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
+            onClose={() => setGradePickerState(null)}
+          />
+        );
+      })()}
 
       {/* Date Popover Portal */}
       {popoverDate && popoverRect && (() => {
