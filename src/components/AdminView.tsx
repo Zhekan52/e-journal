@@ -1718,8 +1718,8 @@ const Journal: React.FC = () => {
                 <th className="px-3 py-2 text-left w-10">№</th>
                 <th className="px-3 py-2 text-left w-28">Дата</th>
                 <th className="px-3 py-2 text-left min-w-[180px]">Тип урока</th>
-                <th className="px-3 py-2 text-left">Тема урока</th>
-                <th className="px-3 py-2 text-left">Домашнее задание</th>
+                <th className="px-3 py-2 text-left min-w-[200px]">Тема урока</th>
+                <th className="px-3 py-2 text-left min-w-[200px]">Домашнее задание</th>
                 <th className="px-3 py-2 text-center w-16">Пров. ДЗ</th>
                 <th className="px-3 py-2 text-left w-40">Тест</th>
               </tr>
