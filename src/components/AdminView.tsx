@@ -1576,7 +1576,7 @@ const Journal: React.FC = () => {
                           </div>
                         )}
                         {ltType && (
-                          <div className={`text-[10px] font-bold rounded px-1 mt-0.5 ${ltType.color}`}>{ltType.label}</div>
+                          <div className={`text-[9px] font-bold rounded px-1 mt-0.5 ${ltType.color}`}>{ltType.short}</div>
                         )}
                         {isToday && (
                           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-green-500 rounded-full"></div>
@@ -1747,8 +1747,37 @@ const Journal: React.FC = () => {
                     </td>
                     <td className="px-3 py-2">
                       {lt?.type ? (
-                        <div className={`inline-flex px-3 py-1.5 rounded-lg text-sm font-medium ${customLessonTypes.find(c => c.value === lt.type)?.color || 'bg-gray-100 text-gray-700'}`}>
-                          {customLessonTypes.find(c => c.value === lt.type)?.label || lt.type}
+                        <div className="flex items-center gap-2">
+                          <select value={lt?.type || ''} onChange={e => {
+                            const newValue = e.target.value;
+                            setLessonTypes(prev => {
+                              const slotKey = `${sl.date}_${selectedSubject}_${sl.lessonNumber}`;
+                              if (newValue === '') {
+                                // Удалить тип урока
+                                return prev.filter(l => {
+                                  const lKey = `${l.date}_${l.subject}_${l.lessonNumber}`;
+                                  return lKey !== slotKey;
+                                });
+                              }
+                              const existing = prev.find(l => l.date === sl.date && l.subject === selectedSubject && (l.lessonNumber === sl.lessonNumber || (!l.lessonNumber && !sl.lessonNumber)));
+                              if (existing) return prev.map(l => l.id === existing.id ? { ...l, type: newValue, lessonNumber: sl.lessonNumber } : l);
+                              return [...prev, { id: `lt${Date.now()}`, date: sl.date, subject: selectedSubject, type: newValue, lessonNumber: sl.lessonNumber }];
+                            });
+                          }} className={`flex-1 px-2 py-1.5 text-sm border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 ${customLessonTypes.find(c => c.value === lt.type)?.color || 'bg-gray-100 text-gray-700'}`}>
+                            <option value="">—</option>
+                            {customLessonTypes && Array.isArray(customLessonTypes) && customLessonTypes.map(clt => <option key={clt.id} value={clt.value}>{clt.label}</option>)}
+                          </select>
+                          <button onClick={() => {
+                            setLessonTypes(prev => {
+                              const slotKey = `${sl.date}_${selectedSubject}_${sl.lessonNumber}`;
+                              return prev.filter(l => {
+                                const lKey = `${l.date}_${l.subject}_${l.lessonNumber}`;
+                                return lKey !== slotKey;
+                              });
+                            });
+                          }} className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="Удалить тип урока">
+                            <X className="w-4 h-4" />
+                          </button>
                         </div>
                       ) : (
                         <select value={lt?.type || ''} onChange={e => {
