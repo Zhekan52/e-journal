@@ -1650,7 +1650,7 @@ const Journal: React.FC = () => {
                           <div className={`text-[9px] font-bold rounded px-1 mt-0.5 ${ltType.color}`}>{ltType.short}</div>
                         )}
                         {isToday && (
-                          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                         )}
                       </th>
                     );
@@ -1812,9 +1812,9 @@ const Journal: React.FC = () => {
                   <tr key={sl.key} className={`border-b border-gray-300 hover:bg-gray-50 ${isToday ? 'bg-green-50' : ''}`}>
                     <td className="px-3 py-2 text-gray-500">{idx + 1}</td>
                     <td className={`px-3 py-2 font-medium ${isToday ? 'text-green-700' : 'text-gray-700'}`}>
-                      {sl.date.split('-')[2]}.{sl.date.split('-')[1]}
-                      {slotsOnDate.length > 1 && <span className="text-primary-600 text-[10px] ml-1">(Ур.{sl.lessonNumber})</span>}
-                      {isToday && <span className="ml-1 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Сегодня</span>}
+                      <div>{sl.date.split('-')[2]}.{sl.date.split('-')[1]}</div>
+                      {slotsOnDate.length > 1 && <div className="text-primary-600 text-[10px]">(Ур.{sl.lessonNumber})</div>}
+                      {isToday && <div className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded mt-0.5 inline-block">Сегодня</div>}
                     </td>
                     <td className="px-3 py-2">
                       {lt?.type ? (
