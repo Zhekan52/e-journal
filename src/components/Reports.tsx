@@ -1,0 +1,815 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import { useData } from '../context';
+import { SUBJECTS, MONTH_NAMES, getTodayString, getTodayDate, ATTENDANCE_TYPES } from '../data';
+import {
+  FileText, Calendar, Users, TrendingUp, ChevronDown, ChevronUp,
+  Filter, User, BarChart3, AlertCircle
+} from 'lucide-react';
+
+type ReportTab = 'student' | 'class' | 'attendance';
+
+interface DateRange {
+  start: string;
+  end: string;
+}
+
+// Получить дату начала учебного года (1 сентября)
+function getSchoolYearStart(): string {
+  const today = getTodayDate();
+  const year = today.getMonth() >= 8 ? today.getFullYear() : today.getFullYear() - 1;
+  return `${year}-09-01`;
+}
+
+// Парсинг даты
+function parseDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+// Формат даты для отображения
+function formatDateDisplay(dateStr: string): string {
+  const date = parseDate(dateStr);
+  return `${date.getDate()} ${MONTH_NAMES[date.getMonth()].toLowerCase()} ${date.getFullYear()}`;
+}
+
+// Проверка даты в диапазоне
+function isDateInRange(dateStr: string, range: DateRange): boolean {
+  const date = dateStr;
+  return date >= range.start && date <= range.end;
+}
+
+export const Reports: React.FC = () => {
+  const { students, grades, attendance } = useData();
+  
+  const [activeTab, setActiveTab] = useState<ReportTab>('student');
+  const [dateRange, setDateRange] = useState<DateRange>({
+    start: getSchoolYearStart(),
+    end: getTodayString()
+  });
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<string>('');
+  const [studentSearch, setStudentSearch] = useState('');
+
+  // Сброс выбора ученика при смене вкладки
+  useEffect(() => {
+    setSelectedStudent('');
+    setStudentSearch('');
+  }, [activeTab]);
+
+  const tabs: { id: ReportTab; label: string; icon: React.ReactNode }[] = [
+    { id: 'student', label: 'Табель ученика', icon: <User className="w-5 h-5" /> },
+    { id: 'class', label: 'Успеваемость класса', icon: <BarChart3 className="w-5 h-5" /> },
+    { id: 'attendance', label: 'Пропуски', icon: <AlertCircle className="w-5 h-5" /> },
+  ];
+
+  // Отфильтрованный список учеников для поиска
+  const filteredStudents = useMemo(() => {
+    if (!studentSearch) return students;
+    const search = studentSearch.toLowerCase();
+    return students.filter(s => 
+      `${s.lastName} ${s.firstName}`.toLowerCase().includes(search)
+    );
+  }, [students, studentSearch]);
+
+  // Установить период "За весь период"
+  const setFullPeriod = () => {
+    setDateRange({
+      start: getSchoolYearStart(),
+      end: getTodayString()
+    });
+  };
+
+  // Установить период "За неделю"
+  const setWeekPeriod = () => {
+    const today = getTodayDate();
+    const start = new Date(today);
+    start.setDate(start.getDate() - 7);
+    setDateRange({
+      start: `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`,
+      end: getTodayString()
+    });
+  };
+
+  // Установить период "За месяц"
+  const setMonthPeriod = () => {
+    const today = getTodayDate();
+    const start = new Date(today);
+    start.setMonth(start.getMonth() - 1);
+    setDateRange({
+      start: `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`,
+      end: getTodayString()
+    });
+  };
+
+  return (
+    <div className="animate-fadeIn space-y-6">
+      {/* Заголовок */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900">Отчёты</h2>
+      </div>
+
+      {/* Выбор периода */}
+      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-4 shadow-lg">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-gray-500" />
+            <span className="font-medium text-gray-700">Период:</span>
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={setWeekPeriod}
+              className="px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+            >
+              За неделю
+            </button>
+            <button
+              onClick={setMonthPeriod}
+              className="px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+            >
+              За месяц
+            </button>
+            <button
+              onClick={setFullPeriod}
+              className="px-4 py-2 text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-xl transition-colors"
+            >
+              За весь период
+            </button>
+          </div>
+
+          <div className="relative">
+            <button
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+            >
+              <Filter className="w-4 h-4" />
+              {formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}
+              {showDatePicker ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+
+            {showDatePicker && (
+              <div className="absolute top-full left-0 mt-2 p-4 bg-white rounded-xl shadow-xl border border-gray-200 z-10 min-w-[300px]">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Дата начала</label>
+                    <input
+                      type="date"
+                      value={dateRange.start}
+                      onChange={(e) => setDateRange(p => ({ ...p, start: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Дата окончания</label>
+                    <input
+                      type="date"
+                      value={dateRange.end}
+                      onChange={(e) => setDateRange(p => ({ ...p, end: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <button
+                    onClick={() => setShowDatePicker(false)}
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    Применить
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Вкладки отчётов */}
+      <div className="flex gap-2 border-b border-gray-200 pb-1">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === tab.id
+                ? 'text-blue-600 border-blue-600'
+                : 'text-gray-500 border-transparent hover:text-gray-700'
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Контент */}
+      {activeTab === 'student' && (
+        <StudentReport 
+          students={filteredStudents}
+          grades={grades}
+          dateRange={dateRange}
+          selectedStudent={selectedStudent}
+          setSelectedStudent={setSelectedStudent}
+          studentSearch={studentSearch}
+          setStudentSearch={setStudentSearch}
+        />
+      )}
+      {activeTab === 'class' && (
+        <ClassReport 
+          students={students}
+          grades={grades}
+          dateRange={dateRange}
+        />
+      )}
+      {activeTab === 'attendance' && (
+        <AttendanceReport 
+          students={students}
+          attendance={attendance}
+          dateRange={dateRange}
+        />
+      )}
+    </div>
+  );
+};
+
+// ==================== ТАБЕЛЬ УСПЕВАЕМОСТИ УЧЕНИКА ====================
+interface StudentReportProps {
+  students: any[];
+  grades: any[];
+  dateRange: DateRange;
+  selectedStudent: string;
+  setSelectedStudent: (id: string) => void;
+  studentSearch: string;
+  setStudentSearch: (s: string) => void;
+}
+
+const StudentReport: React.FC<StudentReportProps> = ({
+  students,
+  grades,
+  dateRange,
+  selectedStudent,
+  setSelectedStudent,
+  studentSearch,
+  setStudentSearch
+}) => {
+  // Получить оценки ученика за период
+  const studentGrades = useMemo(() => {
+    if (!selectedStudent) return {};
+    const filtered = grades.filter(g => 
+      g.studentId === selectedStudent && isDateInRange(g.date, dateRange)
+    );
+    
+    // Группировка по предметам
+    const grouped: Record<string, any[]> = {};
+    filtered.forEach(g => {
+      if (!grouped[g.subject]) grouped[g.subject] = [];
+      grouped[g.subject].push(g);
+    });
+    
+    // Сортировка оценок по дате внутри каждого предмета
+    Object.keys(grouped).forEach(subject => {
+      grouped[subject].sort((a, b) => a.date.localeCompare(b.date));
+    });
+    
+    return grouped;
+  }, [grades, selectedStudent, dateRange]);
+
+  // Рассчитать средний балл по предмету
+  const calculateAverage = (subjectGrades: any[]): string => {
+    if (subjectGrades.length === 0) return '—';
+    const sum = subjectGrades.reduce((acc, g) => acc + g.value, 0);
+    return (sum / subjectGrades.length).toFixed(2);
+  };
+
+  const selectedStudentData = students.find(s => s.id === selectedStudent);
+
+  return (
+    <div className="space-y-6">
+      {/* Выбор ученика */}
+      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Выберите ученика</h3>
+        
+        <div className="relative">
+          <input
+            type="text"
+            value={studentSearch}
+            onChange={(e) => setStudentSearch(e.target.value)}
+            placeholder="Поиск по ФИО..."
+            className="w-full px-4 py-3 pl-11 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        </div>
+
+        {studentSearch && (
+          <div className="mt-2 max-h-48 overflow-y-auto border border-gray-200 rounded-xl">
+            {students.length === 0 ? (
+              <p className="p-4 text-gray-500 text-center">Нет учеников</p>
+            ) : (
+              students.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    setSelectedStudent(s.id);
+                    setStudentSearch(`${s.lastName} ${s.firstName}`);
+                  }}
+                  className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 ${
+                    selectedStudent === s.id ? 'bg-blue-50' : ''
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-medium">
+                    {s.lastName?.charAt(0)}{s.firstName?.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900">{s.lastName} {s.firstName}</div>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Табель успеваемости */}
+      {selectedStudent && selectedStudentData && (
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-xl font-bold text-gray-900">
+              Табель успеваемости
+            </h3>
+            <p className="text-gray-500 mt-1">
+              {selectedStudentData.lastName} {selectedStudentData.firstName} · {formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Предмет</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Оценки</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">Средний балл</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {SUBJECTS.map(subject => {
+                  const subjectGrades = studentGrades[subject] || [];
+                  const avg = calculateAverage(subjectGrades);
+                  
+                  return (
+                    <tr key={subject} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <span className="font-medium text-gray-900">{subject}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1.5">
+                          {subjectGrades.length > 0 ? (
+                            subjectGrades.map((g, idx) => (
+                              <span
+                                key={idx}
+                                className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm font-semibold ${
+                                  g.value >= 4 ? 'bg-green-100 text-green-700' :
+                                  g.value >= 3 ? 'bg-blue-100 text-blue-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}
+                                title={`${g.date}`}
+                              >
+                                {g.value}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-gray-400 text-sm">Нет оценок</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {subjectGrades.length > 0 ? (
+                          <span className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-bold ${
+                            parseFloat(avg) >= 4.5 ? 'bg-green-100 text-green-700' :
+                            parseFloat(avg) >= 3.5 ? 'bg-blue-100 text-blue-700' :
+                            parseFloat(avg) >= 2.5 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {avg}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ==================== ОТЧЁТ УСПЕВАЕМОСТИ КЛАССА ====================
+interface ClassReportProps {
+  students: any[];
+  grades: any[];
+  dateRange: DateRange;
+}
+
+const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }) => {
+  // Рассчитать средний балл каждого ученика по каждому предмету
+  const studentSubjectAverages = useMemo(() => {
+    const result: Record<string, Record<string, number>> = {};
+    
+    students.forEach(student => {
+      result[student.id] = {};
+      SUBJECTS.forEach(subject => {
+        const subjectGrades = grades.filter(g => 
+          g.studentId === student.id && 
+          g.subject === subject && 
+          isDateInRange(g.date, dateRange)
+        );
+        
+        if (subjectGrades.length > 0) {
+          const sum = subjectGrades.reduce((acc, g) => acc + g.value, 0);
+          result[student.id][subject] = sum / subjectGrades.length;
+        } else {
+          result[student.id][subject] = -1; // Нет оценок
+        }
+      });
+    });
+    
+    return result;
+  }, [students, grades, dateRange]);
+
+  // Рассчитать средний балл класса по каждому предмету
+  const classSubjectAverages = useMemo(() => {
+    const result: Record<string, number> = {};
+    
+    SUBJECTS.forEach(subject => {
+      let totalSum = 0;
+      let count = 0;
+      
+      students.forEach(student => {
+        const avg = studentSubjectAverages[student.id]?.[subject];
+        if (avg !== undefined && avg >= 0) {
+          totalSum += avg;
+          count++;
+        }
+      });
+      
+      result[subject] = count > 0 ? totalSum / count : -1;
+    });
+    
+    return result;
+  }, [students, studentSubjectAverages]);
+
+  // Рассчитать общий процент успеваемости (оценки 3 и выше)
+  const successRate = useMemo(() => {
+    let totalGrades = 0;
+    let passingGrades = 0;
+    
+    students.forEach(student => {
+      SUBJECTS.forEach(subject => {
+        const avg = studentSubjectAverages[student.id]?.[subject];
+        if (avg !== undefined && avg >= 0) {
+          totalGrades++;
+          if (avg >= 3) passingGrades++;
+        }
+      });
+    });
+    
+    return totalGrades > 0 ? (passingGrades / totalGrades) * 100 : 0;
+  }, [students, studentSubjectAverages]);
+
+  // Отсортировать учеников по фамилии
+  const sortedStudents = [...students].sort((a, b) => 
+    `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`)
+  );
+
+  const formatAvg = (avg: number): string => {
+    if (avg < 0) return '—';
+    return avg.toFixed(2);
+  };
+
+  return (
+    <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
+      <div className="p-6 border-b border-gray-100">
+        <h3 className="text-xl font-bold text-gray-900">
+          Сводная ведомость класса
+        </h3>
+        <p className="text-gray-500 mt-1">
+          {formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}
+        </p>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 sticky left-0 bg-gray-50 z-10">
+                Ученик
+              </th>
+              {SUBJECTS.map(subject => (
+                <th key={subject} className="px-4 py-4 text-center text-sm font-semibold text-gray-700 min-w-[80px]">
+                  {subject}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {sortedStudents.map(student => (
+              <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3 sticky left-0 bg-white z-10">
+                  <span className="font-medium text-gray-900">
+                    {student.lastName} {student.firstName}
+                  </span>
+                </td>
+                {SUBJECTS.map(subject => {
+                  const avg = studentSubjectAverages[student.id]?.[subject] ?? -1;
+                  return (
+                    <td key={subject} className="px-4 py-3 text-center">
+                      {avg >= 0 ? (
+                        <span className={`inline-flex px-2 py-1 rounded-lg text-sm font-semibold ${
+                          avg >= 4.5 ? 'bg-green-100 text-green-700' :
+                          avg >= 3.5 ? 'bg-blue-100 text-blue-700' :
+                          avg >= 2.5 ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {formatAvg(avg)}
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+          <tfoot className="bg-gray-100">
+            <tr>
+              <td className="px-4 py-4 text-left text-sm font-bold text-gray-900 sticky left-0 bg-gray-100 z-10">
+                Средний балл класса
+              </td>
+              {SUBJECTS.map(subject => {
+                const avg = classSubjectAverages[subject];
+                return (
+                  <td key={subject} className="px-4 py-4 text-center">
+                    {avg >= 0 ? (
+                      <span className="inline-flex px-2 py-1 rounded-lg text-sm font-bold bg-white text-gray-900 shadow-sm">
+                        {formatAvg(avg)}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      {/* Аналитика внизу */}
+      <div className="p-6 border-t border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
+              <TrendingUp className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <div className="text-sm text-gray-600">Общий процент успеваемости</div>
+              <div className="text-2xl font-bold text-gray-900">{successRate.toFixed(1)}%</div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
+              <Users className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <div className="text-sm text-gray-600">Всего учеников</div>
+              <div className="text-2xl font-bold text-gray-900">{students.length}</div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
+              <FileText className="w-6 h-6 text-purple-600" />
+            </div>
+            <div>
+              <div className="text-sm text-gray-600">Всего предметов</div>
+              <div className="text-2xl font-bold text-gray-900">{SUBJECTS.length}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ==================== ОТЧЁТ О ПРОПУСКАХ ====================
+interface AttendanceReportProps {
+  students: any[];
+  attendance: any[];
+  dateRange: DateRange;
+}
+
+const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendance, dateRange }) => {
+  // Рассчитать пропуски для каждого ученика
+  const studentAttendance = useMemo(() => {
+    const result: Record<string, { Н: number; УП: number; Б: number; ОП: number; total: number }> = {};
+    
+    students.forEach(student => {
+      result[student.id] = { Н: 0, УП: 0, Б: 0, ОП: 0, total: 0 };
+    });
+    
+    attendance
+      .filter(a => isDateInRange(a.date, dateRange))
+      .forEach(record => {
+        if (result[record.studentId]) {
+          const type = record.type as 'Н' | 'УП' | 'Б' | 'ОП';
+          if (type === 'Н' || type === 'УП' || type === 'Б' || type === 'ОП') {
+            result[record.studentId][type]++;
+            result[record.studentId].total++;
+          }
+        }
+      });
+    
+    return result;
+  }, [students, attendance, dateRange]);
+
+  // Рассчитать итого по классу
+  const totalAttendance = useMemo(() => {
+    const totals = { Н: 0, УП: 0, Б: 0, ОП: 0, total: 0 };
+    Object.values(studentAttendance).forEach(data => {
+      totals.Н += data.Н;
+      totals.УП += data.УП;
+      totals.Б += data.Б;
+      totals.ОП += data.ОП;
+      totals.total += data.total;
+    });
+    return totals;
+  }, [studentAttendance]);
+
+  // Отсортировать учеников по фамилии
+  const sortedStudents = [...students].sort((a, b) => 
+    `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`)
+  );
+
+  return (
+    <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
+      <div className="p-6 border-b border-gray-100">
+        <h3 className="text-xl font-bold text-gray-900">
+          Информация о пропусках
+        </h3>
+        <p className="text-gray-500 mt-1">
+          {formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}
+        </p>
+      </div>
+
+      {/* Легенда */}
+      <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+        <div className="flex flex-wrap items-center gap-4 text-sm">
+          <span className="text-gray-600">Типы отметок:</span>
+          {ATTENDANCE_TYPES.map(type => (
+            <div key={type.value} className="flex items-center gap-1.5">
+              <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold ${type.bgColor} ${type.color}`}>
+                {type.short}
+              </span>
+              <span className="text-gray-600">{type.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Ученик</th>
+              <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-red-100 text-red-700 text-xs font-bold">Н</span>
+              </th>
+              <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-blue-100 text-blue-700 text-xs font-bold">УП</span>
+              </th>
+              <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-amber-100 text-amber-700 text-xs font-bold">Б</span>
+              </th>
+              <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-orange-100 text-orange-700 text-xs font-bold">ОП</span>
+              </th>
+              <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">Итого</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {sortedStudents.map(student => {
+              const data = studentAttendance[student.id] || { Н: 0, УП: 0, Б: 0, ОП: 0, total: 0 };
+              return (
+                <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4">
+                    <span className="font-medium text-gray-900">
+                      {student.lastName} {student.firstName}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 text-center">
+                    {data.Н > 0 ? (
+                      <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-red-100 text-red-700">
+                        {data.Н}
+                      </span>
+                    ) : (
+                      <span className="text-gray-300">0</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-4 text-center">
+                    {data.УП > 0 ? (
+                      <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-blue-100 text-blue-700">
+                        {data.УП}
+                      </span>
+                    ) : (
+                      <span className="text-gray-300">0</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-4 text-center">
+                    {data.Б > 0 ? (
+                      <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-amber-100 text-amber-700">
+                        {data.Б}
+                      </span>
+                    ) : (
+                      <span className="text-gray-300">0</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-4 text-center">
+                    {data.ОП > 0 ? (
+                      <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-orange-100 text-orange-700">
+                        {data.ОП}
+                      </span>
+                    ) : (
+                      <span className="text-gray-300">0</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    {data.total > 0 ? (
+                      <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-bold bg-gray-100 text-gray-700">
+                        {data.total}
+                      </span>
+                    ) : (
+                      <span className="text-gray-300">0</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot className="bg-gray-100">
+            <tr>
+              <td className="px-6 py-4 text-left text-sm font-bold text-gray-900">Итого по классу</td>
+              <td className="px-4 py-4 text-center">
+                {totalAttendance.Н > 0 ? (
+                  <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-red-100 text-red-700">
+                    {totalAttendance.Н}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">0</span>
+                )}
+              </td>
+              <td className="px-4 py-4 text-center">
+                {totalAttendance.УП > 0 ? (
+                  <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-blue-100 text-blue-700">
+                    {totalAttendance.УП}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">0</span>
+                )}
+              </td>
+              <td className="px-4 py-4 text-center">
+                {totalAttendance.Б > 0 ? (
+                  <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-amber-100 text-amber-700">
+                    {totalAttendance.Б}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">0</span>
+                )}
+              </td>
+              <td className="px-4 py-4 text-center">
+                {totalAttendance.ОП > 0 ? (
+                  <span className="inline-flex items-center justify-center min-width-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-orange-100 text-orange-700">
+                    {totalAttendance.ОП}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">0</span>
+                )}
+              </td>
+              <td className="px-6 py-4 text-center">
+                {totalAttendance.total > 0 ? (
+                  <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-bold bg-white text-gray-900 shadow-sm">
+                    {totalAttendance.total}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">0</span>
+                )}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+};
