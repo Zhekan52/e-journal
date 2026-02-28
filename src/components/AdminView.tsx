@@ -1757,4 +1757,4 @@ const Journal: React.FC = () => {
                   return (
                     <tr key={student.id} className="border-b border-gray-300 hover:bg-gray-50/60">
                       <td className="sticky left-0 z-10 bg-white px-2 py-1.5 text-center text-xs text-gray-500 border-r border-gray-300 w-[48px]">{idx + 1}</td>
-                      <td className="sticky left-[48px] z-10 bg-white px-3 py-1.5 font-medium text-gray-900 text-xs border-r border-gray-300 whitespace-nowrap">{student.lastName} {student
+                      <td className="sticky left-[48px] z-10 bg-white px-3 py-1.5 font-medium text-gray-900 text-xs border-r border-gray-300 whitespace-nowrap">{student.lastName} {student.firstName}</td>
