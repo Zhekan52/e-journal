@@ -131,32 +131,7 @@ export const FipiTrainer: React.FC = () => {
       )}
 
       {activeTab === 'rewards' && (
-        <div className="grid gap-4 md:grid-cols-2">
-          {SUBJECTS.map(subject => {
-            const reward = fipiRewards.find(r => r.subject === subject);
-            const [editing, setEditing] = useState(false);
-            const [points, setPoints] = useState(reward?.pointsRequired || 10);
-            return (
-              <div key={subject} className="bg-white/80 rounded-2xl border p-6 shadow-lg">
-                <h3 className="font-bold mb-4">{subject}</h3>
-                {editing ? (
-                  <div className="flex gap-2">
-                    <input type="number" value={points} onChange={(e) => setPoints(parseInt(e.target.value) || 10)}
-                      className="flex-1 px-3 py-2 border rounded" />
-                    <button onClick={() => { handleSaveReward({ id: reward?.id || '', subject, pointsRequired: points, grade: 5 }); setEditing(false); }}
-                      className="px-4 py-2 bg-green-600 text-white rounded"><Save className="w-4 h-4" /></button>
-                    <button onClick={() => setEditing(false)} className="p-2 hover:bg-gray-100 rounded"><X className="w-5 h-5" /></button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <span>{reward?.pointsRequired || 10} баллов = оценка 5</span>
-                    <button onClick={() => setEditing(true)} className="p-2 hover:bg-gray-100 rounded"><Settings className="w-5 h-5" /></button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <RewardsEditor rewards={fipiRewards} onSave={handleSaveReward} />
       )}
 
       {activeTab === 'students' && (
@@ -249,6 +224,50 @@ export const FipiTrainer: React.FC = () => {
       )}
 
       {showTaskModal && <TaskModal task={editingTask} onSave={handleSaveTask} onClose={() => { setShowTaskModal(false); setEditingTask(null); }} />}
+    </div>
+  );
+};
+
+// Компонент редактирования поощрений (отдельный, чтобы соблюсти правила хуков)
+const RewardsEditor: React.FC<{ rewards: FipiReward[]; onSave: (r: FipiReward) => void }> = ({ rewards, onSave }) => {
+  const [editingSubject, setEditingSubject] = useState<string | null>(null);
+  const [editPoints, setEditPoints] = useState(10);
+
+  const handleStartEdit = (subject: string, currentPoints: number) => {
+    setEditingSubject(subject);
+    setEditPoints(currentPoints);
+  };
+
+  const handleSave = (subject: string) => {
+    const reward = rewards.find(r => r.subject === subject);
+    onSave({ id: reward?.id || '', subject, pointsRequired: editPoints, grade: 5 });
+    setEditingSubject(null);
+  };
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      {SUBJECTS.map(subject => {
+        const reward = rewards.find(r => r.subject === subject);
+        const points = reward?.pointsRequired || 10;
+        return (
+          <div key={subject} className="bg-white/80 rounded-2xl border p-6 shadow-lg">
+            <h3 className="font-bold mb-4">{subject}</h3>
+            {editingSubject === subject ? (
+              <div className="flex gap-2">
+                <input type="number" value={editPoints} onChange={(e) => setEditPoints(parseInt(e.target.value) || 10)}
+                  className="flex-1 px-3 py-2 border rounded" />
+                <button onClick={() => handleSave(subject)} className="px-4 py-2 bg-green-600 text-white rounded"><Save className="w-4 h-4" /></button>
+                <button onClick={() => setEditingSubject(null)} className="p-2 hover:bg-gray-100 rounded"><X className="w-5 h-5" /></button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <span>{points} баллов = оценка 5</span>
+                <button onClick={() => handleStartEdit(subject, points)} className="p-2 hover:bg-gray-100 rounded"><Settings className="w-5 h-5" /></button>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
