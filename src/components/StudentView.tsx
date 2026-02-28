@@ -6,11 +6,12 @@ import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import {
   BookOpen, Calendar, ClipboardList, BarChart3, LogOut, ChevronLeft, ChevronRight,
-  FileText, Clock, CheckCircle, AlertCircle, Play, ArrowLeft, ArrowRight, Download
+  FileText, Clock, CheckCircle, AlertCircle, Play, ArrowLeft, ArrowRight, Download,
+  UserCheck
 } from 'lucide-react';
 import { SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, DAY_NAMES, getWeekDates, formatDate, ATTENDANCE_TYPES, getTodayString, getTodayDate } from '../data';
 
-type Tab = 'home' | 'schedule' | 'grades' | 'diary' | 'statistics';
+type Tab = 'home' | 'schedule' | 'grades' | 'diary' | 'attendance' | 'statistics';
 
 // ==================== GRADE WITH TOOLTIP ====================
 interface GradeWithTooltipProps {
@@ -113,6 +114,7 @@ export const StudentView: React.FC = () => {
     { id: 'schedule', label: 'Расписание', icon: <Calendar className="w-5 h-5" /> },
     { id: 'grades', label: 'Оценки', icon: <ClipboardList className="w-5 h-5" /> },
     { id: 'diary', label: 'Дневник', icon: <FileText className="w-5 h-5" /> },
+    { id: 'attendance', label: 'Посещаемость', icon: <UserCheck className="w-5 h-5" /> },
     { id: 'statistics', label: 'Статистика', icon: <BarChart3 className="w-5 h-5" /> },
   ];
 
@@ -174,6 +176,7 @@ export const StudentView: React.FC = () => {
           />
         )}
         {activeTab === 'statistics' && <Statistics studentId={studentId} grades={grades} lessons={lessons} students={students} />}
+        {activeTab === 'attendance' && <Attendance studentId={studentId} attendance={attendance} />}
       </main>
     </div>
   );
@@ -1064,6 +1067,152 @@ const Diary: React.FC<DiaryProps> = ({
           );
         })}
       </div>
+    </div>
+  );
+};
+
+// ==================== ATTENDANCE ====================
+interface AttendanceProps {
+  studentId: string;
+  attendance: any[];
+}
+
+const Attendance: React.FC<AttendanceProps> = ({ studentId, attendance }) => {
+  const myAttendance = useMemo(() => {
+    if (!attendance || !Array.isArray(attendance)) return [];
+    return attendance.filter((a: any) => a.studentId === studentId);
+  }, [attendance, studentId]);
+
+  // Group by date
+  const attendanceByDate = useMemo(() => {
+    const grouped: Record<string, any[]> = {};
+    myAttendance.forEach((a: any) => {
+      if (!grouped[a.date]) grouped[a.date] = [];
+      grouped[a.date].push(a);
+    });
+    return grouped;
+  }, [myAttendance]);
+
+  const sortedDates = useMemo(() => {
+    return Object.keys(attendanceByDate).sort((a, b) => b.localeCompare(a));
+  }, [attendanceByDate]);
+
+  // Group by month
+  const monthGroups = useMemo(() => {
+    const groups: { month: string; monthName: string; dates: string[] }[] = [];
+    let currentMonth = '';
+    sortedDates.forEach(d => {
+      const m = MONTH_NAMES[parseInt(d.split('-')[1]) - 1];
+      if (m !== currentMonth) { currentMonth = m; groups.push({ month: m, monthName: m, dates: [d] }); }
+      else { groups[groups.length - 1].dates.push(d); }
+    });
+    return groups;
+  }, [sortedDates]);
+
+  // Statistics
+  const stats = useMemo(() => {
+    const counts: Record<string, number> = { Н: 0, УП: 0, Б: 0, ОП: 0 };
+    myAttendance.forEach((a: any) => {
+      if (counts[a.type] !== undefined) counts[a.type]++;
+    });
+    return counts;
+  }, [myAttendance]);
+
+  const totalAbsences = stats.Н + stats.УП + stats.Б;
+
+  return (
+    <div className="animate-fadeIn space-y-6">
+      <h2 className="text-2xl font-bold text-gray-900">Посещаемость</h2>
+
+      {/* Stats cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="glass rounded-2xl p-5 text-center">
+          <div className="text-3xl font-bold text-gray-900">{myAttendance.length}</div>
+          <div className="text-sm text-gray-500 mt-1">Всего отметок</div>
+        </div>
+        <div className="glass rounded-2xl p-5 text-center">
+          <div className="text-3xl font-bold text-red-600">{stats.Н}</div>
+          <div className="text-sm text-gray-500 mt-1">Неуважительная</div>
+        </div>
+        <div className="glass rounded-2xl p-5 text-center">
+          <div className="text-3xl font-bold text-blue-600">{stats.УП}</div>
+          <div className="text-sm text-gray-500 mt-1">Уважительная</div>
+        </div>
+        <div className="glass rounded-2xl p-5 text-center">
+          <div className="text-3xl font-bold text-amber-600">{stats.Б}</div>
+          <div className="text-sm text-gray-500 mt-1">Болел</div>
+        </div>
+        <div className="glass rounded-2xl p-5 text-center">
+          <div className="text-3xl font-bold text-orange-600">{stats.ОП}</div>
+          <div className="text-sm text-gray-500 mt-1">Опоздал</div>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap items-center gap-4 p-4 bg-gray-50 rounded-2xl">
+        <span className="text-sm font-medium text-gray-600">Легенда:</span>
+        {ATTENDANCE_TYPES.map((type: any) => (
+          <div key={type.value} className="flex items-center gap-2">
+            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold ${type.bgColor} ${type.color}`}>
+              {type.short}
+            </span>
+            <span className="text-sm text-gray-600">{type.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Attendance list */}
+      {sortedDates.length > 0 ? (
+        <div className="space-y-6">
+          {monthGroups.map((mg) => (
+            <div key={mg.monthName} className="glass rounded-2xl overflow-hidden shadow-soft">
+              <div className="px-6 py-4 bg-gradient-to-r from-primary-50 to-primary-100/50 border-b border-primary-100">
+                <h3 className="font-bold text-gray-900">{mg.monthName}</h3>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {mg.dates.map(date => {
+                  const dayAttendance = attendanceByDate[date] || [];
+                  const dayOfWeek = new Date(date + 'T00:00:00').getDay();
+                  const dayName = DAY_NAMES[dayOfWeek === 0 ? 6 : dayOfWeek - 1];
+                  const dayNum = parseInt(date.split('-')[2]);
+                  const monthNum = parseInt(date.split('-')[1]);
+
+                  return (
+                    <div key={date} className="p-4 hover:bg-gray-50/50 transition-colors">
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-gray-100 flex flex-col items-center justify-center">
+                          <span className="text-lg font-bold text-gray-900">{dayNum}</span>
+                          <span className="text-xs text-gray-500">{MONTH_NAMES[monthNum - 1]?.slice(0, 3)}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-gray-900 mb-1">{dayName}</div>
+                          <div className="flex flex-wrap gap-2">
+                            {dayAttendance.map((att: any, idx: number) => {
+                              const attType = ATTENDANCE_TYPES.find((t: any) => t.value === att.type);
+                              return (
+                                <div key={idx} className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${attType?.bgColor}`}>
+                                  <span className={`text-sm font-bold ${attType?.color}`}>{att.type}</span>
+                                  <span className="text-sm text-gray-700">{att.subject}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-16 glass rounded-2xl">
+          <UserCheck className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+          <p className="text-lg text-gray-600">Нет записей о посещаемости</p>
+          <p className="text-sm text-gray-500 mt-1">Все ваши уроки отмечены как посещённые</p>
+        </div>
+      )}
     </div>
   );
 };
