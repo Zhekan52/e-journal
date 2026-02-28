@@ -711,11 +711,11 @@ const GradePickerPortal: React.FC<{
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="За что оценка..."
-                className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="w-full px-2 py-1.5 pr-7 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
               <button
                 onClick={() => { setShowReasonInput(false); setReason(''); }}
-                className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -1216,7 +1216,7 @@ const Journal: React.FC = () => {
                 <input type="text" value={entry?.homework || ''} onChange={e => {
                   const ent = getOrCreateDiaryEntry(lessonPageDate, lessonPageLessonNum);
                   if (ent) setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, homework: e.target.value } : de));
-                }} className="w-full px-4 py-3 pr-12 bg-white border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all placeholder-gray-400" placeholder="ДЗ..." />
+                }} className="w-full px-4 py-3 pr-20 bg-white border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all placeholder-gray-400" placeholder="ДЗ..." />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                   {entry?.attachment && (
                     <>
@@ -1956,7 +1956,7 @@ const Journal: React.FC = () => {
                           if (ent) {
                             setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, homework: e.target.value } : de));
                           }
-                        }} placeholder="ДЗ..." className="w-full px-2 py-1.5 pr-8 text-xs border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500" />
+                        }} placeholder="ДЗ..." className="w-full px-2 py-1.5 pr-12 text-xs border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500" />
                         <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
                           {entry?.attachment && (
                             <>
