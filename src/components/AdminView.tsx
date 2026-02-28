@@ -1251,6 +1251,8 @@ const Reports: React.FC = () => {
 
   // Экспорт в Excel
   const exportToExcel = () => {
+    if (!students || !Array.isArray(students) || !subjects || !Array.isArray(subjects)) return;
+    
     // Создаем CSV данные
     let csvContent = '\uFEFF'; // BOM for UTF-8
     
