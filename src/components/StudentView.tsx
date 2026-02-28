@@ -922,14 +922,14 @@ const Diary: React.FC<DiaryProps> = ({
                   <span className="text-sm font-semibold text-primary-700">{date.getDate()} {MONTH_NAMES_GEN[date.getMonth()]}</span>
                 </div>
               </div>
-              <table className="w-full text-sm">
+              <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="text-xs text-gray-500 border-b border-gray-100">
-                    <th className="px-5 py-3 text-left w-10">№</th>
-                    <th className="px-5 py-3 text-left">Предмет</th>
-                    <th className="px-5 py-3 text-left">Тема</th>
-                    <th className="px-5 py-3 text-left">Домашнее задание</th>
-                    <th className="px-5 py-3 text-center w-24">Оценка</th>
+                  <tr className="text-xs text-gray-500 bg-gray-50 border-b-2 border-gray-200">
+                    <th className="px-4 py-3 text-left w-12 font-semibold border-r border-gray-200">№</th>
+                    <th className="px-4 py-3 text-left font-semibold border-r border-gray-200 w-36">Предмет</th>
+                    <th className="px-4 py-3 text-left font-semibold border-r border-gray-200">Тема</th>
+                    <th className="px-4 py-3 text-left font-semibold border-r border-gray-200">Домашнее задание</th>
+                    <th className="px-4 py-3 text-center font-semibold w-24">Оценка</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -955,11 +955,11 @@ const Diary: React.FC<DiaryProps> = ({
                     const isExempt = assignment?.assigned === false;
 
                     return (
-                      <tr key={lesson.id} className="border-b border-gray-50 last:border-b-0 hover:bg-white/50 transition-colors">
-                        <td className="px-5 py-3 text-gray-500 font-bold">{lesson.lessonNumber}</td>
-                        <td className="px-5 py-3 font-bold text-gray-900">{lesson.subject}</td>
-                        <td className="px-5 py-3 text-gray-600">{entry?.topic || '—'}</td>
-                        <td className="px-5 py-3">
+                      <tr key={lesson.id} className="border-b border-gray-200 hover:bg-gray-50/80 transition-colors">
+                        <td className="px-4 py-3 text-gray-500 font-bold border-r border-gray-200">{lesson.lessonNumber}</td>
+                        <td className="px-4 py-3 font-bold text-gray-900 border-r border-gray-200">{lesson.subject}</td>
+                        <td className="px-4 py-3 text-gray-600 border-r border-gray-200">{entry?.topic || '—'}</td>
+                        <td className="px-4 py-3 border-r border-gray-200">
                           {entry?.homework && (
                             <p className="text-gray-600 mb-2">{entry.homework}</p>
                           )}
@@ -1027,7 +1027,7 @@ const Diary: React.FC<DiaryProps> = ({
                           )}
                           {!entry?.homework && !testObj && <span className="text-gray-400">—</span>}
                         </td>
-                        <td className="px-5 py-3 text-center overflow-visible">
+                        <td className="px-4 py-3 text-center overflow-visible">
                           {(() => {
                             // Ищем отметку посещаемости для этого урока
                             const att = attendance && Array.isArray(attendance) 
