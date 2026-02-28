@@ -5,11 +5,67 @@ import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import {
   BookOpen, Calendar, ClipboardList, BarChart3, LogOut, ChevronLeft, ChevronRight,
-  FileText, Clock, CheckCircle, AlertCircle, Play, ArrowLeft, ArrowRight, Download
+  FileText, Clock, CheckCircle, AlertCircle, Play, ArrowLeft, ArrowRight, Download, Info
 } from 'lucide-react';
 import { SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, DAY_NAMES, getWeekDates, formatDate, ATTENDANCE_TYPES, getTodayString, getTodayDate } from '../data';
 
 type Tab = 'home' | 'schedule' | 'grades' | 'diary' | 'statistics';
+
+// ==================== GRADE WITH TOOLTIP ====================
+interface GradeWithTooltipProps {
+  value: number;
+  excludeFromAverage?: boolean;
+  reason?: string;
+  size?: 'sm' | 'md';
+}
+
+const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromAverage, reason, size = 'md' }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  
+  const sizeClasses = size === 'sm' 
+    ? 'w-8 h-8 text-xs' 
+    : 'w-9 h-9 text-sm';
+    
+  const colorClass = excludeFromAverage 
+    ? 'bg-gray-200 text-gray-500 cursor-help' 
+    : value === 5 
+      ? 'bg-success-100 text-success-700 cursor-help' 
+      : value === 4 
+        ? 'bg-primary-100 text-primary-700 cursor-help' 
+        : value === 3 
+          ? 'bg-warning-100 text-warning-700 cursor-help' 
+          : 'bg-danger-100 text-danger-700 cursor-help';
+
+  const tooltipText = excludeFromAverage 
+    ? 'Не учитывается в среднем балле' 
+    : reason 
+      ? reason 
+      : '';
+
+  const showInfoIcon = excludeFromAverage || reason;
+
+  return (
+    <div className="relative inline-flex">
+      <span 
+        className={`inline-flex items-center justify-center rounded-xl font-bold ${sizeClasses} ${colorClass}`}
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        onClick={() => setShowTooltip(!showTooltip)}
+      >
+        {value}
+        {showInfoIcon && (
+          <Info className={`ml-0.5 ${size === 'sm' ? 'w-2.5 h-2.5' : 'w-3 h-3'} opacity-60`} />
+        )}
+      </span>
+      {showTooltip && tooltipText && (
+        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap shadow-lg">
+          {tooltipText}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const StudentView: React.FC = () => {
   const { user, logout } = useAuth();
@@ -146,14 +202,14 @@ const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons
 // ==================== GRADES ====================
 const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }> = ({ myGrades, attendance, studentId }) => {
   const gradesBySubject = useMemo(() => {
-    const map: Record<string, { dates: Record<string, { value: number; excludeFromAverage?: boolean }[]>; allGrades: number[]; hasAttendance: Set<string> }> = {};
+    const map: Record<string, { dates: Record<string, { value: number; excludeFromAverage?: boolean; reason?: string }[]>; allGrades: number[]; hasAttendance: Set<string> }> = {};
     SUBJECTS.forEach(s => { map[s] = { dates: {}, allGrades: [], hasAttendance: new Set() }; });
     
-    // Добавляем оценки (включая информацию о excludeFromAverage)
+    // Добавляем оценки (включая информацию о excludeFromAverage и reason)
     myGrades.forEach(g => {
       if (!map[g.subject]) map[g.subject] = { dates: {}, allGrades: [], hasAttendance: new Set() };
       if (!map[g.subject].dates[g.date]) map[g.subject].dates[g.date] = [];
-      map[g.subject].dates[g.date].push({ value: g.value, excludeFromAverage: g.excludeFromAverage });
+      map[g.subject].dates[g.date].push({ value: g.value, excludeFromAverage: g.excludeFromAverage, reason: g.reason });
       // Включаем все оценки в общий список для отображения
       map[g.subject].allGrades.push(g.value);
     });
@@ -262,7 +318,7 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
                         <td key={d} className="px-1.5 py-2 text-center border-r border-gray-200">
                           <div className="flex flex-wrap gap-1 justify-center">
                             {vals.map((gradeObj: any, i: number) => (
-                              <span key={i} className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold ${gradeColor(gradeObj.value, gradeObj.excludeFromAverage)}`} title={gradeObj.excludeFromAverage ? 'Не учитывается в среднем балле' : ''}>{gradeObj.value}</span>
+                              <GradeWithTooltip key={i} value={gradeObj.value} excludeFromAverage={gradeObj.excludeFromAverage} reason={gradeObj.reason} size="sm" />
                             ))}
                           </div>
                         </td>
@@ -960,13 +1016,7 @@ const Diary: React.FC<DiaryProps> = ({
                             return (
                               <div className="flex flex-wrap gap-1.5 justify-center">
                                 {dayGrades.map((g: any, i: number) => (
-                                  <span key={i} className={`inline-flex items-center justify-center w-9 h-9 rounded-xl text-sm font-bold ${
-                                    g.excludeFromAverage ? 'bg-gray-200 text-gray-500' :
-                                    g.value === 5 ? 'bg-success-100 text-success-700' :
-                                    g.value === 4 ? 'bg-primary-100 text-primary-700' :
-                                    g.value === 3 ? 'bg-warning-100 text-warning-700' :
-                                    'bg-danger-100 text-danger-700'
-                                  }`} title={g.excludeFromAverage ? 'Не учитывается в среднем балле' : ''}>{g.value}</span>
+                                  <GradeWithTooltip key={i} value={g.value} excludeFromAverage={g.excludeFromAverage} reason={g.reason} size="md" />
                                 ))}
                                 {dayGrades.length === 0 && <span className="text-gray-400">—</span>}
                               </div>

@@ -26,6 +26,7 @@ export interface Grade {
   lessonNumber?: number;
   columnId?: string;
   excludeFromAverage?: boolean; // Если true — не учитывается при расчёте среднего балла
+  reason?: string; // Основание для оценки (за что поставлена)
 }
 
 export interface DiaryEntryAttachment {
