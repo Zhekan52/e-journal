@@ -531,7 +531,7 @@ const AttendanceManager: React.FC = () => {
 
     return createPortal(
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={() => setShowDayModal(false)}>
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
           <div className="px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-between flex-shrink-0">
             <div>
               <h3 className="text-xl font-semibold">{formatDate(selectedDate)}</h3>
@@ -1803,8 +1803,8 @@ const Journal: React.FC = () => {
                           const at = att ? ATTENDANCE_TYPES.find(at => at.value === att.type) : null;
                           // Если есть посещаемость — показываем её на всю клетку, иначе оценку
                           const showAttendance = !!att;
-                          // Блокируем кнопку если есть посещаемость (нельзя ставить оценку)
-                          const isBlocked = showAttendance;
+                          // Блокируем кнопку если есть посещаемость КРОМЕ ОП (опоздание не блокирует оценку)
+                          const isBlocked = showAttendance && att?.type !== 'ОП';
                           return (
                             <button
                               onClick={e => {
@@ -1836,7 +1836,7 @@ const Journal: React.FC = () => {
                         <td className="px-1 py-2 text-center border-r border-gray-300">
                           {(() => {
                             const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
-                            const isBlocked = !!att;
+                            const isBlocked = !!att && att.type !== 'ОП';
                             return (
                               <button 
                                 onClick={e => {
@@ -1868,7 +1868,7 @@ const Journal: React.FC = () => {
                       {cols.filter(c => c.type !== 'homework').map(c => {
                         const g = getGrade(s.id, lessonPageDate, c.id, lessonPageLessonNum);
                         const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
-                        const isBlocked = !!att;
+                        const isBlocked = !!att && att.type !== 'ОП';
                         return (
                           <td key={c.id} className="px-1 py-2 text-center border-r border-gray-300">
                             <button
@@ -2131,8 +2131,8 @@ const Journal: React.FC = () => {
                         const at = att ? ATTENDANCE_TYPES.find(a => a.value === att.type) : null;
                         // Если есть посещаемость — показываем её на всю клетку, иначе оценку
                         const showAttendance = !!att;
-                        // Блокируем кнопку если есть посещаемость (нельзя ставить оценку)
-                        const isBlocked = showAttendance;
+                        // Блокируем кнопку если есть посещаемость КРОМЕ ОП (опоздание не блокирует оценку)
+                        const isBlocked = showAttendance && att?.type !== 'ОП';
                         const isToday = highlightToday && sl.date === today;
                         return (
                           <React.Fragment key={sl.key}>
