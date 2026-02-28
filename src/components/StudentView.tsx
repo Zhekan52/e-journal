@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom';
 import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
+import { FipiWidget } from './FipiWidget';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import {
@@ -235,6 +236,10 @@ const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons
         <h1 className="text-2xl font-semibold mb-2">Добро пожаловать!</h1>
         <p className="text-blue-100">Сегодня {getTodayDate().getDate()} {MONTH_NAMES_GEN[getTodayDate().getMonth()]}</p>
       </div>
+
+      {/* FIPI Widget */}
+      <FipiWidget />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
           <div className="text-sm font-medium text-gray-500 mb-2">Средний балл</div>

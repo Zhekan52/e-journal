@@ -4,6 +4,7 @@ import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
 import { QuestionEditor } from './QuestionEditor';
 import { Reports } from './Reports';
+import { FipiTrainer } from './FipiTrainer';
 import { uploadHomeworkFile } from '../firebase';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -13,7 +14,7 @@ import {
   AlertTriangle, TrendingUp, TrendingDown, FileText,
   BarChart3, Award, ArrowLeft, RefreshCw, ChevronRight, Tag, Info,
   Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft,
-  CalendarDays, FileBarChart
+  CalendarDays, FileBarChart, Brain
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
@@ -21,7 +22,7 @@ import {
   formatDate, getTodayString, getTodayDate
 } from '../data';
 
-type Tab = 'dashboard' | 'schedule' | 'journal' | 'attendance' | 'tests' | 'students' | 'lessonTypes' | 'reports';
+type Tab = 'dashboard' | 'schedule' | 'journal' | 'attendance' | 'tests' | 'students' | 'lessonTypes' | 'reports' | 'fipi';
 
 export const AdminView: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
@@ -40,6 +41,7 @@ export const AdminView: React.FC = () => {
     { id: 'students', label: 'Ученики', icon: <Users className="w-5 h-5" /> },
     { id: 'lessonTypes', label: 'Типы уроков', icon: <Tag className="w-5 h-5" /> },
     { id: 'reports', label: 'Отчёты', icon: <FileBarChart className="w-5 h-5" /> },
+    { id: 'fipi', label: 'ФИПИ тренажёр', icon: <Brain className="w-5 h-5" /> },
   ];
 
   const handleOpenLessonPage = (subject: string, date: string, lessonNumber: number) => {
@@ -151,6 +153,7 @@ export const AdminView: React.FC = () => {
         {activeTab === 'students' && <StudentsManager />}
         {activeTab === 'lessonTypes' && <LessonTypesManager />}
         {activeTab === 'reports' && <Reports />}
+        {activeTab === 'fipi' && <FipiTrainer />}
         </div>
       </main>
         
