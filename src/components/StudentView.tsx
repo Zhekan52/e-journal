@@ -1008,9 +1008,9 @@ const Diary: React.FC<DiaryProps> = ({
                             <a
                               href={entry.attachment.url}
                               download={entry.attachment.name}
-                              className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg transition-colors"
+                              className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg transition-colors min-w-0 overflow-hidden"
                             >
-                              <Download className="w-4 h-4" />
+                              <Download className="w-4 h-4 flex-shrink-0" />
                               <span className="truncate">{entry.attachment.name}</span>
                             </a>
                           )}
