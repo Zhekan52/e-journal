@@ -637,6 +637,13 @@ const AttendanceManager: React.FC = () => {
     );
   };
 
+  // Helper to get day of week name
+  const getDayName = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    const days = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+    return days[d.getDay()];
+  };
+
   return (
     <div className="animate-fadeIn space-y-6">
       <h2 className="text-2xl font-semibold text-gray-900">Посещаемость</h2>
@@ -647,36 +654,75 @@ const AttendanceManager: React.FC = () => {
         <button onClick={nextMonth} className="p-2 rounded-xl hover:bg-gray-200"><ChevronRight className="w-5 h-5" /></button>
       </div>
 
-      {/* Calendar with clear borders */}
+      {/* Calendar - more visual */}
       <div className="bg-white rounded-2xl border-2 border-gray-300 shadow-lg overflow-hidden">
+        {/* Header with day names */}
         <div className="grid grid-cols-7 bg-gray-100 border-b-2 border-gray-300">
-          {DAY_NAMES_SHORT.map(day => (
-            <div key={day} className="px-2 py-3 text-center text-sm font-bold text-gray-700 border-r border-gray-200 last:border-r-0">{day}</div>
+          {DAY_NAMES_SHORT.map((day, idx) => (
+            <div key={day} className={`px-2 py-3 text-center text-sm font-bold ${idx === 0 || idx === 6 ? 'text-red-500' : 'text-gray-700'}`}>
+              {day}
+            </div>
           ))}
         </div>
+        
+        {/* Calendar grid */}
         <div className="grid grid-cols-7">
           {calendarDays.map((day, idx) => {
-            if (day === null) return <div key={idx} className="h-28 bg-gray-50 border-r border-b border-gray-200" />;
+            if (day === null) return <div key={idx} className="h-24 bg-gray-50 border-r border-b border-gray-200" />;
+            
             const dateStr = `${selectedMonth}-${String(day).padStart(2, '0')}`;
             const dateInfo = monthDates.find(d => d.date === dateStr);
             const hasLessons = !!dateInfo;
             const summary = getDateSummary(dateStr);
             const isToday = dateStr === getTodayString();
+            const dayOfWeek = new Date(dateStr + 'T00:00:00').getDay();
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            
+            // Calculate background color based on attendance summary
+            let bgClass = '';
+            if (summary) {
+              const total = Object.values(summary).reduce((a, b) => a + b, 0) as number;
+              const absent = (summary['Н'] || 0);
+              const excused = (summary['УП'] || 0) + (summary['Б'] || 0);
+              const late = (summary['ОП'] || 0);
+              
+              if (absent > 0) bgClass = 'bg-red-50';
+              else if (excused > 0) bgClass = 'bg-blue-50';
+              else if (late > 0) bgClass = 'bg-orange-50';
+              else bgClass = 'bg-green-50';
+            }
+            
             return (
-              <div key={idx} onClick={() => hasLessons && openDayModal(dateStr)} className={`h-28 p-2 border-r border-b border-gray-200 transition-colors ${hasLessons ? 'hover:bg-blue-50 cursor-pointer' : 'bg-gray-50'}`}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className={`text-sm font-bold ${isToday ? 'w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center' : hasLessons ? 'text-gray-900' : 'text-gray-400'}`}>{day}</span>
-                  {hasLessons && <span className="text-xs text-gray-500 font-medium">{dateInfo?.lessons.length}ур.</span>}
+              <div 
+                key={idx} 
+                onClick={() => hasLessons && openDayModal(dateStr)} 
+                className={`h-24 p-1.5 border-r border-b border-gray-200 transition-all cursor-pointer ${
+                  hasLessons ? 'hover:ring-2 hover:ring-blue-400 hover:z-10' : 'bg-gray-50'
+                } ${bgClass} ${isWeekend ? 'bg-gray-50' : ''}`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`text-sm font-bold ${isToday ? 'w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs' : isWeekend ? 'text-gray-400' : 'text-gray-700'}`}>
+                    {day}
+                  </span>
+                  {isToday && <span className="text-[10px] text-blue-600 font-medium">Сегодня</span>}
                 </div>
+
                 {hasLessons && (
-                  <div className="flex flex-wrap gap-1">
-                    {dateInfo?.lessons.slice(0, 4).map((ln, i) => <span key={i} className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-medium">{ln.lessonNumber}</span>)}
-                    {dateInfo && dateInfo.lessons.length > 4 && <span className="text-[10px] text-gray-500">+{dateInfo.lessons.length - 4}</span>}
-                  </div>
-                )}
-                {summary && (
-                  <div className="flex flex-wrap gap-0.5 mt-1">
-                    {Object.entries(summary).map(([type, count]) => { const t = ATTENDANCE_TYPES.find((at: any) => at.value === type); if (!t) return null; return <span key={type} className={`text-[10px] px-1 rounded font-bold ${t.bgColor} ${t.color}`}>{count}</span>; })}
+                  <div className="mt-1">
+                    <div className="text-[10px] text-gray-500 font-medium">{dateInfo?.lessons.length} урок.</div>
+                    {summary && (
+                      <div className="flex items-center gap-0.5 mt-0.5 flex-wrap">
+                        {Object.entries(summary).map(([type, count]) => {
+                          const t = ATTENDANCE_TYPES.find((at: any) => at.value === type);
+                          if (!t) return null;
+                          return (
+                            <span key={type} className={`text-[9px] px-1 rounded font-bold ${t.bgColor} ${t.color}`}>
+                              {count}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -685,6 +731,7 @@ const AttendanceManager: React.FC = () => {
         </div>
       </div>
 
+      {/* Legend */}
       <div className="flex flex-wrap items-center gap-4 p-4 bg-gray-100 rounded-2xl border-2 border-gray-200">
         <span className="text-sm font-bold text-gray-700">Легенда:</span>
         {ATTENDANCE_TYPES.map((type: any) => (
@@ -693,6 +740,18 @@ const AttendanceManager: React.FC = () => {
             <span className="text-sm text-gray-700">{type.label}</span>
           </div>
         ))}
+        <div className="flex items-center gap-2 ml-4">
+          <div className="w-4 h-4 rounded bg-red-50 border border-red-200"></div>
+          <span className="text-xs text-gray-600">Есть неуважительные</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-blue-50 border border-blue-200"></div>
+          <span className="text-xs text-gray-600">Есть уважительные</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-green-50 border border-green-200"></div>
+          <span className="text-xs text-gray-600">Все посещены</span>
+        </div>
       </div>
 
       {showDayModal && <DayModal />}
