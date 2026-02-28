@@ -18,10 +18,11 @@ interface GradeWithTooltipProps {
   value: number;
   excludeFromAverage?: boolean;
   reason?: string;
+  testTitle?: string;
   size?: 'sm' | 'md';
 }
 
-const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromAverage, reason, size = 'md' }) => {
+const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromAverage, reason, testTitle, size = 'md' }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
@@ -40,13 +41,15 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromA
           ? 'bg-warning-100 text-warning-700 cursor-help' 
           : 'bg-danger-100 text-danger-700 cursor-help';
 
-  const tooltipText = excludeFromAverage 
-    ? 'Не учитывается в среднем балле' 
-    : reason 
-      ? reason 
-      : '';
+  const tooltipText = testTitle 
+    ? `Тест: ${testTitle}` 
+    : excludeFromAverage 
+      ? 'Не учитывается в среднем балле' 
+      : reason 
+        ? reason 
+        : '';
 
-  const showIndicator = excludeFromAverage || reason;
+  const showIndicator = excludeFromAverage || reason || testTitle;
 
   const handleMouseEnter = () => {
     if (triggerRef.current) {
@@ -1064,9 +1067,26 @@ const Diary: React.FC<DiaryProps> = ({
                             // Иначе показываем оценки
                             return (
                               <div className="flex flex-wrap gap-1.5 justify-center overflow-visible">
-                                {dayGrades.map((g: any, i: number) => (
-                                  <GradeWithTooltip key={i} value={g.value} excludeFromAverage={g.excludeFromAverage} reason={g.reason} size="md" />
-                                ))}
+                                {dayGrades.map((g: any, i: number) => {
+                                  // Проверяем, является ли оценка оценкой за тест
+                                  let testTitle: string | undefined;
+                                  if (g.columnId) {
+                                    const col = journalColumns.find((c: any) => c.id === g.columnId && c.type === 'test');
+                                    if (col) {
+                                      // Ищем diaryEntry для этой даты и предмета
+                                      const entry = diaryEntries.find((e: any) => e.date === dateStr && e.subject === lesson.subject && e.lessonNumber === lesson.lessonNumber);
+                                      if (entry?.testId) {
+                                        const test = tests.find((t: any) => t.id === entry.testId);
+                                        if (test) {
+                                          testTitle = test.title;
+                                        }
+                                      }
+                                    }
+                                  }
+                                  return (
+                                    <GradeWithTooltip key={i} value={g.value} excludeFromAverage={g.excludeFromAverage} reason={g.reason} testTitle={testTitle} size="md" />
+                                  );
+                                })}
                                 {dayGrades.length === 0 && <span className="text-gray-400">—</span>}
                               </div>
                             );
