@@ -939,7 +939,7 @@ const Diary: React.FC<DiaryProps> = ({
                   {dayLessons.map((lesson: any) => {
                     // ONLY exact match — no fallback to prevent sharing between lessons
                     const entry = diaryEntries.find((e: any) => e.date === dateStr && e.subject === lesson.subject && e.lessonNumber === lesson.lessonNumber);
-                    const dayGrades = myGrades.filter(g => g.date === dateStr && g.subject === lesson.subject);
+                    const dayGrades = myGrades.filter(g => g.date === dateStr && g.subject === lesson.subject && g.lessonNumber === lesson.lessonNumber);
                     const testObj = entry?.testId ? tests.find((t: any) => t.id === entry.testId) : null;
 
                     const attempt = testObj ? testAttempts.find((a: any) => a.studentId === studentId && a.testId === testObj.id && a.date === dateStr) : null;
@@ -1047,9 +1047,10 @@ const Diary: React.FC<DiaryProps> = ({
                               );
                             }
                             
-                            // Иначе показываем оценки
+                            // Иначе показываем оценки (горизонтально, если больше 2)
+                            const hasManyGrades = dayGrades.length > 2;
                             return (
-                              <div className="flex flex-wrap gap-1.5 justify-center overflow-visible">
+                              <div className={`flex ${hasManyGrades ? 'flex-nowrap' : 'flex-wrap'} gap-1.5 justify-center overflow-x-auto`}>
                                 {dayGrades.map((g: any, i: number) => (
                                   <GradeWithTooltip key={i} value={g.value} excludeFromAverage={g.excludeFromAverage} reason={g.reason} size="md" />
                                 ))}
