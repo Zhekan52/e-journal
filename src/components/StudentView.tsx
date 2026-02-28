@@ -5,7 +5,7 @@ import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import {
   BookOpen, Calendar, ClipboardList, BarChart3, LogOut, ChevronLeft, ChevronRight,
-  FileText, Clock, CheckCircle, AlertCircle, Play, ArrowLeft, ArrowRight, Download, Info
+  FileText, Clock, CheckCircle, AlertCircle, Play, ArrowLeft, ArrowRight, Download
 } from 'lucide-react';
 import { SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, DAY_NAMES, getWeekDates, formatDate, ATTENDANCE_TYPES, getTodayString, getTodayDate } from '../data';
 
@@ -42,7 +42,7 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromA
       ? reason 
       : '';
 
-  const showInfoIcon = excludeFromAverage || reason;
+  const showIndicator = excludeFromAverage || reason;
 
   return (
     <div className="relative inline-flex">
@@ -53,10 +53,10 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromA
         onClick={() => setShowTooltip(!showTooltip)}
       >
         {value}
-        {showInfoIcon && (
-          <Info className={`ml-0.5 ${size === 'sm' ? 'w-2.5 h-2.5' : 'w-3 h-3'} opacity-60`} />
+        {showIndicator && (
+          <span className={`ml-0.5 ${size === 'sm' ? 'text-[8px]' : 'text-[10px]'} leading-none opacity-60`}>•</span>
         )}
-те      </span>
+      </span>
       {showTooltip && tooltipText && (
         <div className="absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap shadow-xl pointer-events-none">
           {tooltipText}
@@ -315,8 +315,8 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
                       }
                       
                       return (
-                        <td key={d} className="px-1.5 py-2 text-center border-r border-gray-200">
-                          <div className="flex flex-wrap gap-1 justify-center">
+                        <td key={d} className="px-1.5 py-2 text-center border-r border-gray-200 overflow-visible">
+                          <div className="flex flex-wrap gap-1 justify-center overflow-visible">
                             {vals.map((gradeObj: any, i: number) => (
                               <GradeWithTooltip key={i} value={gradeObj.value} excludeFromAverage={gradeObj.excludeFromAverage} reason={gradeObj.reason} size="sm" />
                             ))}
