@@ -654,8 +654,15 @@ const GradePickerPortal: React.FC<{
     onSelect(v, excludeFromAverage, reason.trim() || undefined);
   };
 
+  // Сохранить только основание (для уже выставленной оценки)
+  const handleSaveReason = () => {
+    if (currentGrade !== undefined) {
+      onSelect(currentGrade, excludeFromAverage, reason.trim() || undefined);
+    }
+  };
+
   const widgetW = 240;
-  const widgetH = currentGrade ? 230 : 160;
+  const widgetH = currentGrade ? 260 : 160;
   let top = anchorRect.bottom + 4;
   let left = anchorRect.left + anchorRect.width / 2 - widgetW / 2;
   if (top + widgetH > window.innerHeight) top = anchorRect.top - widgetH - 4;
@@ -697,28 +704,37 @@ const GradePickerPortal: React.FC<{
       {/* Поле для ввода основания оценки */}
       <div className="mt-2">
         {showReasonInput ? (
-          <div className="relative">
-            <input
-              type="text"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="За что оценка..."
-              className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
-              autoFocus
-            />
-            <button
-              onClick={() => { setShowReasonInput(false); setReason(''); }}
-              className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-3 h-3" />
-            </button>
+          <div className="space-y-1.5">
+            <div className="relative">
+              <input
+                type="text"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="За что оценка..."
+                className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+              />
+              <button
+                onClick={() => { setShowReasonInput(false); setReason(''); }}
+                className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+            {currentGrade !== undefined && (
+              <button
+                onClick={handleSaveReason}
+                className="w-full py-1 text-xs bg-primary-100 text-primary-700 hover:bg-primary-200 rounded-lg transition-colors"
+              >
+                Сохранить основание
+              </button>
+            )}
           </div>
         ) : (
           <button
             onClick={() => setShowReasonInput(true)}
             className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary-600 transition-colors"
           >
-            <Info className="w-3 h-3" /> Добавить основание
+            <Info className="w-3 h-3" /> {currentGrade !== undefined ? 'Изменить основание' : 'Добавить основание'}
           </button>
         )}
       </div>

@@ -56,9 +56,9 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromA
         {showInfoIcon && (
           <Info className={`ml-0.5 ${size === 'sm' ? 'w-2.5 h-2.5' : 'w-3 h-3'} opacity-60`} />
         )}
-      </span>
+те      </span>
       {showTooltip && tooltipText && (
-        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap shadow-lg">
+        <div className="absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap shadow-xl pointer-events-none">
           {tooltipText}
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
         </div>
@@ -995,7 +995,7 @@ const Diary: React.FC<DiaryProps> = ({
                           )}
                           {!entry?.homework && !testObj && <span className="text-gray-400">—</span>}
                         </td>
-                        <td className="px-5 py-3 text-center">
+                        <td className="px-5 py-3 text-center overflow-visible">
                           {(() => {
                             // Ищем отметку посещаемости для этого урока
                             const att = attendance && Array.isArray(attendance) 
@@ -1014,7 +1014,7 @@ const Diary: React.FC<DiaryProps> = ({
                             
                             // Иначе показываем оценки
                             return (
-                              <div className="flex flex-wrap gap-1.5 justify-center">
+                              <div className="flex flex-wrap gap-1.5 justify-center overflow-visible">
                                 {dayGrades.map((g: any, i: number) => (
                                   <GradeWithTooltip key={i} value={g.value} excludeFromAverage={g.excludeFromAverage} reason={g.reason} size="md" />
                                 ))}
