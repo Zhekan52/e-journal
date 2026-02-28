@@ -11,7 +11,8 @@ import {
   Trash2, Edit2, Search, X, Save, ChevronDown, ChevronLeft, Eye, EyeOff,
   AlertTriangle, TrendingUp, TrendingDown, FileText,
   BarChart3, Award, ArrowLeft, RefreshCw, ChevronRight, Tag, Info,
-  Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft
+  Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft,
+  UserCheck
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
@@ -19,7 +20,7 @@ import {
   formatDate, getTodayString, getTodayDate
 } from '../data';
 
-type Tab = 'dashboard' | 'schedule' | 'journal' | 'tests' | 'students' | 'lessonTypes';
+type Tab = 'dashboard' | 'schedule' | 'journal' | 'tests' | 'students' | 'lessonTypes' | 'attendance';
 
 export const AdminView: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
@@ -35,6 +36,7 @@ export const AdminView: React.FC = () => {
     { id: 'journal', label: 'Журнал', icon: <ClipboardList className="w-5 h-5" /> },
     { id: 'tests', label: 'Тесты', icon: <FileText className="w-5 h-5" /> },
     { id: 'students', label: 'Ученики', icon: <Users className="w-5 h-5" /> },
+    { id: 'attendance', label: 'Посещаемость', icon: <UserCheck className="w-5 h-5" /> },
     { id: 'lessonTypes', label: 'Типы уроков', icon: <Tag className="w-5 h-5" /> },
   ];
 
@@ -144,6 +146,7 @@ export const AdminView: React.FC = () => {
         {activeTab === 'journal' && <Journal />}
         {activeTab === 'tests' && <TestsManager />}
         {activeTab === 'students' && <StudentsManager />}
+        {activeTab === 'attendance' && <AttendanceManager />}
         {activeTab === 'lessonTypes' && <LessonTypesManager />}
         </div>
       </main>
@@ -388,6 +391,376 @@ const LessonTypesManager: React.FC = () => {
           </div>
         </div>,
         document.body
+      )}
+    </div>
+  );
+};
+
+// ==================== ATTENDANCE MANAGER ====================
+const DAY_NAMES = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+
+const AttendanceManager: React.FC = () => {
+  const { students, attendance, setAttendance, lessons, subjects } = useData();
+  const [selectedSubject, setSelectedSubject] = useState<string>(SUBJECTS[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayString());
+  const [viewMode, setViewMode] = useState<'day' | 'period'>('day');
+  const [startDate, setStartDate] = useState<string>(getTodayString());
+  const [endDate, setEndDate] = useState<string>(getTodayString());
+
+  const sortedStudents = useMemo(() =>
+    [...students].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`)),
+    [students]
+  );
+
+  // Get unique dates with lessons for selected subject
+  const availableDates = useMemo(() => {
+    const dates = new Set<string>();
+    lessons.forEach(l => {
+      if (l.subject === selectedSubject) dates.add(l.date);
+    });
+    return Array.from(dates).sort().reverse();
+  }, [lessons, selectedSubject]);
+
+  // Get lessons for selected date and subject
+  const dayLessons = useMemo(() => {
+    return lessons
+      .filter(l => l.subject === selectedSubject && l.date === selectedDate)
+      .sort((a, b) => a.lessonNumber - b.lessonNumber);
+  }, [lessons, selectedSubject, selectedDate]);
+
+  // Get attendance for selected period
+  const periodAttendance = useMemo(() => {
+    return attendance.filter(a => 
+      a.subject === selectedSubject && 
+      a.date >= startDate && 
+      a.date <= endDate
+    );
+  }, [attendance, selectedSubject, startDate, endDate]);
+
+  const getAttendanceForStudent = (studentId: string, date: string) => {
+    return attendance.find(a => a.studentId === studentId && a.date === date && a.subject === selectedSubject);
+  };
+
+  const setAttendanceForStudent = (studentId: string, date: string, type: AttendanceRecord['type']) => {
+    setAttendance(prev => {
+      const existing = prev.find(a => a.studentId === studentId && a.date === date && a.subject === selectedSubject);
+      if (existing) {
+        return prev.map(a => a.id === existing.id ? { ...a, type } : a);
+      }
+      return [...prev, { id: `at${Date.now()}${Math.random().toString(36).slice(2, 6)}`, studentId, date, subject: selectedSubject, type }];
+    });
+  };
+
+  const deleteAttendanceForStudent = (studentId: string, date: string) => {
+    setAttendance(prev => prev.filter(a => !(a.studentId === studentId && a.date === date && a.subject === selectedSubject)));
+  };
+
+  // Set first available date if current not available
+  useEffect(() => {
+    if (availableDates.length > 0 && !availableDates.includes(selectedDate)) {
+      setSelectedDate(availableDates[0]);
+    }
+  }, [availableDates, selectedDate]);
+
+  const formatDate = (d: string) => {
+    const date = new Date(d + 'T00:00:00');
+    return `${date.getDate()} ${MONTH_NAMES_GEN[date.getMonth()]}`;
+  };
+
+  const getDayOfWeek = (d: string) => {
+    const date = new Date(d + 'T00:00:00');
+    return DAY_NAMES[date.getDay() === 0 ? 6 : date.getDay() - 1];
+  };
+
+  // Statistics
+  const stats = useMemo(() => {
+    const counts: Record<string, number> = { Н: 0, УП: 0, Б: 0, ОП: 0, ' ': 0 };
+    periodAttendance.forEach(a => {
+      counts[a.type] = (counts[a.type] || 0) + 1;
+    });
+    return counts;
+  }, [periodAttendance]);
+
+  const studentStats = useMemo(() => {
+    return sortedStudents.map(s => {
+      const sa = periodAttendance.filter(a => a.studentId === s.id);
+      const absent = sa.filter(a => a.type === 'Н').length;
+      const excused = sa.filter(a => a.type === 'УП' || a.type === 'Б').length;
+      const late = sa.filter(a => a.type === 'ОП').length;
+      return { student: s, absent, excused, late, total: sa.length };
+    }).filter(s => s.total > 0).sort((a, b) => b.absent - a.absent);
+  }, [sortedStudents, periodAttendance]);
+
+  return (
+    <div className="animate-fadeIn space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold text-gray-900">Посещаемость</h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode('day')}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+              viewMode === 'day' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            За день
+          </button>
+          <button
+            onClick={() => setViewMode('period')}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+              viewMode === 'period' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            За период
+          </button>
+        </div>
+      </div>
+
+      {/* Subject selector */}
+      <div className="flex flex-wrap gap-4 items-center">
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1">Предмет</label>
+          <select
+            value={selectedSubject}
+            onChange={(e) => setSelectedSubject(e.target.value)}
+            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {SUBJECTS.map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+
+        {viewMode === 'day' ? (
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Дата</label>
+            <select
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {availableDates.map(d => (
+                <option key={d} value={d}>{formatDate(d)} — {getDayOfWeek(d)}</option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">С</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">По</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap items-center gap-4 p-4 bg-gray-50 rounded-2xl">
+        <span className="text-sm font-medium text-gray-600">Легенда:</span>
+        {ATTENDANCE_TYPES.map((type: any) => (
+          <div key={type.value} className="flex items-center gap-2">
+            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold ${type.bgColor} ${type.color}`}>
+              {type.short}
+            </span>
+            <span className="text-sm text-gray-600">{type.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Day view - table */}
+      {viewMode === 'day' && (
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
+          <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+            <h3 className="font-semibold text-gray-900">{formatDate(selectedDate)} — {getDayOfWeek(selectedDate)}</h3>
+            <p className="text-sm text-gray-500">{selectedSubject} · {dayLessons.length} урок(ов)</p>
+          </div>
+          
+          {dayLessons.length === 0 ? (
+            <div className="text-center py-12">
+              <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-gray-500">Нет уроков за эту дату</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Ученик</th>
+                    {dayLessons.map(l => (
+                      <th key={l.lessonNumber} className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
+                        <div>Урок {l.lessonNumber}</div>
+                        <div className="text-xs font-normal text-gray-500">{l.startTime}</div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {sortedStudents.map(student => (
+                    <tr key={student.id} className="hover:bg-gray-50/50">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-900">{student.lastName} {student.firstName}</div>
+                      </td>
+                      {dayLessons.map(lesson => {
+                        const att = attendance.find(a => 
+                          a.studentId === student.id && 
+                          a.date === lesson.date && 
+                          a.subject === selectedSubject &&
+                          a.lessonNumber === lesson.lessonNumber
+                        );
+                        const attType = att ? ATTENDANCE_TYPES.find((t: any) => t.value === att.type) : null;
+                        
+                        return (
+                          <td key={lesson.lessonNumber} className="px-2 py-2 text-center">
+                            {attType ? (
+                              <button
+                                onClick={() => deleteAttendanceForStudent(student.id, lesson.date)}
+                                className={`w-10 h-10 rounded-lg text-sm font-bold ${attType.bgColor} ${attType.color} hover:opacity-80 transition-opacity`}
+                                title={`${attType.label} (нажмите для удаления)`}
+                              >
+                                {attType.short}
+                              </button>
+                            ) : (
+                              <div className="relative group">
+                                <button className="w-10 h-10 rounded-lg border-2 border-dashed border-gray-200 hover:border-gray-300 text-gray-300 hover:text-gray-400 transition-colors">
+                                  +
+                                </button>
+                                <div className="absolute z-10 top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 p-1 hidden group-hover:block min-w-[180px]">
+                                  <div className="grid grid-cols-2 gap-1">
+                                    {ATTENDANCE_TYPES.map((at: any) => (
+                                      <button
+                                        key={at.value}
+                                        onClick={() => setAttendanceForStudent(student.id, lesson.date, at.value)}
+                                        className={`px-2 py-1.5 rounded text-xs font-bold ${at.bgColor} ${at.color} hover:opacity-80`}
+                                      >
+                                        {at.short} — {at.label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Period view - statistics */}
+      {viewMode === 'period' && (
+        <div className="space-y-6">
+          {/* Stats summary */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="glass rounded-2xl p-5 text-center">
+              <div className="text-3xl font-bold text-gray-900">{periodAttendance.length}</div>
+              <div className="text-sm text-gray-500 mt-1">Всего отметок</div>
+            </div>
+            <div className="glass rounded-2xl p-5 text-center">
+              <div className="text-3xl font-bold text-red-600">{stats.Н || 0}</div>
+              <div className="text-sm text-gray-500 mt-1">Неуважительная</div>
+            </div>
+            <div className="glass rounded-2xl p-5 text-center">
+              <div className="text-3xl font-bold text-blue-600">{(stats.УП || 0) + (stats.Б || 0)}</div>
+              <div className="text-sm text-gray-500 mt-1">Уважительная</div>
+            </div>
+            <div className="glass rounded-2xl p-5 text-center">
+              <div className="text-3xl font-bold text-amber-600">{stats.Б || 0}</div>
+              <div className="text-sm text-gray-500 mt-1">Болел</div>
+            </div>
+            <div className="glass rounded-2xl p-5 text-center">
+              <div className="text-3xl font-bold text-orange-600">{stats.ОП || 0}</div>
+              <div className="text-sm text-gray-500 mt-1">Опоздал</div>
+            </div>
+          </div>
+
+          {/* Student statistics table */}
+          <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
+            <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+              <h3 className="font-semibold text-gray-900">Статистика по ученикам</h3>
+              <p className="text-sm text-gray-500">Период: {formatDate(startDate)} — {formatDate(endDate)}</p>
+            </div>
+            
+            {studentStats.length === 0 ? (
+              <div className="text-center py-12">
+                <UserCheck className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-gray-500">Нет данных о посещаемости за этот период</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Ученик</th>
+                      <th className="px-3 py-3 text-center text-sm font-semibold text-red-600">Неуважительные</th>
+                      <th className="px-3 py-3 text-center text-sm font-semibold text-blue-600">Уважительные</th>
+                      <th className="px-3 py-3 text-center text-sm font-semibold text-amber-600">Болел</th>
+                      <th className="px-3 py-3 text-center text-sm font-semibold text-orange-600">Опоздания</th>
+                      <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">Всего</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {studentStats.map(({ student, absent, excused, late, total }) => (
+                      <tr key={student.id} className="hover:bg-gray-50/50">
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-gray-900">{student.lastName} {student.firstName}</div>
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          {absent > 0 ? (
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-100 text-red-700 font-bold">
+                              {absent}
+                            </span>
+                          ) : <span className="text-gray-400">—</span>}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          {excused > 0 ? (
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-700 font-bold">
+                              {excused}
+                            </span>
+                          ) : <span className="text-gray-400">—</span>}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          {late > 0 ? (
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 text-amber-700 font-bold">
+                              {late}
+                            </span>
+                          ) : <span className="text-gray-400">—</span>}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          {late > 0 ? (
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-orange-100 text-orange-700 font-bold">
+                              {late}
+                            </span>
+                          ) : <span className="text-gray-400">—</span>}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <span className="font-semibold text-gray-900">{total}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
