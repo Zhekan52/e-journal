@@ -11,8 +11,7 @@ import {
   Trash2, Edit2, Search, X, Save, ChevronDown, ChevronLeft, Eye, EyeOff,
   AlertTriangle, TrendingUp, TrendingDown, FileText,
   BarChart3, Award, ArrowLeft, RefreshCw, ChevronRight, Tag, Info,
-  Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft,
-  UserCheck
+  Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
@@ -20,7 +19,7 @@ import {
   formatDate, getTodayString, getTodayDate
 } from '../data';
 
-type Tab = 'dashboard' | 'schedule' | 'journal' | 'tests' | 'students' | 'lessonTypes' | 'attendance';
+type Tab = 'dashboard' | 'schedule' | 'journal' | 'tests' | 'students' | 'lessonTypes';
 
 export const AdminView: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
@@ -36,7 +35,6 @@ export const AdminView: React.FC = () => {
     { id: 'journal', label: 'Журнал', icon: <ClipboardList className="w-5 h-5" /> },
     { id: 'tests', label: 'Тесты', icon: <FileText className="w-5 h-5" /> },
     { id: 'students', label: 'Ученики', icon: <Users className="w-5 h-5" /> },
-    { id: 'attendance', label: 'Посещаемость', icon: <UserCheck className="w-5 h-5" /> },
     { id: 'lessonTypes', label: 'Типы уроков', icon: <Tag className="w-5 h-5" /> },
   ];
 
@@ -146,7 +144,6 @@ export const AdminView: React.FC = () => {
         {activeTab === 'journal' && <Journal />}
         {activeTab === 'tests' && <TestsManager />}
         {activeTab === 'students' && <StudentsManager />}
-        {activeTab === 'attendance' && <AttendanceManager />}
         {activeTab === 'lessonTypes' && <LessonTypesManager />}
         </div>
       </main>
@@ -392,366 +389,6 @@ const LessonTypesManager: React.FC = () => {
         </div>,
         document.body
       )}
-    </div>
-  );
-};
-
-// ==================== ATTENDANCE MANAGER ====================
-const DAY_NAMES_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-
-const AttendanceManager: React.FC = () => {
-  const { students, attendance, setAttendance, lessons } = useData();
-  const [selectedMonth, setSelectedMonth] = useState<string>(getTodayString().slice(0, 7));
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [showDayModal, setShowDayModal] = useState(false);
-
-  const sortedStudents = useMemo(() =>
-    [...students].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`)),
-    [students]
-  );
-
-  // Get all dates with lessons (all subjects) for selected month
-  const monthDates = useMemo(() => {
-    const dates: { date: string; lessons: { subject: string; lessonNumber: number; startTime?: string }[] }[] = [];
-    const dateMap = new Map<string, number>();
-    
-    lessons.forEach(l => {
-      if (l.date.startsWith(selectedMonth)) {
-        if (!dateMap.has(l.date)) {
-          dateMap.set(l.date, dates.length);
-          dates.push({ date: l.date, lessons: [] });
-        }
-        const idx = dateMap.get(l.date)!;
-        dates[idx].lessons.push({ subject: l.subject, lessonNumber: l.lessonNumber, startTime: l.startTime });
-      }
-    });
-    
-    dates.forEach(d => d.lessons.sort((a, b) => a.lessonNumber - b.lessonNumber));
-    return dates.sort((a, b) => a.date.localeCompare(b.date));
-  }, [lessons, selectedMonth]);
-
-  const calendarDays = useMemo(() => {
-    const year = parseInt(selectedMonth.split('-')[0]);
-    const month = parseInt(selectedMonth.split('-')[1]) - 1;
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
-    const days: (number | null)[] = [];
-    const startPadding = firstDay === 0 ? 6 : firstDay - 1;
-    for (let i = 0; i < startPadding; i++) days.push(null);
-    for (let i = 1; i <= daysInMonth; i++) days.push(i);
-    return days;
-  }, [selectedMonth]);
-
-  const getMonthName = (monthStr: string) => {
-    const m = parseInt(monthStr.split('-')[1]) - 1;
-    return MONTH_NAMES[m];
-  };
-
-  const getDateAttendance = (date: string) => attendance.filter(a => a.date === date);
-
-  const getDateSummary = (date: string) => {
-    const marks = getDateAttendance(date);
-    if (marks.length === 0) return null;
-    const byType: Record<string, number> = {};
-    marks.forEach(m => { byType[m.type] = (byType[m.type] || 0) + 1; });
-    return byType;
-  };
-
-  const openDayModal = (date: string) => { setSelectedDate(date); setShowDayModal(true); };
-
-  const prevMonth = () => {
-    const [y, m] = selectedMonth.split('-').map(Number);
-    const newDate = new Date(y, m - 2, 1);
-    setSelectedMonth(`${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, '0')}`);
-  };
-
-  const nextMonth = () => {
-    const [y, m] = selectedMonth.split('-').map(Number);
-    const newDate = new Date(y, m, 1);
-    setSelectedMonth(`${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, '0')}`);
-  };
-
-  const DayModal = () => {
-    if (!selectedDate) return null;
-    
-    // Each lesson slot = unique combination of lessonNumber + subject
-    const dateLessons = lessons.filter(l => l.date === selectedDate).sort((a, b) => a.lessonNumber - b.lessonNumber || a.subject.localeCompare(b.subject));
-    const dateAttendance = getDateAttendance(selectedDate);
-    
-    // Get total lessons count for this day
-    const totalLessons = dateLessons.length;
-    
-    const getLessonAttendance = (studentId: string, lessonNumber: number, subject: string) => 
-      dateAttendance.find(a => a.studentId === studentId && a.lessonNumber === lessonNumber && a.subject === subject);
-
-    const setLessonAttendance = (studentId: string, lessonNumber: number, subject: string, type: AttendanceRecord['type'] | null, e?: React.MouseEvent) => {
-      e?.stopPropagation();
-      if (type === null) {
-        setAttendance(prev => prev.filter(a => !(a.studentId === studentId && a.date === selectedDate && a.lessonNumber === lessonNumber && a.subject === subject)));
-      } else {
-        setAttendance(prev => {
-          const existing = prev.find(a => a.studentId === studentId && a.date === selectedDate && a.lessonNumber === lessonNumber && a.subject === subject);
-          if (existing) return prev.map(a => a.id === existing.id ? { ...a, type } : a);
-          return [...prev, { id: `at${Date.now()}${Math.random().toString(36).slice(2, 6)}`, studentId, date: selectedDate, subject, lessonNumber, type }];
-        });
-      }
-    };
-
-    // Check if student has FULL day attendance - ALL lessons must be marked with same type
-    const getFullDayType = (studentId: string) => {
-      const studentAttendance = dateAttendance.filter(a => a.studentId === studentId);
-      if (studentAttendance.length === 0) return null;
-      
-      // Must have attendance for ALL lessons
-      if (studentAttendance.length < totalLessons) return null;
-      
-      const types = new Set(studentAttendance.map(a => a.type));
-      if (types.size === 1) return studentAttendance[0].type;
-      return null;
-    };
-
-    const setFullDayAbsence = (studentId: string, type: AttendanceRecord['type'], e?: React.MouseEvent) => {
-      e?.stopPropagation();
-      setAttendance(prev => {
-        let newPrev = prev.filter(a => !(a.studentId === studentId && a.date === selectedDate));
-        dateLessons.forEach(l => {
-          newPrev = [...newPrev, { id: `at${Date.now()}${Math.random().toString(36).slice(2, 6)}`, studentId, date: selectedDate, subject: l.subject, lessonNumber: l.lessonNumber, type }];
-        });
-        return newPrev;
-      });
-    };
-
-    const clearFullDay = (studentId: string, e?: React.MouseEvent) => {
-      e?.stopPropagation();
-      setAttendance(prev => prev.filter(a => !(a.studentId === studentId && a.date === selectedDate)));
-    };
-
-    const formatDate = (d: string) => { const date = new Date(d + 'T00:00:00'); return `${date.getDate()} ${MONTH_NAMES_GEN[date.getMonth()]}`; };
-
-    return createPortal(
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={() => setShowDayModal(false)}>
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-          <div className="px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-between flex-shrink-0">
-            <div>
-              <h3 className="text-xl font-semibold">{formatDate(selectedDate)}</h3>
-              <p className="text-blue-100 text-sm">{dateLessons.length} урок(ов)</p>
-            </div>
-            <button onClick={() => setShowDayModal(false)} className="p-2 rounded-xl hover:bg-white/20"><X className="w-6 h-6" /></button>
-          </div>
-          <div className="px-6 py-3 bg-gray-100 border-b-2 border-gray-300 flex flex-wrap items-center gap-4 flex-shrink-0">
-            <span className="text-sm font-bold text-gray-700">Легенда:</span>
-            {ATTENDANCE_TYPES.map((type: any) => (
-              <div key={type.value} className="flex items-center gap-1.5">
-                <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold ${type.bgColor} ${type.color}`}>{type.short}</span>
-                <span className="text-xs text-gray-600">{type.label}</span>
-              </div>
-            ))}
-            <button onClick={() => sortedStudents.forEach(s => clearFullDay(s.id))} className="ml-auto px-3 py-1.5 text-xs bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300">Очистить всё</button>
-          </div>
-          <div className="overflow-auto flex-1">
-            {dateLessons.length === 0 ? (
-              <div className="text-center py-12"><Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" /><p className="text-gray-500">Нет уроков</p></div>
-            ) : (
-              <table className="w-full min-w-[800px]">
-                <thead className="bg-gray-50 border-b-2 border-gray-300 sticky top-0 z-10">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 sticky left-0 bg-gray-50 border-r-2 border-gray-200 z-20">Ученик</th>
-                    <th className="px-2 py-3 text-center text-sm font-bold text-gray-800 border-r-2 border-gray-200 min-w-[90px]">Весь день</th>
-                    {dateLessons.map((l, colIdx) => (
-                      <th key={`${l.lessonNumber}-${l.subject}`} className={`px-2 py-3 text-center text-sm font-bold text-gray-800 min-w-[90px] ${colIdx < dateLessons.length - 1 ? 'border-r-2 border-gray-200' : ''}`}>
-                        <div className="text-xs font-bold">№{l.lessonNumber}</div>
-                        <div className="text-[10px] font-normal text-gray-500 truncate" title={l.subject}>{l.subject}</div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y-2 divide-gray-200">
-                  {sortedStudents.map(student => {
-                    const fullDayType = getFullDayType(student.id);
-                    return (
-                      <tr key={student.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-2.5 sticky left-0 bg-white border-r-2 border-gray-200 z-10"><div className="font-bold text-gray-900">{student.lastName} {student.firstName}</div></td>
-                        <td className="px-2 py-2 text-center border-r-2 border-gray-200">
-                          {fullDayType ? (
-                            <div className="relative group">
-                              <button 
-                                onClick={(e) => clearFullDay(student.id, e)}
-                                className={`w-16 h-9 rounded-lg text-xs font-bold ${ATTENDANCE_TYPES.find((t: any) => t.value === fullDayType)?.bgColor} ${ATTENDANCE_TYPES.find((t: any) => t.value === fullDayType)?.color}`}
-                              >
-                                {ATTENDANCE_TYPES.find((t: any) => t.value === fullDayType)?.short}
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="relative group">
-                              <button className="w-16 h-9 rounded-lg border-2 border-dashed border-gray-400 hover:border-gray-500 text-gray-500 hover:text-gray-600 text-xs">—</button>
-                              <div className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-xl border-2 border-gray-200 p-1 hidden group-hover:block min-w-[140px]">
-                                <div className="grid grid-cols-2 gap-0.5">
-                                  {ATTENDANCE_TYPES.map((at: any) => (
-                                    <button key={at.value} onClick={(e) => setFullDayAbsence(student.id, at.value, e)} className={`px-2 py-1.5 rounded text-xs font-bold ${at.bgColor} ${at.color}`}>{at.short}</button>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </td>
-                        {dateLessons.map((lesson, colIdx) => {
-                          const att = getLessonAttendance(student.id, lesson.lessonNumber, lesson.subject);
-                          const attType = att ? ATTENDANCE_TYPES.find((t: any) => t.value === att.type) : null;
-                          return (
-                            <td key={`${lesson.lessonNumber}-${lesson.subject}`} className={`px-1 py-2 text-center ${colIdx < dateLessons.length - 1 ? 'border-r-2 border-gray-200' : ''}`}>
-                              <div className="relative group">
-                                {attType ? (
-                                  <button 
-                                    onClick={(e) => setLessonAttendance(student.id, lesson.lessonNumber, lesson.subject, null, e)} 
-                                    className={`w-10 h-10 rounded-lg text-sm font-bold ${attType.bgColor} ${attType.color}`}
-                                    title={`${lesson.subject}: ${attType.label} (нажмите для удаления)`}
-                                  >
-                                    {attType.short}
-                                  </button>
-                                ) : (
-                                  <button className="w-10 h-10 rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400 text-gray-400 hover:text-gray-500 text-xs">+</button>
-                                )}
-                                <div className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-xl border-2 border-gray-200 p-1 hidden group-hover:block min-w-[120px]">
-                                  <div className="grid grid-cols-2 gap-0.5">
-                                    {ATTENDANCE_TYPES.map((at: any) => (
-                                      <button key={at.value} onClick={(e) => setLessonAttendance(student.id, lesson.lessonNumber, lesson.subject, at.value, e)} className={`px-2 py-1 rounded text-xs font-bold ${at.bgColor} ${at.color}`}>{at.short}</button>
-                                    ))}
-                                    {att && <button onClick={(e) => setLessonAttendance(student.id, lesson.lessonNumber, lesson.subject, null, e)} className="col-span-2 px-2 py-1 rounded text-xs text-red-600 hover:bg-red-50">Убрать</button>}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-      </div>,
-      document.body
-    );
-  };
-
-  // Helper to get day of week name
-  const getDayName = (dateStr: string) => {
-    const d = new Date(dateStr + 'T00:00:00');
-    const days = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-    return days[d.getDay()];
-  };
-
-  return (
-    <div className="animate-fadeIn space-y-6">
-      <h2 className="text-2xl font-semibold text-gray-900">Посещаемость</h2>
-
-      <div className="flex items-center gap-4">
-        <button onClick={prevMonth} className="p-2 rounded-xl hover:bg-gray-200"><ChevronLeft className="w-5 h-5" /></button>
-        <h3 className="text-lg font-bold text-gray-900 min-w-[180px] text-center">{getMonthName(selectedMonth)} {selectedMonth.split('-')[0]}</h3>
-        <button onClick={nextMonth} className="p-2 rounded-xl hover:bg-gray-200"><ChevronRight className="w-5 h-5" /></button>
-      </div>
-
-      {/* Calendar - more visual */}
-      <div className="bg-white rounded-2xl border-2 border-gray-300 shadow-lg overflow-hidden">
-        {/* Header with day names */}
-        <div className="grid grid-cols-7 bg-gray-100 border-b-2 border-gray-300">
-          {DAY_NAMES_SHORT.map((day, idx) => (
-            <div key={day} className={`px-2 py-3 text-center text-sm font-bold ${idx === 0 || idx === 6 ? 'text-red-500' : 'text-gray-700'}`}>
-              {day}
-            </div>
-          ))}
-        </div>
-        
-        {/* Calendar grid */}
-        <div className="grid grid-cols-7">
-          {calendarDays.map((day, idx) => {
-            if (day === null) return <div key={idx} className="h-24 bg-gray-50 border-r border-b border-gray-200" />;
-            
-            const dateStr = `${selectedMonth}-${String(day).padStart(2, '0')}`;
-            const dateInfo = monthDates.find(d => d.date === dateStr);
-            const hasLessons = !!dateInfo;
-            const summary = getDateSummary(dateStr);
-            const isToday = dateStr === getTodayString();
-            
-            // Calculate background color based on attendance summary
-            let bgClass = '';
-            if (summary) {
-              const absent = (summary['Н'] || 0);
-              const excused = (summary['УП'] || 0) + (summary['Б'] || 0);
-              const late = (summary['ОП'] || 0);
-              
-              if (absent > 0) bgClass = 'bg-red-200';
-              else if (excused > 0) bgClass = 'bg-blue-200';
-              else if (late > 0) bgClass = 'bg-orange-200';
-              else bgClass = 'bg-green-200';
-            }
-            
-            return (
-              <div 
-                key={idx} 
-                onClick={() => hasLessons && openDayModal(dateStr)} 
-                className={`h-24 p-1.5 border-r border-b border-gray-200 transition-all cursor-pointer ${
-                  hasLessons ? 'hover:ring-2 hover:ring-blue-400 hover:z-10' : 'bg-gray-50'
-                } ${bgClass}`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className={`text-sm font-bold ${isToday ? 'w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs' : 'text-gray-700'}`}>
-                    {day}
-                  </span>
-                  {isToday && <span className="text-[10px] text-blue-600 font-medium">Сегодня</span>}
-                </div>
-
-                {hasLessons && (
-                  <div className="mt-1">
-                    <div className="text-[10px] text-gray-500 font-medium">{dateInfo?.lessons.length} урок.</div>
-                    {summary && (
-                      <div className="flex items-center gap-0.5 mt-0.5 flex-wrap">
-                        {Object.entries(summary).map(([type, count]) => {
-                          const t = ATTENDANCE_TYPES.find((at: any) => at.value === type);
-                          if (!t) return null;
-                          return (
-                            <span key={type} className={`text-[9px] px-1 rounded font-bold ${t.bgColor} ${t.color}`}>
-                              {count}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 p-4 bg-gray-100 rounded-2xl border-2 border-gray-200">
-        <span className="text-sm font-bold text-gray-700">Легенда:</span>
-        {ATTENDANCE_TYPES.map((type: any) => (
-          <div key={type.value} className="flex items-center gap-2">
-            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold ${type.bgColor} ${type.color}`}>{type.short}</span>
-            <span className="text-sm text-gray-700">{type.label}</span>
-          </div>
-        ))}
-        <div className="flex items-center gap-2 ml-4">
-          <div className="w-4 h-4 rounded bg-red-50 border border-red-200"></div>
-          <span className="text-xs text-gray-600">Есть неуважительные</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-blue-50 border border-blue-200"></div>
-          <span className="text-xs text-gray-600">Есть уважительные</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-green-50 border border-green-200"></div>
-          <span className="text-xs text-gray-600">Все посещены</span>
-        </div>
-      </div>
-
-      {showDayModal && <DayModal />}
     </div>
   );
 };
@@ -1800,8 +1437,8 @@ const Journal: React.FC = () => {
                           const at = att ? ATTENDANCE_TYPES.find(at => at.value === att.type) : null;
                           // Если есть посещаемость — показываем её на всю клетку, иначе оценку
                           const showAttendance = !!att;
-                          // Блокируем кнопку если есть посещаемость КРОМЕ ОП (опоздание не блокирует оценку)
-                          const isBlocked = showAttendance && att?.type !== 'ОП';
+                          // Блокируем кнопку если есть посещаемость (нельзя ставить оценку)
+                          const isBlocked = showAttendance;
                           return (
                             <button
                               onClick={e => {
@@ -1823,8 +1460,7 @@ const Journal: React.FC = () => {
                               }`}
                               title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                             >
-                              {mainGrade ? mainGrade.value : (showAttendance ? att?.type : '')}
-                              {att?.type === 'ОП' && <span className="block text-[8px] font-bold text-orange-600 bg-orange-100 rounded px-0.5 mt-0.5">ОП</span>}
+                              {showAttendance ? att?.type : (mainGrade?.value || '')}
                             </button>
                           );
                         })()}
@@ -1834,7 +1470,7 @@ const Journal: React.FC = () => {
                         <td className="px-1 py-2 text-center border-r border-gray-300">
                           {(() => {
                             const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
-                            const isBlocked = !!att && att.type !== 'ОП';
+                            const isBlocked = !!att;
                             return (
                               <button 
                                 onClick={e => {
@@ -1866,7 +1502,7 @@ const Journal: React.FC = () => {
                       {cols.filter(c => c.type !== 'homework').map(c => {
                         const g = getGrade(s.id, lessonPageDate, c.id, lessonPageLessonNum);
                         const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
-                        const isBlocked = !!att && att.type !== 'ОП';
+                        const isBlocked = !!att;
                         return (
                           <td key={c.id} className="px-1 py-2 text-center border-r border-gray-300">
                             <button
@@ -1896,7 +1532,7 @@ const Journal: React.FC = () => {
                       })}
 
                       <td className="px-2 py-2 text-center border-r border-gray-300 font-bold text-gray-700">
-                        {s.avg > 0 ? s.avg.toFixed(2) : '—'}
+                        {s.avg > 0 ? s.avg.toFixed(1) : '—'}
                       </td>
                       <td className="px-2 py-2 text-center border-r border-gray-300">
                         {s.trend === 1 && <TrendingUp className="w-4 h-4 text-green-500 mx-auto" />}
@@ -2129,8 +1765,8 @@ const Journal: React.FC = () => {
                         const at = att ? ATTENDANCE_TYPES.find(a => a.value === att.type) : null;
                         // Если есть посещаемость — показываем её на всю клетку, иначе оценку
                         const showAttendance = !!att;
-                        // Блокируем кнопку если есть посещаемость КРОМЕ ОП (опоздание не блокирует оценку)
-                        const isBlocked = showAttendance && att?.type !== 'ОП';
+                        // Блокируем кнопку если есть посещаемость (нельзя ставить оценку)
+                        const isBlocked = showAttendance;
                         const isToday = highlightToday && sl.date === today;
                         return (
                           <React.Fragment key={sl.key}>
@@ -2155,8 +1791,7 @@ const Journal: React.FC = () => {
                                 }`}
                                 title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                               >
-                                {mainGrade ? mainGrade.value : (showAttendance ? att?.type : '')}
-                                {att?.type === 'ОП' && <span className="block text-[8px] font-bold text-orange-600 bg-orange-100 rounded px-0.5 mt-0.5">ОП</span>}
+                                {showAttendance ? att?.type : (mainGrade?.value || '')}
                               </button>
                             </td>
                             {cols.map(c => {
@@ -2195,7 +1830,7 @@ const Journal: React.FC = () => {
                       <td className="px-2 py-1.5 text-center border-gray-300">
                         {avg > 0 ? (
                           <span className={`font-bold text-sm ${avg >= 4.5 ? 'text-green-600' : avg >= 3.5 ? 'text-blue-600' : avg >= 2.5 ? 'text-yellow-600' : 'text-red-600'}`}>
-                            {avg.toFixed(2)}
+                            {avg.toFixed(1)}
                           </span>
                         ) : <span className="text-gray-400">—</span>}
                       </td>

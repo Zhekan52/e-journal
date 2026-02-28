@@ -362,7 +362,7 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
                     <td className="px-3 py-3 text-center font-bold border-gray-300">
                       {avg !== null ? (
                         <span className={`inline-flex items-center justify-center w-11 h-9 rounded-xl text-sm font-bold ${avg >= 4.5 ? 'bg-success-100 text-success-700' : avg >= 3.5 ? 'bg-primary-100 text-primary-700' : avg >= 2.5 ? 'bg-warning-100 text-warning-700' : 'bg-danger-100 text-danger-700'}`}>
-                          {avg.toFixed(2)}
+                          {avg.toFixed(1)}
                         </span>
                       ) : (
                         <span className="text-gray-400">—</span>
@@ -939,7 +939,7 @@ const Diary: React.FC<DiaryProps> = ({
                   {dayLessons.map((lesson: any) => {
                     // ONLY exact match — no fallback to prevent sharing between lessons
                     const entry = diaryEntries.find((e: any) => e.date === dateStr && e.subject === lesson.subject && e.lessonNumber === lesson.lessonNumber);
-                    const dayGrades = myGrades.filter(g => g.date === dateStr && g.subject === lesson.subject && g.lessonNumber === lesson.lessonNumber);
+                    const dayGrades = myGrades.filter(g => g.date === dateStr && g.subject === lesson.subject);
                     const testObj = entry?.testId ? tests.find((t: any) => t.id === entry.testId) : null;
 
                     const attempt = testObj ? testAttempts.find((a: any) => a.studentId === studentId && a.testId === testObj.id && a.date === dateStr) : null;
@@ -1047,10 +1047,9 @@ const Diary: React.FC<DiaryProps> = ({
                               );
                             }
                             
-                            // Иначе показываем оценки (горизонтально, если больше 2)
-                            const hasManyGrades = dayGrades.length > 2;
+                            // Иначе показываем оценки
                             return (
-                              <div className={`flex ${hasManyGrades ? 'flex-nowrap' : 'flex-wrap'} gap-1.5 justify-center overflow-x-auto`}>
+                              <div className="flex flex-wrap gap-1.5 justify-center overflow-visible">
                                 {dayGrades.map((g: any, i: number) => (
                                   <GradeWithTooltip key={i} value={g.value} excludeFromAverage={g.excludeFromAverage} reason={g.reason} size="md" />
                                 ))}
