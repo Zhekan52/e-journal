@@ -11,7 +11,8 @@ import {
   Trash2, Edit2, Search, X, Save, ChevronDown, ChevronLeft, Eye, EyeOff,
   AlertTriangle, TrendingUp, TrendingDown, FileText,
   BarChart3, Award, ArrowLeft, RefreshCw, ChevronRight, Tag, Info,
-  Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft
+  Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft,
+  CalendarDays
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
@@ -19,7 +20,7 @@ import {
   formatDate, getTodayString, getTodayDate
 } from '../data';
 
-type Tab = 'dashboard' | 'schedule' | 'journal' | 'tests' | 'students' | 'lessonTypes';
+type Tab = 'dashboard' | 'schedule' | 'journal' | 'attendance' | 'tests' | 'students' | 'lessonTypes';
 
 export const AdminView: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
@@ -33,6 +34,7 @@ export const AdminView: React.FC = () => {
     { id: 'dashboard', label: 'Сводка', icon: <BarChart3 className="w-5 h-5" /> },
     { id: 'schedule', label: 'Расписание', icon: <Calendar className="w-5 h-5" /> },
     { id: 'journal', label: 'Журнал', icon: <ClipboardList className="w-5 h-5" /> },
+    { id: 'attendance', label: 'Посещаемость', icon: <CalendarDays className="w-5 h-5" /> },
     { id: 'tests', label: 'Тесты', icon: <FileText className="w-5 h-5" /> },
     { id: 'students', label: 'Ученики', icon: <Users className="w-5 h-5" /> },
     { id: 'lessonTypes', label: 'Типы уроков', icon: <Tag className="w-5 h-5" /> },
@@ -142,6 +144,7 @@ export const AdminView: React.FC = () => {
         {activeTab === 'dashboard' && <AdminDashboard />}
         {activeTab === 'schedule' && <Schedule editable={scheduleEditMode} onEditModeChange={setScheduleEditMode} onOpenLessonPage={handleOpenLessonPage} />}
         {activeTab === 'journal' && <Journal />}
+        {activeTab === 'attendance' && <AttendanceCalendar />}
         {activeTab === 'tests' && <TestsManager />}
         {activeTab === 'students' && <StudentsManager />}
         {activeTab === 'lessonTypes' && <LessonTypesManager />}
@@ -608,6 +611,558 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+// ==================== ATTENDANCE CALENDAR ====================
+const AttendanceCalendar: React.FC = () => {
+  const { students, lessons, attendance, setAttendance, lessonTypes } = useData();
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
+
+  // Получить дни месяца
+  const getMonthDays = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const days: Date[] = [];
+    
+    // Добавить дни предыдущего месяца для заполнения первой недели
+    const startDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+    for (let i = startDayOfWeek - 1; i >= 0; i--) {
+      days.push(new Date(year, month, -i));
+    }
+    
+    // Добавить дни текущего месяца
+    for (let i = 1; i <= lastDay.getDate(); i++) {
+      days.push(new Date(year, month, i));
+    }
+    
+    // Добавить дни следующего месяца для заполнения последней недели
+    const endDayOfWeek = lastDay.getDay() === 0 ? 6 : lastDay.getDay() - 1;
+    for (let i = 1; i < 7 - endDayOfWeek; i++) {
+      days.push(new Date(year, month + 1, i));
+    }
+    
+    return days;
+  };
+
+  const monthDays = useMemo(() => getMonthDays(currentDate), [currentDate]);
+
+  const formatDateStr = (date: Date) => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+
+  // Получить количество уроков на конкретную дату
+  const getLessonsCount = (date: Date) => {
+    const dateStr = formatDateStr(date);
+    return lessons.filter(l => l.date === dateStr).length;
+  };
+
+  // Получить уроки на дату
+  const getLessonsForDate = (date: Date) => {
+    const dateStr = formatDateStr(date);
+    return lessons.filter(l => l.date === dateStr).sort((a, b) => a.lessonNumber - b.lessonNumber);
+  };
+
+  // Проверить, является ли дата текущим днём
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() && 
+           date.getMonth() === today.getMonth() && 
+           date.getFullYear() === today.getFullYear();
+  };
+
+  // Проверить, относится ли дата к текущему месяцу
+  const isCurrentMonth = (date: Date) => {
+    return date.getMonth() === currentDate.getMonth();
+  };
+
+  // Получить все записи посещаемости для даты и ученика
+  const getAttendanceForStudentDate = (studentId: string, date: string) => {
+    return attendance.filter(a => a.studentId === studentId && a.date === date);
+  };
+
+  // Получить уникальных учеников с пропусками на дату
+  const getAbsentStudentsForDate = (date: string) => {
+    const dateStr = formatDateStr(new Date(date));
+    const presentStudents = new Set(attendance.filter(a => a.date === dateStr).map(a => a.studentId));
+    return students.filter(s => presentStudents.has(s.id));
+  };
+
+  // Обработчик клика на ячейку даты
+  const handleDateClick = (date: Date) => {
+    const dateStr = formatDateStr(date);
+    const lessonsCount = getLessonsCount(date);
+    if (lessonsCount > 0) {
+      setSelectedDate(dateStr);
+    }
+  };
+
+  // Установить/изменить отметку посещаемости
+  const setAttendanceForLesson = (studentId: string, date: string, subject: string, lessonNumber: number, type: AttendanceRecord['type'] | null) => {
+    setAttendance(prev => {
+      // Удаляем существующие записи для этой комбинации
+      const filtered = prev.filter(a => 
+        !(a.studentId === studentId && a.date === date && a.subject === subject && a.lessonNumber === lessonNumber)
+      );
+      
+      if (type) {
+        return [...filtered, { 
+          id: `at${Date.now()}${Math.random().toString(36).slice(2, 6)}`, 
+          studentId, 
+          date, 
+          subject, 
+          type,
+          lessonNumber
+        }];
+      }
+      return filtered;
+    });
+  };
+
+  // Установить отметку на весь день
+  const setAttendanceForDay = (studentId: string, date: string, type: AttendanceRecord['type'] | null) => {
+    const dayLessons = getLessonsForDate(new Date(date));
+    setAttendance(prev => {
+      // Удаляем все существующие записи для этого ученика и даты
+      const filtered = prev.filter(a => 
+        !(a.studentId === studentId && a.date === date)
+      );
+
+      if (type) {
+        // Добавляем записи для каждого урока
+        const newRecords = dayLessons.map(lesson => ({
+          id: `at${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
+          studentId,
+          date,
+          subject: lesson.subject,
+          type,
+          lessonNumber: lesson.lessonNumber
+        }));
+        return [...filtered, ...newRecords];
+      }
+      return filtered;
+    });
+  };
+
+  // Получить отметку для конкретного урока
+  const getAttendanceForLesson = (studentId: string, date: string, subject: string, lessonNumber: number): AttendanceRecord['type'] | null => {
+    const record = attendance.find(a => 
+      a.studentId === studentId && a.date === date && a.subject === subject && a.lessonNumber === lessonNumber
+    );
+    return record?.type || null;
+  };
+
+  // Предыдущий месяц
+  const prevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+
+  // Следующий месяц
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  // Навигация по месяцам
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  return (
+    <div className="animate-fadeIn space-y-6">
+      {/* Заголовок и навигация */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900">Посещаемость</h2>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={goToToday}
+            className="px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-xl transition-colors"
+          >
+            Сегодня
+          </button>
+          <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+            <ChevronLeft className="w-5 h-5 text-gray-600" />
+          </button>
+          <span className="text-lg font-semibold text-gray-900 min-w-[180px] text-center">
+            {MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}
+          </span>
+          <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+            <ChevronRight className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+      </div>
+
+      {/* Легенда */}
+      <div className="flex flex-wrap items-center gap-4 p-4 bg-gray-50 rounded-2xl">
+        <span className="text-sm font-medium text-gray-600">Типы отметок:</span>
+        {ATTENDANCE_TYPES.map((type: any) => (
+          <div key={type.value} className="flex items-center gap-2">
+            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold ${type.bgColor} ${type.color}`}>
+              {type.short}
+            </span>
+            <span className="text-sm text-gray-600">{type.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Календарь */}
+      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
+        {/* Дни недели */}
+        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+          {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((day, i) => (
+            <div key={i} className="px-2 py-3 text-center text-sm font-semibold text-gray-600">
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* Дни месяца */}
+        <div className="grid grid-cols-7">
+          {monthDays.map((date, idx) => {
+            const lessonsCount = getLessonsCount(date);
+            const hasLessons = lessonsCount > 0;
+            const isSelected = selectedDate === formatDateStr(date);
+            
+            return (
+              <button
+                key={idx}
+                onClick={() => handleDateClick(date)}
+                disabled={!hasLessons}
+                className={`
+                  min-h-[80px] p-2 border-b border-r border-gray-100 transition-all
+                  ${!isCurrentMonth(date) ? 'bg-gray-30' : 'bg-white hover:bg-gray-50'}
+                  ${isToday(date) ? 'bg-blue-50' : ''}
+                  ${isSelected ? 'ring-2 ring-inset ring-primary-500 bg-primary-50' : ''}
+                  ${!hasLessons ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
+                `}
+              >
+                <div className={`text-sm font-medium ${isToday(date) ? 'text-primary-600' : isCurrentMonth(date) ? 'text-gray-900' : 'text-gray-400'}`}>
+                  {date.getDate()}
+                </div>
+                {hasLessons && (
+                  <div className="mt-1 text-xs font-medium text-gray-500">
+                    {lessonsCount} урок{lessonsCount === 1 ? '' : lessonsCount > 1 && lessonsCount < 5 ? 'а' : 'ов'}
+                  </div>
+                )}
+                {/* Индикаторы посещаемости */}
+                {hasLessons && (
+                  <div className="mt-1 flex flex-wrap gap-0.5">
+                    {ATTENDANCE_TYPES.slice(0, 3).map((type: any) => {
+                      const count = attendance.filter(a => 
+                        a.date === formatDateStr(date) && a.type === type.value
+                      ).length;
+                      if (count === 0) return null;
+                      return (
+                        <span key={type.value} className={`w-4 h-4 rounded text-[8px] font-bold flex items-center justify-center ${type.bgColor} ${type.color}`}>
+                          {count}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Модальное окно для работы с посещаемостью */}
+      {selectedDate && (
+        <AttendanceModal
+          date={selectedDate}
+          lessons={getLessonsForDate(new Date(selectedDate))}
+          students={students}
+          attendance={attendance}
+          onClose={() => setSelectedDate(null)}
+          onSetAttendance={setAttendanceForDay}
+          onSetAttendanceForLesson={setAttendanceForLesson}
+          getAttendanceForLesson={getAttendanceForLesson}
+        />
+      )}
+    </div>
+  );
+};
+
+// ==================== ATTENDANCE MODAL ====================
+const AttendanceModal: React.FC<{
+  date: string;
+  lessons: any[];
+  students: any[];
+  attendance: any[];
+  onClose: () => void;
+  onSetAttendance: (studentId: string, date: string, type: AttendanceRecord['type'] | null) => void;
+  onSetAttendanceForLesson: (studentId: string, date: string, subject: string, lessonNumber: number, type: AttendanceRecord['type'] | null) => void;
+  getAttendanceForLesson: (studentId: string, date: string, subject: string, lessonNumber: number) => AttendanceRecord['type'] | null;
+}> = ({ date, lessons, students, attendance, onClose, onSetAttendance, onSetAttendanceForLesson, getAttendanceForLesson }) => {
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [wholeDay, setWholeDay] = useState(false);
+  const [selectedType, setSelectedType] = useState<AttendanceRecord['type'] | null>(null);
+  const [selectedLessons, setSelectedLessons] = useState<number[]>([]);
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00');
+    return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+  };
+
+  // Переключить выбор урока
+  const toggleLesson = (lessonNumber: number) => {
+    setSelectedLessons(prev => 
+      prev.includes(lessonNumber) 
+        ? prev.filter(n => n !== lessonNumber)
+        : [...prev, lessonNumber]
+    );
+  };
+
+  // Применить отметку
+  const applyAttendance = () => {
+    if (!selectedStudentId || !selectedType) return;
+
+    if (wholeDay) {
+      // Отметить весь день
+      onSetAttendance(selectedStudentId, date, selectedType);
+    } else if (selectedLessons.length > 0) {
+      // Отметить только выбранные уроки
+      selectedLessons.forEach(lessonNumber => {
+        const lesson = lessons.find(l => l.lessonNumber === lessonNumber);
+        if (lesson) {
+          onSetAttendanceForLesson(selectedStudentId, date, lesson.subject, lessonNumber, selectedType);
+        }
+      });
+    }
+
+    // Сбросить выбор
+    setSelectedType(null);
+    setSelectedLessons([]);
+    setWholeDay(false);
+    setSelectedStudentId(null);
+  };
+
+  // Удалить отметку
+  const removeAttendance = () => {
+    if (!selectedStudentId) return;
+
+    if (wholeDay) {
+      onSetAttendance(selectedStudentId, date, null);
+    } else if (selectedLessons.length > 0) {
+      selectedLessons.forEach(lessonNumber => {
+        const lesson = lessons.find(l => l.lessonNumber === lessonNumber);
+        if (lesson) {
+          onSetAttendanceForLesson(selectedStudentId, date, lesson.subject, lessonNumber, null);
+        }
+      });
+    }
+
+    // Сбросить выбор
+    setSelectedType(null);
+    setSelectedLessons([]);
+    setWholeDay(false);
+    setSelectedStudentId(null);
+  };
+
+  // Получить текущую отметку для выбранного ученика
+  const getCurrentAttendance = () => {
+    if (!selectedStudentId) return null;
+    
+    if (wholeDay) {
+      const dayAttendance = attendance.filter(a => a.studentId === selectedStudentId && a.date === date);
+      if (dayAttendance.length === lessons.length && lessons.length > 0) {
+        const firstType = dayAttendance[0].type;
+        if (dayAttendance.every(a => a.type === firstType)) {
+          return firstType;
+        }
+      }
+      return null;
+    } else if (selectedLessons.length > 0) {
+      const types = selectedLessons.map(ln => getAttendanceForLesson(selectedStudentId, date, lessons.find(l => l.lessonNumber === ln)?.subject || '', ln));
+      if (types.every(t => t !== null) && types.every(t => t === types[0])) {
+        return types[0];
+      }
+    }
+    return null;
+  };
+
+  const currentAttendance = getCurrentAttendance();
+  const sortedStudents = [...students].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`));
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+        {/* Заголовок */}
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">Посещаемость</h3>
+            <p className="text-sm text-gray-500">{formatDate(date)} · {lessons.length} уроков</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-xl transition-colors">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Выбор ученика */}
+        <div className="px-6 py-4 border-b border-gray-100">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Выберите ученика</label>
+          <select
+            value={selectedStudentId || ''}
+            onChange={(e) => {
+              setSelectedStudentId(e.target.value || null);
+              setWholeDay(false);
+              setSelectedLessons([]);
+              setSelectedType(null);
+            }}
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+          >
+            <option value="">-- Выберите ученика --</option>
+            {sortedStudents.map(student => (
+              <option key={student.id} value={student.id}>
+                {student.lastName} {student.firstName}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Выбор режима и типа */}
+        {selectedStudentId && (
+          <div className="px-6 py-4 border-b border-gray-100 space-y-4">
+            {/* Режим "Весь день" */}
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={wholeDay}
+                onChange={(e) => {
+                  setWholeDay(e.target.checked);
+                  if (e.target.checked) {
+                    setSelectedLessons(lessons.map(l => l.lessonNumber));
+                  } else {
+                    setSelectedLessons([]);
+                  }
+                }}
+                className="w-5 h-5 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+              />
+              <span className="text-sm font-medium text-gray-900">Весь день (все {lessons.length} уроков)</span>
+            </label>
+
+            {/* Выбор уроков (если не весь день) */}
+            {!wholeDay && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Или выберите конкретные уроки:</label>
+                <div className="flex flex-wrap gap-2">
+                  {lessons.map(lesson => {
+                    const isSelected = selectedLessons.includes(lesson.lessonNumber);
+                    const currentType = getAttendanceForLesson(selectedStudentId, date, lesson.subject, lesson.lessonNumber);
+                    const attType = currentType ? ATTENDANCE_TYPES.find(at => at.value === currentType) : null;
+                    
+                    return (
+                      <button
+                        key={lesson.lessonNumber}
+                        onClick={() => toggleLesson(lesson.lessonNumber)}
+                        className={`
+                          px-3 py-2 rounded-lg text-sm font-medium transition-all
+                          ${isSelected 
+                            ? 'bg-primary-100 text-primary-700 ring-2 ring-primary-500' 
+                            : currentType 
+                              ? `${attType?.bgColor} ${attType?.color}`
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }
+                        `}
+                      >
+                        {lesson.lessonNumber}. {lesson.subject}
+                        {currentType && <span className="ml-1">({currentType})</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Выбор типа отметки */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Тип отметки:</label>
+              <div className="flex flex-wrap gap-2">
+                {ATTENDANCE_TYPES.map(type => (
+                  <button
+                    key={type.value}
+                    onClick={() => setSelectedType(type.value)}
+                    disabled={selectedLessons.length === 0 && wholeDay === false}
+                    className={`
+                      px-4 py-2 rounded-lg text-sm font-bold transition-all
+                      ${selectedType === type.value 
+                        ? 'ring-2 ring-offset-2 ring-gray-400' 
+                        : ''
+                      } ${type.bgColor} ${type.color}
+                      ${(selectedLessons.length === 0 && wholeDay === false) ? 'opacity-50 cursor-not-allowed' : ''}
+                    `}
+                  >
+                    {type.short} — {type.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Кнопки действий */}
+        <div className="px-6 py-4 border-t border-gray-200 flex gap-3 justify-end bg-gray-50">
+          {selectedStudentId && selectedType && selectedLessons.length > 0 && (
+            <button
+              onClick={removeAttendance}
+              className="px-5 py-2.5 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 transition-colors font-medium flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" /> Удалить отметку
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+          >
+            Отмена
+          </button>
+          <button
+            onClick={applyAttendance}
+            disabled={!selectedStudentId || !selectedType || (selectedLessons.length === 0 && !wholeDay)}
+            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/20 font-medium disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            <Save className="w-4 h-4" /> Применить
+          </button>
+        </div>
+
+        {/* Список учеников с отметками */}
+        <div className="flex-1 overflow-auto p-6">
+          <h4 className="text-sm font-semibold text-gray-700 mb-3">Отметки на {formatDate(date)}:</h4>
+          <div className="space-y-2">
+            {sortedStudents.map(student => {
+              const studentAttendance = attendance.filter(a => a.studentId === student.id && a.date === date);
+              if (studentAttendance.length === 0) return null;
+              
+              // Группируем по типу
+              const byType: Record<string, number> = {};
+              studentAttendance.forEach(a => {
+                byType[a.type] = (byType[a.type] || 0) + 1;
+              });
+              
+              return (
+                <div key={student.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                  <span className="font-medium text-gray-900">{student.lastName} {student.firstName}</span>
+                  <div className="flex gap-1">
+                    {Object.entries(byType).map(([type, count]) => {
+                      const attType = ATTENDANCE_TYPES.find(at => at.value === type);
+                      return (
+                        <span key={type} className={`px-2 py-1 rounded-lg text-xs font-bold ${attType?.bgColor} ${attType?.color}`}>
+                          {type}: {count}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 };
 
