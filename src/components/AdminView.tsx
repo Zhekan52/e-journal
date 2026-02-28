@@ -397,122 +397,366 @@ const LessonTypesManager: React.FC = () => {
 };
 
 // ==================== ATTENDANCE MANAGER ====================
-const DAY_NAMES = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+const DAY_NAMES_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 const AttendanceManager: React.FC = () => {
-  const { students, attendance, setAttendance, lessons, subjects } = useData();
+  const { students, attendance, setAttendance, lessons } = useData();
   const [selectedSubject, setSelectedSubject] = useState<string>(SUBJECTS[0]);
-  const [selectedDate, setSelectedDate] = useState<string>(getTodayString());
-  const [viewMode, setViewMode] = useState<'day' | 'period'>('day');
-  const [startDate, setStartDate] = useState<string>(getTodayString());
-  const [endDate, setEndDate] = useState<string>(getTodayString());
+  const [selectedMonth, setSelectedMonth] = useState<string>(getTodayString().slice(0, 7)); // YYYY-MM
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [showDayModal, setShowDayModal] = useState(false);
 
   const sortedStudents = useMemo(() =>
     [...students].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`)),
     [students]
   );
 
-  // Get unique dates with lessons for selected subject
-  const availableDates = useMemo(() => {
-    const dates = new Set<string>();
+  // Get all dates with lessons for selected subject and month
+  const monthDates = useMemo(() => {
+    const year = parseInt(selectedMonth.split('-')[0]);
+    const month = parseInt(selectedMonth.split('-')[1]);
+    const monthStr = String(month).padStart(2, '0');
+    
+    const dates: { date: string; lessons: number[] }[] = [];
+    const dateSet = new Set<string>();
+    
     lessons.forEach(l => {
-      if (l.subject === selectedSubject) dates.add(l.date);
+      if (l.subject === selectedSubject && l.date.startsWith(selectedMonth)) {
+        if (!dateSet.has(l.date)) {
+          dateSet.add(l.date);
+          dates.push({ date: l.date, lessons: [] });
+        }
+        const idx = dates.findIndex(d => d.date === l.date);
+        if (idx !== -1 && !dates[idx].lessons.includes(l.lessonNumber)) {
+          dates[idx].lessons.push(l.lessonNumber);
+        }
+      }
     });
-    return Array.from(dates).sort().reverse();
-  }, [lessons, selectedSubject]);
+    
+    return dates.map(d => ({ ...d, lessons: d.lessons.sort((a, b) => a - b) }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [lessons, selectedSubject, selectedMonth]);
 
-  // Get lessons for selected date and subject
-  const dayLessons = useMemo(() => {
-    return lessons
+  // Get calendar days for month view
+  const calendarDays = useMemo(() => {
+    const year = parseInt(selectedMonth.split('-')[0]);
+    const month = parseInt(selectedMonth.split('-')[1]) - 1;
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    const days: (number | null)[] = [];
+    // Fill empty days before first day of month
+    const startPadding = firstDay === 0 ? 6 : firstDay - 1;
+    for (let i = 0; i < startPadding; i++) days.push(null);
+    // Fill days of month
+    for (let i = 1; i <= daysInMonth; i++) days.push(i);
+    
+    return days;
+  }, [selectedMonth]);
+
+  // Get month name
+  const getMonthName = (monthStr: string) => {
+    const m = parseInt(monthStr.split('-')[1]) - 1;
+    return MONTH_NAMES[m];
+  };
+
+  // Get day of week
+  const getDayOfWeek = (day: number) => {
+    const year = parseInt(selectedMonth.split('-')[0]);
+    const month = parseInt(selectedMonth.split('-')[1]) - 1;
+    return DAY_NAMES_SHORT[new Date(year, month, day).getDay()];
+  };
+
+  // Get attendance for a date
+  const getDateAttendance = (date: string) => {
+    return attendance.filter(a => a.date === date && a.subject === selectedSubject);
+  };
+
+  // Check if date has any attendance marks
+  const dateHasMarks = (date: string) => {
+    return attendance.some(a => a.date === date && a.subject === selectedSubject);
+  };
+
+  // Get attendance summary for a date (for display on calendar)
+  const getDateSummary = (date: string) => {
+    const marks = getDateAttendance(date);
+    if (marks.length === 0) return null;
+    
+    const byType: Record<string, number> = {};
+    marks.forEach(m => { byType[m.type] = (byType[m.type] || 0) + 1; });
+    return byType;
+  };
+
+  // Open day modal
+  const openDayModal = (date: string) => {
+    setSelectedDate(date);
+    setShowDayModal(true);
+  };
+
+  // Navigate months
+  const prevMonth = () => {
+    const [y, m] = selectedMonth.split('-').map(Number);
+    const newDate = new Date(y, m - 2, 1);
+    setSelectedMonth(`${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, '0')}`);
+  };
+
+  const nextMonth = () => {
+    const [y, m] = selectedMonth.split('-').map(Number);
+    const newDate = new Date(y, m, 1);
+    setSelectedMonth(`${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, '0')}`);
+  };
+
+  // Day Modal Component
+  const DayModal = () => {
+    if (!selectedDate) return null;
+    
+    const dateLessons = lessons
       .filter(l => l.subject === selectedSubject && l.date === selectedDate)
       .sort((a, b) => a.lessonNumber - b.lessonNumber);
-  }, [lessons, selectedSubject, selectedDate]);
 
-  // Get attendance for selected period
-  const periodAttendance = useMemo(() => {
-    return attendance.filter(a => 
-      a.subject === selectedSubject && 
-      a.date >= startDate && 
-      a.date <= endDate
-    );
-  }, [attendance, selectedSubject, startDate, endDate]);
+    const dateAttendance = getDateAttendance(selectedDate);
+    
+    const getLessonAttendance = (studentId: string, lessonNum: number) => {
+      return dateAttendance.find(a => a.studentId === studentId && a.lessonNumber === lessonNum);
+    };
 
-  const getAttendanceForStudent = (studentId: string, date: string) => {
-    return attendance.find(a => a.studentId === studentId && a.date === date && a.subject === selectedSubject);
-  };
-
-  const setAttendanceForStudent = (studentId: string, date: string, type: AttendanceRecord['type']) => {
-    setAttendance(prev => {
-      const existing = prev.find(a => a.studentId === studentId && a.date === date && a.subject === selectedSubject);
-      if (existing) {
-        return prev.map(a => a.id === existing.id ? { ...a, type } : a);
+    const setLessonAttendance = (studentId: string, lessonNum: number, type: AttendanceRecord['type'] | null) => {
+      if (type === null) {
+        // Remove attendance for this lesson
+        setAttendance(prev => prev.filter(a => 
+          !(a.studentId === studentId && a.date === selectedDate && a.subject === selectedSubject && a.lessonNumber === lessonNum)
+        ));
+      } else {
+        setAttendance(prev => {
+          const existing = prev.find(a => 
+            a.studentId === studentId && a.date === selectedDate && a.subject === selectedSubject && a.lessonNumber === lessonNum
+          );
+          if (existing) {
+            return prev.map(a => a.id === existing.id ? { ...a, type } : a);
+          }
+          return [...prev, { 
+            id: `at${Date.now()}${Math.random().toString(36).slice(2, 6)}`, 
+            studentId,
+            date: selectedDate, 
+            subject: selectedSubject, 
+            lessonNumber: lessonNum,
+            type 
+          }];
+        });
       }
-      return [...prev, { id: `at${Date.now()}${Math.random().toString(36).slice(2, 6)}`, studentId, date, subject: selectedSubject, type }];
-    });
+    };
+
+    // Check if student has full day absence
+    const hasFullDayAbsence = (studentId: string) => {
+      const studentLessons = dateLessons.map(l => l.lessonNumber);
+      const studentAttendance = dateAttendance.filter(a => a.studentId === studentId);
+      return studentAttendance.length > 0 && studentAttendance.every(a => a.type === 'Н' || a.type === 'УП' || a.type === 'Б');
+    };
+
+    // Set full day absence
+    const setFullDayAbsence = (studentId: string, type: AttendanceRecord['type']) => {
+      const studentLessons = dateLessons.map(l => l.lessonNumber);
+      setAttendance(prev => {
+        // Remove existing attendance for this student/date
+        let newPrev = prev.filter(a => 
+          !(a.studentId === studentId && a.date === selectedDate && a.subject === selectedSubject)
+        );
+        // Add new attendance for each lesson
+        studentLessons.forEach(ln => {
+          newPrev = [...newPrev, { 
+            id: `at${Date.now()}${Math.random().toString(36).slice(2, 6)}`, 
+            studentId, 
+            date: selectedDate, 
+            subject: selectedSubject, 
+            lessonNumber: ln,
+            type 
+          }];
+        });
+        return newPrev;
+      });
+    };
+
+    // Clear full day
+    const clearFullDay = (studentId: string) => {
+      setAttendance(prev => prev.filter(a => 
+        !(a.studentId === studentId && a.date === selectedDate && a.subject === selectedSubject)
+      ));
+    };
+
+    const formatDate = (d: string) => {
+      const date = new Date(d + 'T00:00:00');
+      return `${date.getDate()} ${MONTH_NAMES_GEN[date.getMonth()]}`;
+    };
+
+    return createPortal(
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={() => setShowDayModal(false)}>
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+          {/* Header */}
+          <div className="px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-between flex-shrink-0">
+            <div>
+              <h3 className="text-xl font-semibold">{formatDate(selectedDate)}</h3>
+              <p className="text-blue-100 text-sm">{selectedSubject} · {dateLessons.length} урок(ов)</p>
+            </div>
+            <button onClick={() => setShowDayModal(false)} className="p-2 rounded-xl hover:bg-white/20 transition-colors">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Legend */}
+          <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center gap-4 flex-shrink-0">
+            <span className="text-sm font-medium text-gray-600">Легенда:</span>
+            {ATTENDANCE_TYPES.map((type: any) => (
+              <div key={type.value} className="flex items-center gap-1.5">
+                <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold ${type.bgColor} ${type.color}`}>
+                  {type.short}
+                </span>
+                <span className="text-xs text-gray-600">{type.label}</span>
+              </div>
+            ))}
+            <div className="flex items-center gap-1.5 ml-auto">
+              <button
+                onClick={() => {
+                  sortedStudents.forEach(s => clearFullDay(s.id));
+                }}
+                className="px-3 py-1.5 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Очистить всё
+              </button>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-auto flex-1">
+            {dateLessons.length === 0 ? (
+              <div className="text-center py-12">
+                <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-gray-500">Нет уроков за эту дату</p>
+              </div>
+            ) : (
+              <table className="w-full min-w-[600px]">
+                <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 sticky left-0 bg-gray-50">Ученик</th>
+                    <th className="px-2 py-3 text-center text-sm font-semibold text-gray-700">
+                      <div>Весь день</div>
+                    </th>
+                    {dateLessons.map(l => (
+                      <th key={l.lessonNumber} className="px-2 py-3 text-center text-sm font-semibold text-gray-700 min-w-[70px]">
+                        <div className="text-xs">{l.lessonNumber}</div>
+                        <div className="text-xs font-normal text-gray-500">{l.startTime?.slice(0, 5)}</div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {sortedStudents.map(student => {
+                    const fullDayType = hasFullDayAbsence(student.id) ? dateAttendance.find(a => a.studentId === student.id)?.type : null;
+                    
+                    return (
+                      <tr key={student.id} className="hover:bg-gray-50/50">
+                        <td className="px-4 py-2 sticky left-0 bg-white">
+                          <div className="font-medium text-gray-900">{student.lastName} {student.firstName}</div>
+                        </td>
+                        <td className="px-2 py-2 text-center">
+                          {fullDayType ? (
+                            <div className="relative group">
+                              <button
+                                className={`w-14 h-8 rounded-lg text-xs font-bold ${ATTENDANCE_TYPES.find((t: any) => t.value === fullDayType)?.bgColor} ${ATTENDANCE_TYPES.find((t: any) => t.value === fullDayType)?.color}`}
+                              >
+                                {ATTENDANCE_TYPES.find((t: any) => t.value === fullDayType)?.short}
+                              </button>
+                              <div className="absolute z-10 top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 p-1 hidden group-hover:block min-w-[160px]">
+                                <button
+                                  onClick={() => clearFullDay(student.id)}
+                                  className="w-full px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded transition-colors text-left"
+                                >
+                                  Убрать весь день
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="relative group">
+                              <button className="w-14 h-8 rounded-lg border-2 border-dashed border-gray-200 hover:border-gray-300 text-gray-300 hover:text-gray-400 text-xs transition-colors">
+                                —
+                              </button>
+                              <div className="absolute z-10 top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 p-1 hidden group-hover:block min-w-[140px]">
+                                <div className="grid grid-cols-2 gap-0.5">
+                                  {ATTENDANCE_TYPES.filter((t: any) => t.value !== 'ОП').map((at: any) => (
+                                    <button
+                                      key={at.value}
+                                      onClick={() => setFullDayAbsence(student.id, at.value)}
+                                      className={`px-2 py-1.5 rounded text-xs font-bold ${at.bgColor} ${at.color} hover:opacity-80`}
+                                    >
+                                      {at.short}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </td>
+                        {dateLessons.map(lesson => {
+                          const att = getLessonAttendance(student.id, lesson.lessonNumber);
+                          const attType = att ? ATTENDANCE_TYPES.find((t: any) => t.value === att.type) : null;
+                          
+                          return (
+                            <td key={lesson.lessonNumber} className="px-1 py-2 text-center">
+                              <div className="relative group">
+                                {attType ? (
+                                  <button
+                                    onClick={() => setLessonAttendance(student.id, lesson.lessonNumber, null)}
+                                    className={`w-10 h-10 rounded-lg text-sm font-bold ${attType.bgColor} ${attType.color} hover:opacity-80 transition-opacity`}
+                                    title={`${attType.label} (нажмите для удаления)`}
+                                  >
+                                    {attType.short}
+                                  </button>
+                                ) : (
+                                  <button className="w-10 h-10 rounded-lg border-2 border-dashed border-gray-200 hover:border-gray-300 text-gray-300 hover:text-gray-400 transition-colors text-xs">
+                                    +
+                                  </button>
+                                )}
+                                <div className="absolute z-10 top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 p-1 hidden group-hover:block min-w-[140px]">
+                                  <div className="grid grid-cols-2 gap-0.5">
+                                    {ATTENDANCE_TYPES.map((at: any) => (
+                                      <button
+                                        key={at.value}
+                                        onClick={() => setLessonAttendance(student.id, lesson.lessonNumber, at.value)}
+                                        className={`px-2 py-1.5 rounded text-xs font-bold ${at.bgColor} ${at.color} hover:opacity-80`}
+                                      >
+                                        {at.short}
+                                      </button>
+                                    ))}
+                                    {att && (
+                                      <button
+                                        onClick={() => setLessonAttendance(student.id, lesson.lessonNumber, null)}
+                                        className="col-span-2 px-2 py-1.5 rounded text-xs text-red-600 hover:bg-red-50"
+                                      >
+                                        Убрать
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
   };
-
-  const deleteAttendanceForStudent = (studentId: string, date: string) => {
-    setAttendance(prev => prev.filter(a => !(a.studentId === studentId && a.date === date && a.subject === selectedSubject)));
-  };
-
-  // Set first available date if current not available
-  useEffect(() => {
-    if (availableDates.length > 0 && !availableDates.includes(selectedDate)) {
-      setSelectedDate(availableDates[0]);
-    }
-  }, [availableDates, selectedDate]);
-
-  const formatDate = (d: string) => {
-    const date = new Date(d + 'T00:00:00');
-    return `${date.getDate()} ${MONTH_NAMES_GEN[date.getMonth()]}`;
-  };
-
-  const getDayOfWeek = (d: string) => {
-    const date = new Date(d + 'T00:00:00');
-    return DAY_NAMES[date.getDay() === 0 ? 6 : date.getDay() - 1];
-  };
-
-  // Statistics
-  const stats = useMemo(() => {
-    const counts: Record<string, number> = { Н: 0, УП: 0, Б: 0, ОП: 0, ' ': 0 };
-    periodAttendance.forEach(a => {
-      counts[a.type] = (counts[a.type] || 0) + 1;
-    });
-    return counts;
-  }, [periodAttendance]);
-
-  const studentStats = useMemo(() => {
-    return sortedStudents.map(s => {
-      const sa = periodAttendance.filter(a => a.studentId === s.id);
-      const absent = sa.filter(a => a.type === 'Н').length;
-      const excused = sa.filter(a => a.type === 'УП' || a.type === 'Б').length;
-      const late = sa.filter(a => a.type === 'ОП').length;
-      return { student: s, absent, excused, late, total: sa.length };
-    }).filter(s => s.total > 0).sort((a, b) => b.absent - a.absent);
-  }, [sortedStudents, periodAttendance]);
 
   return (
     <div className="animate-fadeIn space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold text-gray-900">Посещаемость</h2>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setViewMode('day')}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-              viewMode === 'day' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            За день
-          </button>
-          <button
-            onClick={() => setViewMode('period')}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-              viewMode === 'period' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            За период
-          </button>
-        </div>
       </div>
 
       {/* Subject selector */}
@@ -529,42 +773,95 @@ const AttendanceManager: React.FC = () => {
             ))}
           </select>
         </div>
+      </div>
 
-        {viewMode === 'day' ? (
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Дата</label>
-            <select
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {availableDates.map(d => (
-                <option key={d} value={d}>{formatDate(d)} — {getDayOfWeek(d)}</option>
-              ))}
-            </select>
-          </div>
-        ) : (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">С</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+      {/* Month navigation */}
+      <div className="flex items-center gap-4">
+        <button onClick={prevMonth} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+          <ChevronLeft className="w-5 h-5 text-gray-600" />
+        </button>
+        <h3 className="text-lg font-semibold text-gray-900 min-w-[180px] text-center">
+          {getMonthName(selectedMonth)} {selectedMonth.split('-')[0]}
+        </h3>
+        <button onClick={nextMonth} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+          <ChevronRight className="w-5 h-5 text-gray-600" />
+        </button>
+      </div>
+
+      {/* Calendar grid */}
+      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
+        {/* Day headers */}
+        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+          {DAY_NAMES_SHORT.map(day => (
+            <div key={day} className="px-2 py-3 text-center text-sm font-medium text-gray-600">
+              {day}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">По</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </>
-        )}
+          ))}
+        </div>
+        
+        {/* Calendar days */}
+        <div className="grid grid-cols-7">
+          {calendarDays.map((day, idx) => {
+            if (day === null) {
+              return <div key={idx} className="h-24 bg-gray-50/30" />;
+            }
+            
+            const dateStr = `${selectedMonth}-${String(day).padStart(2, '0')}`;
+            const dateInfo = monthDates.find(d => d.date === dateStr);
+            const hasLessons = !!dateInfo;
+            const summary = getDateSummary(dateStr);
+            const isToday = dateStr === getTodayString();
+            
+            return (
+              <div 
+                key={idx}
+                onClick={() => hasLessons && openDayModal(dateStr)}
+                className={`h-24 p-2 border-b border-r border-gray-100 transition-colors ${
+                  hasLessons ? 'hover:bg-blue-50 cursor-pointer' : 'bg-gray-50/30'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`text-sm font-medium ${
+                    isToday ? 'w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center' : 
+                    hasLessons ? 'text-gray-900' : 'text-gray-400'
+                  }`}>
+                    {day}
+                  </span>
+                  {hasLessons && (
+                    <span className="text-xs text-gray-500">{dateInfo?.lessons.length}ур.</span>
+                  )}
+                </div>
+                
+                {hasLessons && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {dateInfo?.lessons.slice(0, 3).map(ln => (
+                      <span key={ln} className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">
+                        {ln}
+                      </span>
+                    ))}
+                    {dateInfo && dateInfo.lessons.length > 3 && (
+                      <span className="text-[10px] text-gray-500">+{dateInfo.lessons.length - 3}</span>
+                    )}
+                  </div>
+                )}
+                
+                {summary && (
+                  <div className="mt-1 flex flex-wrap gap-0.5">
+                    {Object.entries(summary).map(([type, count]) => {
+                      const t = ATTENDANCE_TYPES.find((at: any) => at.value === type);
+                      if (!t) return null;
+                      return (
+                        <span key={type} className={`text-[10px] px-1 rounded font-bold ${t.bgColor} ${t.color}`}>
+                          {count}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Legend */}
@@ -580,188 +877,7 @@ const AttendanceManager: React.FC = () => {
         ))}
       </div>
 
-      {/* Day view - table */}
-      {viewMode === 'day' && (
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
-          <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
-            <h3 className="font-semibold text-gray-900">{formatDate(selectedDate)} — {getDayOfWeek(selectedDate)}</h3>
-            <p className="text-sm text-gray-500">{selectedSubject} · {dayLessons.length} урок(ов)</p>
-          </div>
-          
-          {dayLessons.length === 0 ? (
-            <div className="text-center py-12">
-              <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-500">Нет уроков за эту дату</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Ученик</th>
-                    {dayLessons.map(l => (
-                      <th key={l.lessonNumber} className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
-                        <div>Урок {l.lessonNumber}</div>
-                        <div className="text-xs font-normal text-gray-500">{l.startTime}</div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {sortedStudents.map(student => (
-                    <tr key={student.id} className="hover:bg-gray-50/50">
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900">{student.lastName} {student.firstName}</div>
-                      </td>
-                      {dayLessons.map(lesson => {
-                        const att = attendance.find(a => 
-                          a.studentId === student.id && 
-                          a.date === lesson.date && 
-                          a.subject === selectedSubject &&
-                          a.lessonNumber === lesson.lessonNumber
-                        );
-                        const attType = att ? ATTENDANCE_TYPES.find((t: any) => t.value === att.type) : null;
-                        
-                        return (
-                          <td key={lesson.lessonNumber} className="px-2 py-2 text-center">
-                            {attType ? (
-                              <button
-                                onClick={() => deleteAttendanceForStudent(student.id, lesson.date)}
-                                className={`w-10 h-10 rounded-lg text-sm font-bold ${attType.bgColor} ${attType.color} hover:opacity-80 transition-opacity`}
-                                title={`${attType.label} (нажмите для удаления)`}
-                              >
-                                {attType.short}
-                              </button>
-                            ) : (
-                              <div className="relative group">
-                                <button className="w-10 h-10 rounded-lg border-2 border-dashed border-gray-200 hover:border-gray-300 text-gray-300 hover:text-gray-400 transition-colors">
-                                  +
-                                </button>
-                                <div className="absolute z-10 top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 p-1 hidden group-hover:block min-w-[180px]">
-                                  <div className="grid grid-cols-2 gap-1">
-                                    {ATTENDANCE_TYPES.map((at: any) => (
-                                      <button
-                                        key={at.value}
-                                        onClick={() => setAttendanceForStudent(student.id, lesson.date, at.value)}
-                                        className={`px-2 py-1.5 rounded text-xs font-bold ${at.bgColor} ${at.color} hover:opacity-80`}
-                                      >
-                                        {at.short} — {at.label}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Period view - statistics */}
-      {viewMode === 'period' && (
-        <div className="space-y-6">
-          {/* Stats summary */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="glass rounded-2xl p-5 text-center">
-              <div className="text-3xl font-bold text-gray-900">{periodAttendance.length}</div>
-              <div className="text-sm text-gray-500 mt-1">Всего отметок</div>
-            </div>
-            <div className="glass rounded-2xl p-5 text-center">
-              <div className="text-3xl font-bold text-red-600">{stats.Н || 0}</div>
-              <div className="text-sm text-gray-500 mt-1">Неуважительная</div>
-            </div>
-            <div className="glass rounded-2xl p-5 text-center">
-              <div className="text-3xl font-bold text-blue-600">{(stats.УП || 0) + (stats.Б || 0)}</div>
-              <div className="text-sm text-gray-500 mt-1">Уважительная</div>
-            </div>
-            <div className="glass rounded-2xl p-5 text-center">
-              <div className="text-3xl font-bold text-amber-600">{stats.Б || 0}</div>
-              <div className="text-sm text-gray-500 mt-1">Болел</div>
-            </div>
-            <div className="glass rounded-2xl p-5 text-center">
-              <div className="text-3xl font-bold text-orange-600">{stats.ОП || 0}</div>
-              <div className="text-sm text-gray-500 mt-1">Опоздал</div>
-            </div>
-          </div>
-
-          {/* Student statistics table */}
-          <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
-              <h3 className="font-semibold text-gray-900">Статистика по ученикам</h3>
-              <p className="text-sm text-gray-500">Период: {formatDate(startDate)} — {formatDate(endDate)}</p>
-            </div>
-            
-            {studentStats.length === 0 ? (
-              <div className="text-center py-12">
-                <UserCheck className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-gray-500">Нет данных о посещаемости за этот период</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Ученик</th>
-                      <th className="px-3 py-3 text-center text-sm font-semibold text-red-600">Неуважительные</th>
-                      <th className="px-3 py-3 text-center text-sm font-semibold text-blue-600">Уважительные</th>
-                      <th className="px-3 py-3 text-center text-sm font-semibold text-amber-600">Болел</th>
-                      <th className="px-3 py-3 text-center text-sm font-semibold text-orange-600">Опоздания</th>
-                      <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">Всего</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {studentStats.map(({ student, absent, excused, late, total }) => (
-                      <tr key={student.id} className="hover:bg-gray-50/50">
-                        <td className="px-4 py-3">
-                          <div className="font-medium text-gray-900">{student.lastName} {student.firstName}</div>
-                        </td>
-                        <td className="px-3 py-3 text-center">
-                          {absent > 0 ? (
-                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-100 text-red-700 font-bold">
-                              {absent}
-                            </span>
-                          ) : <span className="text-gray-400">—</span>}
-                        </td>
-                        <td className="px-3 py-3 text-center">
-                          {excused > 0 ? (
-                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-700 font-bold">
-                              {excused}
-                            </span>
-                          ) : <span className="text-gray-400">—</span>}
-                        </td>
-                        <td className="px-3 py-3 text-center">
-                          {late > 0 ? (
-                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 text-amber-700 font-bold">
-                              {late}
-                            </span>
-                          ) : <span className="text-gray-400">—</span>}
-                        </td>
-                        <td className="px-3 py-3 text-center">
-                          {late > 0 ? (
-                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-orange-100 text-orange-700 font-bold">
-                              {late}
-                            </span>
-                          ) : <span className="text-gray-400">—</span>}
-                        </td>
-                        <td className="px-3 py-3 text-center">
-                          <span className="font-semibold text-gray-900">{total}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {showDayModal && <DayModal />}
     </div>
   );
 };
