@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
 import katex from 'katex';
@@ -21,6 +22,8 @@ interface GradeWithTooltipProps {
 
 const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromAverage, reason, size = 'md' }) => {
   const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
+  const triggerRef = useRef<HTMLSpanElement>(null);
   
   const sizeClasses = size === 'sm' 
     ? 'w-8 h-8 text-xs' 
@@ -44,24 +47,53 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromA
 
   const showIndicator = excludeFromAverage || reason;
 
+  const handleMouseEnter = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setTooltipPos({
+        top: rect.top,
+        left: rect.left + rect.width / 2
+      });
+    }
+    setShowTooltip(true);
+  };
+
   return (
     <div className="relative inline-flex">
       <span 
+        ref={triggerRef}
         className={`inline-flex items-center justify-center rounded-xl font-bold ${sizeClasses} ${colorClass}`}
-        onMouseEnter={() => setShowTooltip(true)}
+        onMouseEnter={handleMouseEnter}
         onMouseLeave={() => setShowTooltip(false)}
-        onClick={() => setShowTooltip(!showTooltip)}
+        onClick={() => {
+          if (!showTooltip && triggerRef.current) {
+            const rect = triggerRef.current.getBoundingClientRect();
+            setTooltipPos({ top: rect.top, left: rect.left + rect.width / 2 });
+          }
+          setShowTooltip(!showTooltip);
+        }}
       >
         {value}
         {showIndicator && (
           <span className={`ml-0.5 ${size === 'sm' ? 'text-[8px]' : 'text-[10px]'} leading-none opacity-60`}>•</span>
         )}
       </span>
-      {showTooltip && tooltipText && (
-        <div className="absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap shadow-xl pointer-events-none">
+      {showTooltip && tooltipText && tooltipPos && createPortal(
+        <div 
+          className="fixed z-[100] px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-xl pointer-events-none"
+          style={{ 
+            top: tooltipPos.top - 8, 
+            left: tooltipPos.left,
+            transform: 'translate(-50%, -100%)',
+            whiteSpace: 'nowrap'
+          }}
+        >
           {tooltipText}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
-        </div>
+          <div 
+            className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" 
+          />
+        </div>,
+        document.body
       )}
     </div>
   );
