@@ -406,9 +406,9 @@ const AdminDashboard: React.FC = () => {
 
   const existingStudentIds = new Set(students.map(s => s.id));
   // Фильтруем оценки: только для существующих учеников и учитываемые в среднем балле
-  const filteredGrades = grades.filter(g => existingStudentIds.has(g.studentId) && !g.excludeFromAverage);
+  const filteredGrades = (grades || []).filter(g => existingStudentIds.has(g.studentId) && !g.excludeFromAverage);
   const avgGrade = filteredGrades.length > 0 ? (filteredGrades.reduce((s, g) => s + g.value, 0) / filteredGrades.length).toFixed(2) : '—';
-  const absentCount = attendance.filter(a => a.type === 'Н' && existingStudentIds.has(a.studentId)).length;
+  const absentCount = (attendance || []).filter(a => a.type === 'Н' && existingStudentIds.has(a.studentId)).length;
 
   const topStudents = useMemo(() => {
     return students.map(s => {
@@ -684,11 +684,13 @@ const AttendanceCalendar: React.FC = () => {
 
   // Получить все записи посещаемости для даты и ученика
   const getAttendanceForStudentDate = (studentId: string, date: string) => {
+    if (!attendance || !Array.isArray(attendance)) return [];
     return attendance.filter(a => a.studentId === studentId && a.date === date);
   };
 
   // Получить уникальных учеников с пропусками на дату
   const getAbsentStudentsForDate = (date: string) => {
+    if (!attendance || !Array.isArray(attendance)) return [];
     const dateStr = formatDateStr(new Date(date));
     const presentStudents = new Set(attendance.filter(a => a.date === dateStr).map(a => a.studentId));
     return students.filter(s => presentStudents.has(s.id));
@@ -706,8 +708,9 @@ const AttendanceCalendar: React.FC = () => {
   // Установить/изменить отметку посещаемости
   const setAttendanceForLesson = (studentId: string, date: string, subject: string, lessonNumber: number, type: AttendanceRecord['type'] | null) => {
     setAttendance(prev => {
+      const arr = prev || [];
       // Удаляем существующие записи для этой комбинации
-      const filtered = prev.filter(a => 
+      const filtered = arr.filter(a => 
         !(a.studentId === studentId && a.date === date && a.subject === subject && a.lessonNumber === lessonNumber)
       );
       
@@ -729,8 +732,9 @@ const AttendanceCalendar: React.FC = () => {
   const setAttendanceForDay = (studentId: string, date: string, type: AttendanceRecord['type'] | null) => {
     const dayLessons = getLessonsForDate(new Date(date));
     setAttendance(prev => {
+      const arr = prev || [];
       // Удаляем все существующие записи для этого ученика и даты
-      const filtered = prev.filter(a => 
+      const filtered = arr.filter(a => 
         !(a.studentId === studentId && a.date === date)
       );
 
@@ -752,7 +756,7 @@ const AttendanceCalendar: React.FC = () => {
 
   // Получить отметку для конкретного урока
   const getAttendanceForLesson = (studentId: string, date: string, subject: string, lessonNumber: number): AttendanceRecord['type'] | null => {
-    const record = attendance.find(a => 
+    const record = (attendance || []).find(a => 
       a.studentId === studentId && a.date === date && a.subject === subject && a.lessonNumber === lessonNumber
     );
     return record?.type || null;
@@ -853,7 +857,7 @@ const AttendanceCalendar: React.FC = () => {
                 {hasLessons && (
                   <div className="mt-1 flex flex-wrap gap-0.5">
                     {ATTENDANCE_TYPES.slice(0, 3).map((type: any) => {
-                      const count = attendance.filter(a => 
+                      const count = (attendance || []).filter(a => 
                         a.date === formatDateStr(date) && a.type === type.value
                       ).length;
                       if (count === 0) return null;
@@ -969,7 +973,7 @@ const AttendanceModal: React.FC<{
     if (!selectedStudentId) return null;
     
     if (wholeDay) {
-      const dayAttendance = attendance.filter(a => a.studentId === selectedStudentId && a.date === date);
+      const dayAttendance = (attendance || []).filter(a => a.studentId === selectedStudentId && a.date === date);
       if (dayAttendance.length === lessons.length && lessons.length > 0) {
         const firstType = dayAttendance[0].type;
         if (dayAttendance.every(a => a.type === firstType)) {
@@ -1135,7 +1139,7 @@ const AttendanceModal: React.FC<{
           <h4 className="text-sm font-semibold text-gray-700 mb-3">Отметки на {formatDate(date)}:</h4>
           <div className="space-y-2">
             {sortedStudents.map(student => {
-              const studentAttendance = attendance.filter(a => a.studentId === student.id && a.date === date);
+              const studentAttendance = (attendance || []).filter(a => a.studentId === student.id && a.date === date);
               if (studentAttendance.length === 0) return null;
               
               // Группируем по типу
@@ -1205,6 +1209,7 @@ const Reports: React.FC = () => {
 
   // Фильтрация оценок по периоду
   const filterGradesByPeriod = useCallback((studentId?: string, subject?: string) => {
+    if (!grades || !Array.isArray(grades)) return [];
     return grades.filter(g => {
       if (studentId && g.studentId !== studentId) return false;
       if (subject && g.subject !== subject) return false;
@@ -1215,6 +1220,7 @@ const Reports: React.FC = () => {
 
   // Фильтрация посещаемости по периоду
   const filterAttendanceByPeriod = useCallback((studentId?: string) => {
+    if (!attendance || !Array.isArray(attendance)) return [];
     return attendance.filter(a => {
       if (studentId && a.studentId !== studentId) return false;
       if (!isAllPeriod && (a.date < dateRange.start || a.date > dateRange.end)) return false;
@@ -2135,19 +2141,20 @@ const Journal: React.FC = () => {
   };
 
   const getAttendanceMark = (studentId: string, date: string) => {
-    return attendance.find(a => a.studentId === studentId && a.date === date && a.subject === selectedSubject);
+    return (attendance || []).find(a => a.studentId === studentId && a.date === date && a.subject === selectedSubject);
   };
 
   const setAttendanceMark = (studentId: string, date: string, type: AttendanceRecord['type']) => {
     setAttendance(prev => {
-      const existing = prev.find(a => a.studentId === studentId && a.date === date && a.subject === selectedSubject);
-      if (existing) return prev.map(a => a.id === existing.id ? { ...a, type } : a);
-      return [...prev, { id: `at${Date.now()}${Math.random().toString(36).slice(2, 6)}`, studentId, date, subject: selectedSubject, type }];
+      const arr = prev || [];
+      const existing = arr.find(a => a.studentId === studentId && a.date === date && a.subject === selectedSubject);
+      if (existing) return arr.map(a => a.id === existing.id ? { ...a, type } : a);
+      return [...arr, { id: `at${Date.now()}${Math.random().toString(36).slice(2, 6)}`, studentId, date, subject: selectedSubject, type }];
     });
   };
 
   const deleteAttendanceMark = (studentId: string, date: string) => {
-    setAttendance(prev => prev.filter(a => !(a.studentId === studentId && a.date === date && a.subject === selectedSubject)));
+    setAttendance(prev => (prev || []).filter(a => !(a.studentId === studentId && a.date === date && a.subject === selectedSubject)));
   };
 
   const getStudentAvg = (studentId: string) => {
