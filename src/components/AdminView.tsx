@@ -559,9 +559,9 @@ const AttendanceManager: React.FC = () => {
                     <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 sticky left-0 bg-gray-50 border-r-2 border-gray-200 z-20">Ученик</th>
                     <th className="px-2 py-3 text-center text-sm font-bold text-gray-800 border-r-2 border-gray-200 min-w-[90px]">Весь день</th>
                     {dateLessons.map((l, colIdx) => (
-                      <th key={`${l.lessonNumber}-${l.subject}`} className={`px-2 py-3 text-center text-sm font-bold text-gray-800 min-w-[70px] ${colIdx < dateLessons.length - 1 ? 'border-r-2 border-gray-200' : ''}`}>
+                      <th key={`${l.lessonNumber}-${l.subject}`} className={`px-2 py-3 text-center text-sm font-bold text-gray-800 min-w-[90px] ${colIdx < dateLessons.length - 1 ? 'border-r-2 border-gray-200' : ''}`}>
                         <div className="text-xs font-bold">№{l.lessonNumber}</div>
-                        <div className="text-[10px] font-normal text-gray-500">{l.subject.slice(0, 6)}</div>
+                        <div className="text-[10px] font-normal text-gray-500 truncate" title={l.subject}>{l.subject}</div>
                       </th>
                     ))}
                   </tr>
@@ -675,21 +675,18 @@ const AttendanceManager: React.FC = () => {
             const hasLessons = !!dateInfo;
             const summary = getDateSummary(dateStr);
             const isToday = dateStr === getTodayString();
-            const dayOfWeek = new Date(dateStr + 'T00:00:00').getDay();
-            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
             
             // Calculate background color based on attendance summary
             let bgClass = '';
             if (summary) {
-              const total = Object.values(summary).reduce((a, b) => a + b, 0) as number;
               const absent = (summary['Н'] || 0);
               const excused = (summary['УП'] || 0) + (summary['Б'] || 0);
               const late = (summary['ОП'] || 0);
               
-              if (absent > 0) bgClass = 'bg-red-50';
-              else if (excused > 0) bgClass = 'bg-blue-50';
-              else if (late > 0) bgClass = 'bg-orange-50';
-              else bgClass = 'bg-green-50';
+              if (absent > 0) bgClass = 'bg-red-200';
+              else if (excused > 0) bgClass = 'bg-blue-200';
+              else if (late > 0) bgClass = 'bg-orange-200';
+              else bgClass = 'bg-green-200';
             }
             
             return (
@@ -698,10 +695,10 @@ const AttendanceManager: React.FC = () => {
                 onClick={() => hasLessons && openDayModal(dateStr)} 
                 className={`h-24 p-1.5 border-r border-b border-gray-200 transition-all cursor-pointer ${
                   hasLessons ? 'hover:ring-2 hover:ring-blue-400 hover:z-10' : 'bg-gray-50'
-                } ${bgClass} ${isWeekend ? 'bg-gray-50' : ''}`}
+                } ${bgClass}`}
               >
                 <div className="flex items-center justify-between">
-                  <span className={`text-sm font-bold ${isToday ? 'w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs' : isWeekend ? 'text-gray-400' : 'text-gray-700'}`}>
+                  <span className={`text-sm font-bold ${isToday ? 'w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs' : 'text-gray-700'}`}>
                     {day}
                   </span>
                   {isToday && <span className="text-[10px] text-blue-600 font-medium">Сегодня</span>}
@@ -1826,7 +1823,7 @@ const Journal: React.FC = () => {
                               }`}
                               title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                             >
-                              {showAttendance ? att?.type : (mainGrade?.value || '')}
+                              {mainGrade?.value || (showAttendance ? att?.type : '')}
                             </button>
                           );
                         })()}
@@ -2157,7 +2154,7 @@ const Journal: React.FC = () => {
                                 }`}
                                 title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                               >
-                                {showAttendance ? att?.type : (mainGrade?.value || '')}
+                                {mainGrade?.value || (showAttendance ? att?.type : '')}
                               </button>
                             </td>
                             {cols.map(c => {
