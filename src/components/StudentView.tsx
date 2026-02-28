@@ -100,6 +100,42 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromA
   );
 };
 
+// ==================== TOPIC CELL WITH EXPAND/COLLAPSE ====================
+interface TopicCellProps {
+  topic?: string;
+  maxLines?: number;
+}
+
+const TopicCell: React.FC<TopicCellProps> = ({ topic, maxLines = 2 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  if (!topic) {
+    return <span className="text-gray-400">—</span>;
+  }
+  
+  // Проверяем, нужно ли показывать кнопку "подробнее"
+  // Если текст содержит много слов или символов - показываем его с ограничением
+  const needsTruncation = topic.length > 60 || topic.split(' ').length > 10;
+  
+  if (!needsTruncation) {
+    return <span className="text-gray-600">{topic}</span>;
+  }
+  
+  return (
+    <div className="flex flex-col">
+      <p className={`text-gray-600 ${!isExpanded ? 'line-clamp-' + maxLines : 'whitespace-pre-wrap'}`}>
+        {topic}
+      </p>
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="text-xs text-primary-600 hover:text-primary-700 font-medium mt-1 self-start transition-colors"
+      >
+        {isExpanded ? 'Свернуть' : 'Подробнее'}
+      </button>
+    </div>
+  );
+};
+
 export const StudentView: React.FC = () => {
   const { user, logout } = useAuth();
   const { lessons, grades, diaryEntries, tests, testAttempts, setTestAttempts, testRetakes, setTestRetakes, setGrades, journalColumns, students, testAssignments, attendance } = useData();
@@ -547,7 +583,7 @@ const Diary: React.FC<DiaryProps> = ({
         <div className="bg-gradient-to-r from-violet-600 to-purple-700 rounded-2xl p-5 text-white mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold truncate">{test.title}</h2>
+              <h2 className="text-xl font-bold">{test.title}</h2>
               <p className="text-violet-200 text-sm mt-1">Вопрос {currentQuestion + 1} из {questions.length}</p>
             </div>
             <div className="text-right">
@@ -769,7 +805,7 @@ const Diary: React.FC<DiaryProps> = ({
             {testResult.grade >= 4 ? <CheckCircle className="w-10 h-10 text-green-600" /> : <AlertCircle className="w-10 h-10 text-red-600" />}
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Тест завершён!</h2>
-          <p className="text-gray-600 mb-6 truncate">{takingTest.test.title}</p>
+          <p className="text-gray-600 mb-6">{takingTest.test.title}</p>
 
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-white rounded-xl p-4">
@@ -822,7 +858,7 @@ const Diary: React.FC<DiaryProps> = ({
               <Play className="w-8 h-8 text-violet-600" />
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Начать тест?</h3>
-            <p className="text-gray-600 mb-1 truncate">{test.title}</p>
+            <p className="text-gray-600 mb-1">{test.title}</p>
             <p className="text-sm text-gray-500 mb-2">
               {assignedVariant
                 ? `Вариант: ${assignedVariant.name} (${assignedVariant.questions.length} вопросов)`
@@ -961,7 +997,9 @@ const Diary: React.FC<DiaryProps> = ({
                       <tr key={lesson.id} className="border-b border-gray-200 hover:bg-gray-50/80 transition-colors">
                         <td className="px-4 py-3 text-gray-500 font-bold border-r border-gray-200">{lesson.lessonNumber}</td>
                         <td className="px-4 py-3 font-bold text-gray-900 border-r border-gray-200">{lesson.subject}</td>
-                        <td className="px-4 py-3 text-gray-600 border-r border-gray-200 max-w-[200px] truncate" title={entry?.topic || ''}>{entry?.topic || '—'}</td>
+                        <td className="px-4 py-3 border-r border-gray-200">
+                          <TopicCell topic={entry?.topic} />
+                        </td>
                         <td className="px-4 py-3 border-r border-gray-200">
                           {entry?.homework && (
                             <p className="text-gray-600 mb-2">{entry.homework}</p>
