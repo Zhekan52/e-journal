@@ -475,13 +475,18 @@ const AttendanceManager: React.FC = () => {
   const DayModal = () => {
     if (!selectedDate) return null;
     
-    const dateLessons = lessons.filter(l => l.date === selectedDate).sort((a, b) => a.lessonNumber - b.lessonNumber);
+    // Each lesson slot = unique combination of lessonNumber + subject
+    const dateLessons = lessons.filter(l => l.date === selectedDate).sort((a, b) => a.lessonNumber - b.lessonNumber || a.subject.localeCompare(b.subject));
     const dateAttendance = getDateAttendance(selectedDate);
+    
+    // Get total lessons count for this day
+    const totalLessons = dateLessons.length;
     
     const getLessonAttendance = (studentId: string, lessonNumber: number, subject: string) => 
       dateAttendance.find(a => a.studentId === studentId && a.lessonNumber === lessonNumber && a.subject === subject);
 
-    const setLessonAttendance = (studentId: string, lessonNumber: number, subject: string, type: AttendanceRecord['type'] | null) => {
+    const setLessonAttendance = (studentId: string, lessonNumber: number, subject: string, type: AttendanceRecord['type'] | null, e?: React.MouseEvent) => {
+      e?.stopPropagation();
       if (type === null) {
         setAttendance(prev => prev.filter(a => !(a.studentId === studentId && a.date === selectedDate && a.lessonNumber === lessonNumber && a.subject === subject)));
       } else {
@@ -493,15 +498,21 @@ const AttendanceManager: React.FC = () => {
       }
     };
 
+    // Check if student has FULL day attendance - ALL lessons must be marked with same type
     const getFullDayType = (studentId: string) => {
       const studentAttendance = dateAttendance.filter(a => a.studentId === studentId);
       if (studentAttendance.length === 0) return null;
+      
+      // Must have attendance for ALL lessons
+      if (studentAttendance.length < totalLessons) return null;
+      
       const types = new Set(studentAttendance.map(a => a.type));
       if (types.size === 1) return studentAttendance[0].type;
       return null;
     };
 
-    const setFullDayAbsence = (studentId: string, type: AttendanceRecord['type']) => {
+    const setFullDayAbsence = (studentId: string, type: AttendanceRecord['type'], e?: React.MouseEvent) => {
+      e?.stopPropagation();
       setAttendance(prev => {
         let newPrev = prev.filter(a => !(a.studentId === studentId && a.date === selectedDate));
         dateLessons.forEach(l => {
@@ -511,15 +522,12 @@ const AttendanceManager: React.FC = () => {
       });
     };
 
-    const clearFullDay = (studentId: string) => setAttendance(prev => prev.filter(a => !(a.studentId === studentId && a.date === selectedDate)));
+    const clearFullDay = (studentId: string, e?: React.MouseEvent) => {
+      e?.stopPropagation();
+      setAttendance(prev => prev.filter(a => !(a.studentId === studentId && a.date === selectedDate)));
+    };
 
     const formatDate = (d: string) => { const date = new Date(d + 'T00:00:00'); return `${date.getDate()} ${MONTH_NAMES_GEN[date.getMonth()]}`; };
-
-    const lessonsByNumber = useMemo(() => {
-      const grouped: Record<number, { subject: string; startTime?: string }[]> = {};
-      dateLessons.forEach(l => { if (!grouped[l.lessonNumber]) grouped[l.lessonNumber] = []; grouped[l.lessonNumber].push({ subject: l.subject, startTime: l.startTime }); });
-      return grouped;
-    }, [dateLessons]);
 
     return createPortal(
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={() => setShowDayModal(false)}>
@@ -545,15 +553,15 @@ const AttendanceManager: React.FC = () => {
             {dateLessons.length === 0 ? (
               <div className="text-center py-12"><Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" /><p className="text-gray-500">Нет уроков</p></div>
             ) : (
-              <table className="w-full min-w-[700px]">
-                <thead className="bg-gray-50 border-b-2 border-gray-300 sticky top-0">
+              <table className="w-full min-w-[800px]">
+                <thead className="bg-gray-50 border-b-2 border-gray-300 sticky top-0 z-10">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 sticky left-0 bg-gray-50 border-r-2 border-gray-200">Ученик</th>
-                    <th className="px-2 py-3 text-center text-sm font-bold text-gray-800 border-r-2 border-gray-200">Весь день</th>
-                    {Object.entries(lessonsByNumber).map(([ln, lessonInfos], colIdx) => (
-                      <th key={ln} className={`px-2 py-3 text-center text-sm font-bold text-gray-800 min-w-[80px] ${colIdx < Object.keys(lessonsByNumber).length - 1 ? 'border-r-2 border-gray-200' : ''}`}>
-                        <div className="text-xs font-bold">Урок {ln}</div>
-                        <div className="text-[10px] font-normal text-gray-500">{lessonInfos.map(l => l.subject.slice(0, 3)).join(', ')}</div>
+                    <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 sticky left-0 bg-gray-50 border-r-2 border-gray-200 z-20">Ученик</th>
+                    <th className="px-2 py-3 text-center text-sm font-bold text-gray-800 border-r-2 border-gray-200 min-w-[90px]">Весь день</th>
+                    {dateLessons.map((l, colIdx) => (
+                      <th key={`${l.lessonNumber}-${l.subject}`} className={`px-2 py-3 text-center text-sm font-bold text-gray-800 min-w-[70px] ${colIdx < dateLessons.length - 1 ? 'border-r-2 border-gray-200' : ''}`}>
+                        <div className="text-xs font-bold">№{l.lessonNumber}</div>
+                        <div className="text-[10px] font-normal text-gray-500">{l.subject.slice(0, 6)}</div>
                       </th>
                     ))}
                   </tr>
@@ -563,56 +571,55 @@ const AttendanceManager: React.FC = () => {
                     const fullDayType = getFullDayType(student.id);
                     return (
                       <tr key={student.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-2.5 sticky left-0 bg-white border-r-2 border-gray-200"><div className="font-bold text-gray-900">{student.lastName} {student.firstName}</div></td>
+                        <td className="px-4 py-2.5 sticky left-0 bg-white border-r-2 border-gray-200 z-10"><div className="font-bold text-gray-900">{student.lastName} {student.firstName}</div></td>
                         <td className="px-2 py-2 text-center border-r-2 border-gray-200">
                           {fullDayType ? (
                             <div className="relative group">
-                              <button className={`w-14 h-9 rounded-lg text-xs font-bold ${ATTENDANCE_TYPES.find((t: any) => t.value === fullDayType)?.bgColor} ${ATTENDANCE_TYPES.find((t: any) => t.value === fullDayType)?.color}`}>
+                              <button 
+                                onClick={(e) => clearFullDay(student.id, e)}
+                                className={`w-16 h-9 rounded-lg text-xs font-bold ${ATTENDANCE_TYPES.find((t: any) => t.value === fullDayType)?.bgColor} ${ATTENDANCE_TYPES.find((t: any) => t.value === fullDayType)?.color}`}
+                              >
                                 {ATTENDANCE_TYPES.find((t: any) => t.value === fullDayType)?.short}
                               </button>
-                              <div className="absolute z-10 top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-xl border-2 border-gray-200 p-1 hidden group-hover:block">
-                                <button onClick={() => clearFullDay(student.id)} className="w-full px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded text-left">Убрать весь день</button>
-                              </div>
                             </div>
                           ) : (
                             <div className="relative group">
-                              <button className="w-14 h-9 rounded-lg border-2 border-dashed border-gray-400 hover:border-gray-500 text-gray-500 hover:text-gray-600 text-xs">—</button>
-                              <div className="absolute z-10 top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-xl border-2 border-gray-200 p-1 hidden group-hover:block min-w-[140px]">
+                              <button className="w-16 h-9 rounded-lg border-2 border-dashed border-gray-400 hover:border-gray-500 text-gray-500 hover:text-gray-600 text-xs">—</button>
+                              <div className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-xl border-2 border-gray-200 p-1 hidden group-hover:block min-w-[140px]">
                                 <div className="grid grid-cols-2 gap-0.5">
-                                  {ATTENDANCE_TYPES.filter((t: any) => t.value !== 'ОП').map((at: any) => (
-                                    <button key={at.value} onClick={() => setFullDayAbsence(student.id, at.value)} className={`px-2 py-1.5 rounded text-xs font-bold ${at.bgColor} ${at.color}`}>{at.short}</button>
+                                  {ATTENDANCE_TYPES.map((at: any) => (
+                                    <button key={at.value} onClick={(e) => setFullDayAbsence(student.id, at.value, e)} className={`px-2 py-1.5 rounded text-xs font-bold ${at.bgColor} ${at.color}`}>{at.short}</button>
                                   ))}
                                 </div>
                               </div>
                             </div>
                           )}
                         </td>
-                        {Object.entries(lessonsByNumber).map(([ln, lessonInfos], colIdx) => {
-                          const lessonNum = parseInt(ln);
+                        {dateLessons.map((lesson, colIdx) => {
+                          const att = getLessonAttendance(student.id, lesson.lessonNumber, lesson.subject);
+                          const attType = att ? ATTENDANCE_TYPES.find((t: any) => t.value === att.type) : null;
                           return (
-                            <td key={ln} className={`px-1 py-2 text-center ${colIdx < Object.keys(lessonsByNumber).length - 1 ? 'border-r-2 border-gray-200' : ''}`}>
-                              <div className="flex flex-col gap-1 items-center">
-                                {lessonInfos.map((lessonInfo, idx) => {
-                                  const att = getLessonAttendance(student.id, lessonNum, lessonInfo.subject);
-                                  const attType = att ? ATTENDANCE_TYPES.find((t: any) => t.value === att.type) : null;
-                                  return (
-                                    <div key={idx} className="relative group">
-                                      {attType ? (
-                                        <button onClick={() => setLessonAttendance(student.id, lessonNum, lessonInfo.subject, null)} className={`w-9 h-7 rounded text-xs font-bold ${attType.bgColor} ${attType.color}`} title={`${lessonInfo.subject}: ${attType.label}`}>{attType.short}</button>
-                                      ) : (
-                                        <button className="w-9 h-7 rounded border-2 border-dashed border-gray-300 hover:border-gray-400 text-gray-400 hover:text-gray-500 text-xs">+</button>
-                                      )}
-                                      <div className="absolute z-10 top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-xl border-2 border-gray-200 p-1 hidden group-hover:block min-w-[120px]">
-                                        <div className="grid grid-cols-2 gap-0.5">
-                                          {ATTENDANCE_TYPES.map((at: any) => (
-                                            <button key={at.value} onClick={() => setLessonAttendance(student.id, lessonNum, lessonInfo.subject, at.value)} className={`px-2 py-1 rounded text-xs font-bold ${at.bgColor} ${at.color}`}>{at.short}</button>
-                                          ))}
-                                          {att && <button onClick={() => setLessonAttendance(student.id, lessonNum, lessonInfo.subject, null)} className="col-span-2 px-2 py-1 rounded text-xs text-red-600 hover:bg-red-50">Убрать</button>}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
+                            <td key={`${lesson.lessonNumber}-${lesson.subject}`} className={`px-1 py-2 text-center ${colIdx < dateLessons.length - 1 ? 'border-r-2 border-gray-200' : ''}`}>
+                              <div className="relative group">
+                                {attType ? (
+                                  <button 
+                                    onClick={(e) => setLessonAttendance(student.id, lesson.lessonNumber, lesson.subject, null, e)} 
+                                    className={`w-10 h-10 rounded-lg text-sm font-bold ${attType.bgColor} ${attType.color}`}
+                                    title={`${lesson.subject}: ${attType.label} (нажмите для удаления)`}
+                                  >
+                                    {attType.short}
+                                  </button>
+                                ) : (
+                                  <button className="w-10 h-10 rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400 text-gray-400 hover:text-gray-500 text-xs">+</button>
+                                )}
+                                <div className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-xl border-2 border-gray-200 p-1 hidden group-hover:block min-w-[120px]">
+                                  <div className="grid grid-cols-2 gap-0.5">
+                                    {ATTENDANCE_TYPES.map((at: any) => (
+                                      <button key={at.value} onClick={(e) => setLessonAttendance(student.id, lesson.lessonNumber, lesson.subject, at.value, e)} className={`px-2 py-1 rounded text-xs font-bold ${at.bgColor} ${at.color}`}>{at.short}</button>
+                                    ))}
+                                    {att && <button onClick={(e) => setLessonAttendance(student.id, lesson.lessonNumber, lesson.subject, null, e)} className="col-span-2 px-2 py-1 rounded text-xs text-red-600 hover:bg-red-50">Убрать</button>}
+                                  </div>
+                                </div>
                               </div>
                             </td>
                           );
