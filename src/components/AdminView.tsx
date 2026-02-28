@@ -1823,7 +1823,8 @@ const Journal: React.FC = () => {
                               }`}
                               title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                             >
-                              {mainGrade?.value || (showAttendance ? att?.type : '')}
+                              {mainGrade ? mainGrade.value : (showAttendance ? att?.type : '')}
+                              {att?.type === 'ОП' && <span className="block text-[8px] font-bold text-orange-600 bg-orange-100 rounded px-0.5 mt-0.5">ОП</span>}
                             </button>
                           );
                         })()}
@@ -1895,7 +1896,7 @@ const Journal: React.FC = () => {
                       })}
 
                       <td className="px-2 py-2 text-center border-r border-gray-300 font-bold text-gray-700">
-                        {s.avg > 0 ? s.avg.toFixed(1) : '—'}
+                        {s.avg > 0 ? s.avg.toFixed(2) : '—'}
                       </td>
                       <td className="px-2 py-2 text-center border-r border-gray-300">
                         {s.trend === 1 && <TrendingUp className="w-4 h-4 text-green-500 mx-auto" />}
@@ -2154,7 +2155,8 @@ const Journal: React.FC = () => {
                                 }`}
                                 title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                               >
-                                {mainGrade?.value || (showAttendance ? att?.type : '')}
+                                {mainGrade ? mainGrade.value : (showAttendance ? att?.type : '')}
+                                {att?.type === 'ОП' && <span className="block text-[8px] font-bold text-orange-600 bg-orange-100 rounded px-0.5 mt-0.5">ОП</span>}
                               </button>
                             </td>
                             {cols.map(c => {
@@ -2193,7 +2195,7 @@ const Journal: React.FC = () => {
                       <td className="px-2 py-1.5 text-center border-gray-300">
                         {avg > 0 ? (
                           <span className={`font-bold text-sm ${avg >= 4.5 ? 'text-green-600' : avg >= 3.5 ? 'text-blue-600' : avg >= 2.5 ? 'text-yellow-600' : 'text-red-600'}`}>
-                            {avg.toFixed(1)}
+                            {avg.toFixed(2)}
                           </span>
                         ) : <span className="text-gray-400">—</span>}
                       </td>
