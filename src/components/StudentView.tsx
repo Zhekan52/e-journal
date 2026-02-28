@@ -1015,51 +1015,51 @@ const Diary: React.FC<DiaryProps> = ({
                             </a>
                           )}
                           {testObj && (
-                            <div className="mt-2">
+                            <div className="mt-2 overflow-hidden">
                               {isExempt ? (
-                                <div className="flex items-start gap-2 p-2.5 bg-red-50 rounded-xl border border-red-200 min-w-0">
+                                <div className="flex items-start gap-2 p-2 bg-red-50 rounded-lg border border-red-200 w-full overflow-hidden">
                                   <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-                                  <div className="min-w-0">
-                                    <div className="text-xs font-semibold text-gray-700 break-words">{testObj.title}</div>
-                                    <div className="text-[10px] text-red-600">Освобождён от теста</div>
+                                  <div className="min-w-0 overflow-hidden">
+                                    <div className="text-xs font-semibold text-gray-700 whitespace-normal break-words">{testObj.title}</div>
+                                    <div className="text-[10px] text-red-600">Освобождён</div>
                                   </div>
                                 </div>
                               ) : attempt && !retakeAllowed ? (
-                                <div className="flex items-start gap-2 p-2.5 bg-success-50 rounded-xl border border-success-200 min-w-0">
+                                <div className="flex items-start gap-2 p-2 bg-success-50 rounded-lg border border-success-200 w-full overflow-hidden">
                                   <CheckCircle className="w-4 h-4 text-success-600 flex-shrink-0 mt-0.5" />
-                                  <div className="min-w-0">
-                                    <div className="text-xs font-semibold text-gray-700 break-words">{testObj.title}</div>
-                                    <div className="text-[10px] text-gray-500">Оценка: {attempt.grade} ({attempt.percent}%)</div>
+                                  <div className="min-w-0 overflow-hidden">
+                                    <div className="text-xs font-semibold text-gray-700 whitespace-normal break-words">{testObj.title}</div>
+                                    <div className="text-[10px] text-gray-500">{attempt.grade} ({attempt.percent}%)</div>
                                   </div>
                                 </div>
                               ) : retakeAllowed ? (
                                 <button onClick={() => setShowConfirm({ test: testObj, entry, variantId: assignment?.variantId })}
-                                  className="flex items-start gap-2 p-2.5 bg-warning-50 rounded-xl border border-warning-200 hover:bg-warning-100 transition-colors w-full text-left min-w-0">
-                                  <div className="w-9 h-9 rounded-xl bg-warning-200 flex items-center justify-center flex-shrink-0">
-                                    <Play className="w-4 h-4 text-warning-700" />
+                                  className="flex items-start gap-2 p-2 bg-warning-50 rounded-lg border border-warning-200 hover:bg-warning-100 transition-colors w-full text-left overflow-hidden">
+                                  <div className="w-8 h-8 rounded-lg bg-warning-200 flex items-center justify-center flex-shrink-0">
+                                    <Play className="w-3.5 h-3.5 text-warning-700" />
                                   </div>
-                                  <div className="min-w-0">
-                                    <div className="text-xs font-bold text-warning-900 break-words">{testObj.title}</div>
-                                    <div className="text-[10px] text-warning-600">Пересдача доступна</div>
+                                  <div className="min-w-0 overflow-hidden">
+                                    <div className="text-xs font-bold text-warning-900 whitespace-normal break-words">{testObj.title}</div>
+                                    <div className="text-[10px] text-warning-600">Пересдача</div>
                                   </div>
                                 </button>
                               ) : (
                                 <button onClick={() => setShowConfirm({ test: testObj, entry, variantId: assignment?.variantId })}
-                                  className="flex items-start gap-2 p-2.5 bg-primary-50 rounded-xl border border-primary-200 hover:bg-primary-100 transition-colors w-full text-left group min-w-0">
-                                  <div className="w-9 h-9 rounded-xl bg-primary-200 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-300 transition-colors">
-                                    <Play className="w-4 h-4 text-primary-700" />
+                                  className="flex items-start gap-2 p-2 bg-primary-50 rounded-lg border border-primary-200 hover:bg-primary-100 transition-colors w-full text-left group overflow-hidden">
+                                  <div className="w-8 h-8 rounded-lg bg-primary-200 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-300 transition-colors">
+                                    <Play className="w-3.5 h-3.5 text-primary-700" />
                                   </div>
-                                  <div className="min-w-0">
-                                    <div className="text-xs font-bold text-primary-900 break-words">{testObj.title}</div>
-                                    <div className="text-[10px] text-primary-600">
+                                  <div className="min-w-0 overflow-hidden">
+                                    <div className="text-xs font-bold text-primary-900 whitespace-normal break-words">{testObj.title}</div>
+                                    <div className="text-[10px] text-primary-600 whitespace-normal">
                                       {assignment?.variantId && testObj.variants
-                                        ? `Вариант: ${testObj.variants.find((v: any) => v.id === assignment.variantId)?.name || '—'}`
+                                        ? `Вар.: ${testObj.variants.find((v: any) => v.id === assignment.variantId)?.name || '—'}`
                                         : testObj.useVariants && testObj.variants && testObj.variants.length > 0
-                                          ? `${testObj.variants.length} вариант${testObj.variants.length === 1 ? '' : testObj.variants.length > 1 && testObj.variants.length < 5 ? 'а' : 'ов'}`
+                                          ? `${testObj.variants.length} вар.`
                                           : `${testObj.questions.length} вопр.`}{testObj.timeLimit > 0 ? ` · ${testObj.timeLimit} мин` : ''}
                                     </div>
                                     {assignment?.deadlineDate && (
-                                      <div className="text-[10px] text-amber-600 font-medium">⏰ Сдать до {new Date(assignment.deadlineDate).toLocaleDateString('ru-RU')}</div>
+                                      <div className="text-[10px] text-amber-600 font-medium">⏰ до {new Date(assignment.deadlineDate).toLocaleDateString('ru-RU')}</div>
                                     )}
                                   </div>
                                 </button>
