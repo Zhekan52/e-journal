@@ -12,7 +12,7 @@ import {
   AlertTriangle, TrendingUp, TrendingDown, FileText,
   BarChart3, Award, ArrowLeft, RefreshCw, ChevronRight, Tag, Info,
   Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft,
-  CalendarDays
+  CalendarDays, FileSpreadsheet, FileBarChart
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
@@ -20,7 +20,7 @@ import {
   formatDate, getTodayString, getTodayDate
 } from '../data';
 
-type Tab = 'dashboard' | 'schedule' | 'journal' | 'attendance' | 'tests' | 'students' | 'lessonTypes';
+type Tab = 'dashboard' | 'schedule' | 'journal' | 'attendance' | 'reports' | 'tests' | 'students' | 'lessonTypes';
 
 export const AdminView: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
@@ -35,6 +35,7 @@ export const AdminView: React.FC = () => {
     { id: 'schedule', label: 'Расписание', icon: <Calendar className="w-5 h-5" /> },
     { id: 'journal', label: 'Журнал', icon: <ClipboardList className="w-5 h-5" /> },
     { id: 'attendance', label: 'Посещаемость', icon: <CalendarDays className="w-5 h-5" /> },
+    { id: 'reports', label: 'Отчёты', icon: <FileSpreadsheet className="w-5 h-5" /> },
     { id: 'tests', label: 'Тесты', icon: <FileText className="w-5 h-5" /> },
     { id: 'students', label: 'Ученики', icon: <Users className="w-5 h-5" /> },
     { id: 'lessonTypes', label: 'Типы уроков', icon: <Tag className="w-5 h-5" /> },
@@ -145,6 +146,7 @@ export const AdminView: React.FC = () => {
         {activeTab === 'schedule' && <Schedule editable={scheduleEditMode} onEditModeChange={setScheduleEditMode} onOpenLessonPage={handleOpenLessonPage} />}
         {activeTab === 'journal' && <Journal />}
         {activeTab === 'attendance' && <AttendanceCalendar />}
+        {activeTab === 'reports' && <Reports />}
         {activeTab === 'tests' && <TestsManager />}
         {activeTab === 'students' && <StudentsManager />}
         {activeTab === 'lessonTypes' && <LessonTypesManager />}
@@ -1163,6 +1165,589 @@ const AttendanceModal: React.FC<{
       </div>
     </div>,
     document.body
+  );
+};
+
+// ==================== REPORTS ====================
+const Reports: React.FC = () => {
+  const { students, grades, attendance, lessons, subjects, tests, journalColumns, diaryEntries } = useData();
+  const [reportType, setReportType] = useState<'student' | 'class' | 'attendance'>('class');
+  const [dateRange, setDateRange] = useState<{start: string; end: string}>({
+    start: getAcademicYearStart(),
+    end: new Date().toISOString().split('T')[0]
+  });
+  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
+  const [isAllPeriod, setIsAllPeriod] = useState(true);
+
+  // Формат даты для отображения
+  const formatDateDisplay = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00');
+    return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
+  };
+
+  // Получить начало учебного года
+  function getAcademicYearStart(): string {
+    const now = new Date();
+    const year = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+    return `${year}-09-01`;
+  }
+
+  // Обработчик переключения "За весь период"
+  const handleAllPeriodToggle = (checked: boolean) => {
+    setIsAllPeriod(checked);
+    if (checked) {
+      setDateRange({
+        start: getAcademicYearStart(),
+        end: new Date().toISOString().split('T')[0]
+      });
+    }
+  };
+
+  // Фильтрация оценок по периоду
+  const filterGradesByPeriod = useCallback((studentId?: string, subject?: string) => {
+    return grades.filter(g => {
+      if (studentId && g.studentId !== studentId) return false;
+      if (subject && g.subject !== subject) return false;
+      if (!isAllPeriod && (g.date < dateRange.start || g.date > dateRange.end)) return false;
+      return true;
+    });
+  }, [grades, dateRange, isAllPeriod]);
+
+  // Фильтрация посещаемости по периоду
+  const filterAttendanceByPeriod = useCallback((studentId?: string) => {
+    return attendance.filter(a => {
+      if (studentId && a.studentId !== studentId) return false;
+      if (!isAllPeriod && (a.date < dateRange.start || a.date > dateRange.end)) return false;
+      return true;
+    });
+  }, [attendance, dateRange, isAllPeriod]);
+
+  // Вычисление среднего балла
+  const calculateAverage = (gradeValues: number[]): number => {
+    if (gradeValues.length === 0) return 0;
+    const sum = gradeValues.reduce((acc, val) => acc + val, 0);
+    return Math.round((sum / gradeValues.length) * 100) / 100;
+  };
+
+  // Получить название предмета для теста
+  const getTestTitle = (grade: any): string => {
+    if (!grade.columnId) return '';
+    const col = journalColumns.find((c: any) => c.id === grade.columnId && c.type === 'test');
+    if (!col) return '';
+    // Ищем diaryEntry для этой даты и предмета
+    const entry = diaryEntries.find((e: any) => e.date === grade.date && e.subject === grade.subject);
+    if (entry?.testId) {
+      const test = tests.find((t: any) => t.id === entry.testId);
+      return test?.title || '';
+    }
+    return '';
+  };
+
+  // Экспорт в Excel
+  const exportToExcel = () => {
+    // Создаем CSV данные
+    let csvContent = '\uFEFF'; // BOM for UTF-8
+    
+    if (reportType === 'student' && selectedStudentId) {
+      const student = students.find(s => s.id === selectedStudentId);
+      if (!student) return;
+      
+      csvContent += `Табель успеваемости ученика\n`;
+      csvContent += `Ученик: ${student.lastName} ${student.firstName}\n`;
+      csvContent += `Период: ${isAllPeriod ? 'За весь период' : `${formatDateDisplay(dateRange.start)} - ${formatDateDisplay(dateRange.end)}`}\n\n`;
+      csvContent += `Предмет;Оценки;Средний балл\n`;
+      
+      subjects.forEach(subject => {
+        const subjectGrades = filterGradesByPeriod(selectedStudentId, subject);
+        const gradeValues = subjectGrades.map(g => g.value);
+        const avg = calculateAverage(gradeValues);
+        const gradesStr = gradeValues.join(', ');
+        csvContent += `${subject};${gradesStr};${avg > 0 ? avg.toFixed(2) : '-'}\n`;
+      });
+    } else if (reportType === 'class') {
+      csvContent += `Отчёт успеваемости класса\n`;
+      csvContent += `Период: ${isAllPeriod ? 'За весь период' : `${formatDateDisplay(dateRange.start)} - ${formatDateDisplay(dateRange.end)}`}\n\n`;
+      
+      // Заголовок
+      csvContent += `Ученик;${subjects.join(';')};Средний\n`;
+      
+      const sortedStudents = [...students].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`));
+      sortedStudents.forEach(student => {
+        let row = `${student.lastName} ${student.firstName}`;
+        let totalSum = 0;
+        let totalCount = 0;
+        
+        subjects.forEach(subject => {
+          const gradeValues = filterGradesByPeriod(student.id, subject).map(g => g.value);
+          const avg = calculateAverage(gradeValues);
+          row += `;${avg > 0 ? avg.toFixed(2) : '-'}`;
+          if (avg > 0) {
+            totalSum += avg;
+            totalCount++;
+          }
+        });
+        
+        const overallAvg = totalCount > 0 ? (totalSum / totalCount).toFixed(2) : '-';
+        csvContent += `${row};${overallAvg}\n`;
+      });
+      
+      // Средний балл по предметам
+      csvContent += `\nСредний по предмету;`;
+      subjects.forEach(subject => {
+        let subjectSum = 0;
+        let subjectCount = 0;
+        students.forEach(student => {
+          const gradeValues = filterGradesByPeriod(student.id, subject).map(g => g.value);
+          if (gradeValues.length > 0) {
+            subjectSum += calculateAverage(gradeValues);
+            subjectCount++;
+          }
+        });
+        const avg = subjectCount > 0 ? (subjectSum / subjectCount).toFixed(2) : '-';
+        csvContent += `${avg};`;
+      });
+      csvContent += `\n`;
+    } else if (reportType === 'attendance') {
+      csvContent += `Информация о пропусках\n`;
+      csvContent += `Период: ${isAllPeriod ? 'За весь период' : `${formatDateDisplay(dateRange.start)} - ${formatDateDisplay(dateRange.end)}`}\n\n`;
+      csvContent += `ФИО;Н;УП;Б;ОП;Итого\n`;
+      
+      const sortedStudents = [...students].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`));
+      sortedStudents.forEach(student => {
+        const studentAttendance = filterAttendanceByPeriod(student.id);
+        const counts = { Н: 0, УП: 0, Б: 0, ОП: 0 };
+        studentAttendance.forEach(a => {
+          if (counts.hasOwnProperty(a.type)) {
+            counts[a.type as keyof typeof counts]++;
+          }
+        });
+        const total = counts.Н + counts.УП + counts.Б + counts.ОП;
+        csvContent += `${student.lastName} ${student.firstName};${counts.Н};${counts.УП};${counts.Б};${counts.ОП};${total}\n`;
+      });
+    }
+
+    // Скачивание файла
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    const fileName = reportType === 'student' ? 'tabel_uchashchegosya' : reportType === 'class' ? 'uspevaemost_klassa' : 'propuski';
+    link.download = `${fileName}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
+  // Экспорт в PDF (упрощённая версия - печать через браузер)
+  const exportToPDF = () => {
+    window.print();
+  };
+
+  return (
+    <div className="animate-fadeIn space-y-6">
+      {/* Заголовок */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900">Отчёты</h2>
+        <div className="flex gap-2">
+          <button
+            onClick={exportToExcel}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-medium"
+          >
+            <FileSpreadsheet className="w-4 h-4" /> Экспорт в Excel
+          </button>
+          <button
+            onClick={exportToPDF}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium"
+          >
+            <Download className="w-4 h-4" /> Скачать PDF
+          </button>
+        </div>
+      </div>
+
+      {/* Выбор типа отчёта и периода */}
+      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg p-6 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Тип отчёта */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Тип отчёта</label>
+            <select
+              value={reportType}
+              onChange={(e) => setReportType(e.target.value as any)}
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="class">Отчёт успеваемости класса</option>
+              <option value="student">Табель успеваемости ученика</option>
+              <option value="attendance">Информация о пропусках</option>
+            </select>
+          </div>
+
+          {/* Выбор ученика (для табеля) */}
+          {reportType === 'student' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Ученик</label>
+              <select
+                value={selectedStudentId}
+                onChange={(e) => setSelectedStudentId(e.target.value)}
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">-- Выберите ученика --</option>
+                {[...students].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`)).map(student => (
+                  <option key={student.id} value={student.id}>
+                    {student.lastName} {student.firstName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Период */}
+          <div className="flex items-end gap-2">
+            <label className="flex items-center gap-2 pb-2.5">
+              <input
+                type="checkbox"
+                checked={isAllPeriod}
+                onChange={(e) => handleAllPeriodToggle(e.target.checked)}
+                className="w-5 h-5 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+              />
+              <span className="text-sm font-medium text-gray-700">За весь период</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Даты (если не весь период) */}
+        {!isAllPeriod && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Дата начала</label>
+              <input
+                type="date"
+                value={dateRange.start}
+                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Дата окончания</label>
+              <input
+                type="date"
+                value={dateRange.end}
+                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Содержимое отчёта */}
+      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
+        {reportType === 'student' && selectedStudentId && (
+          <StudentReport 
+            studentId={selectedStudentId} 
+            subjects={subjects}
+            filterGradesByPeriod={filterGradesByPeriod}
+            calculateAverage={calculateAverage}
+            getTestTitle={getTestTitle}
+          />
+        )}
+        {reportType === 'class' && (
+          <ClassReport 
+            students={students}
+            subjects={subjects}
+            filterGradesByPeriod={filterGradesByPeriod}
+            calculateAverage={calculateAverage}
+          />
+        )}
+        {reportType === 'attendance' && (
+          <AttendanceReport 
+            students={students}
+            filterAttendanceByPeriod={filterAttendanceByPeriod}
+          />
+        )}
+        {reportType === 'student' && !selectedStudentId && (
+          <div className="p-12 text-center text-gray-500">
+            Выберите ученика для просмотра табеля успеваемости
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ==================== STUDENT REPORT ====================
+const StudentReport: React.FC<{
+  studentId: string;
+  subjects: string[];
+  filterGradesByPeriod: any;
+  calculateAverage: (grades: number[]) => number;
+  getTestTitle: (grade: any) => string;
+}> = ({ studentId, subjects, filterGradesByPeriod, calculateAverage, getTestTitle }) => {
+  const { students, grades } = useData();
+  const student = students.find(s => s.id === studentId);
+  
+  if (!student) return null;
+
+  return (
+    <div className="p-6">
+      <h3 className="text-lg font-bold text-gray-900 mb-4">
+        Табель успеваемости: {student.lastName} {student.firstName}
+      </h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="px-4 py-3 text-left font-semibold text-gray-700">Предмет</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-700">Оценки</th>
+              <th className="px-4 py-3 text-center font-semibold text-gray-700">Средний балл</th>
+            </tr>
+          </thead>
+          <tbody>
+            {subjects.map(subject => {
+              const subjectGrades = filterGradesByPeriod(studentId, subject);
+              const gradeValues = subjectGrades.map(g => g.value);
+              const avg = calculateAverage(gradeValues);
+              
+              return (
+                <tr key={subject} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-gray-900">{subject}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {subjectGrades.length > 0 ? subjectGrades
+                        .sort((a, b) => a.date.localeCompare(b.date))
+                        .map((g, idx) => {
+                          const testTitle = getTestTitle(g);
+                          return (
+                            <span 
+                              key={idx} 
+                              className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold bg-blue-100 text-blue-700 cursor-help"
+                              title={testTitle ? `Тест: ${testTitle}` : ''}
+                            >
+                              {g.value}
+                            </span>
+                          );
+                        }) : <span className="text-gray-400">—</span>}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {avg > 0 ? (
+                      <span className={`font-bold ${avg >= 4.5 ? 'text-green-600' : avg >= 3.5 ? 'text-blue-600' : avg >= 2.5 ? 'text-yellow-600' : 'text-red-600'}`}>
+                        {avg.toFixed(2)}
+                      </span>
+                    ) : <span className="text-gray-400">—</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// ==================== CLASS REPORT ====================
+const ClassReport: React.FC<{
+  students: any[];
+  subjects: string[];
+  filterGradesByPeriod: any;
+  calculateAverage: (grades: number[]) => number;
+}> = ({ students, subjects, filterGradesByPeriod, calculateAverage }) => {
+  const sortedStudents = [...students].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`));
+
+  // Вычисление среднего по предмету
+  const getSubjectAverage = (subject: string) => {
+    let sum = 0;
+    let count = 0;
+    students.forEach(student => {
+      const gradeValues = filterGradesByPeriod(student.id, subject).map((g: any) => g.value);
+      const avg = calculateAverage(gradeValues);
+      if (avg > 0) {
+        sum += avg;
+        count++;
+      }
+    });
+    return count > 0 ? sum / count : 0;
+  };
+
+  // Вычисление общего процента успеваемости (оценки >= 3)
+  const getSuccessRate = () => {
+    let totalGrades = 0;
+    let successGrades = 0;
+    students.forEach(student => {
+      subjects.forEach(subject => {
+        const gradeValues = filterGradesByPeriod(student.id, subject).map((g: any) => g.value);
+        gradeValues.forEach(g => {
+          totalGrades++;
+          if (g >= 3) successGrades++;
+        });
+      });
+    });
+    return totalGrades > 0 ? (successGrades / totalGrades) * 100 : 0;
+  };
+
+  const successRate = getSuccessRate();
+
+  return (
+    <div className="p-6">
+      <h3 className="text-lg font-bold text-gray-900 mb-4">Отчёт успеваемости класса</h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="px-3 py-3 text-left font-semibold text-gray-700 sticky left-0 bg-gray-50">Ученик</th>
+              {subjects.map(subject => (
+                <th key={subject} className="px-3 py-3 text-center font-semibold text-gray-700 min-w-[80px]">{subject}</th>
+              ))}
+              <th className="px-3 py-3 text-center font-semibold text-gray-700 bg-blue-50">Средний</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedStudents.map(student => {
+              let totalSum = 0;
+              let totalCount = 0;
+              
+              return (
+                <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="px-3 py-2 font-medium text-gray-900 sticky left-0 bg-white">{student.lastName} {student.firstName}</td>
+                  {subjects.map(subject => {
+                    const gradeValues = filterGradesByPeriod(student.id, subject).map((g: any) => g.value);
+                    const avg = calculateAverage(gradeValues);
+                    if (avg > 0) {
+                      totalSum += avg;
+                      totalCount++;
+                    }
+                    return (
+                      <td key={subject} className="px-3 py-2 text-center">
+                        {avg > 0 ? (
+                          <span className={`font-medium ${avg >= 4.5 ? 'text-green-600' : avg >= 3.5 ? 'text-blue-600' : avg >= 2.5 ? 'text-yellow-600' : 'text-red-600'}`}>
+                            {avg.toFixed(2)}
+                          </span>
+                        ) : <span className="text-gray-300">—</span>}
+                      </td>
+                    );
+                  })}
+                  <td className="px-3 py-2 text-center font-bold bg-blue-50">
+                    {totalCount > 0 ? (totalSum / totalCount).toFixed(2) : '—'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr className="bg-gray-100 font-semibold">
+              <td className="px-3 py-3 text-gray-900 sticky left-0 bg-gray-100">Средний по предмету</td>
+              {subjects.map(subject => {
+                const avg = getSubjectAverage(subject);
+                return (
+                  <td key={subject} className="px-3 py-3 text-center text-gray-700">
+                    {avg > 0 ? avg.toFixed(2) : '—'}
+                  </td>
+                );
+              })}
+              <td className="px-3 py-3 text-center text-gray-900 bg-blue-100">—</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div className="mt-4 p-4 bg-green-50 rounded-xl">
+        <span className="font-semibold text-green-800">Процент успеваемости класса: </span>
+        <span className="font-bold text-green-700">{successRate.toFixed(1)}%</span>
+      </div>
+    </div>
+  );
+};
+
+// ==================== ATTENDANCE REPORT ====================
+const AttendanceReport: React.FC<{
+  students: any[];
+  filterAttendanceByPeriod: any;
+}> = ({ students, filterAttendanceByPeriod }) => {
+  const sortedStudents = [...students].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`));
+
+  // Подсчёт итогов
+  const totals = { Н: 0, УП: 0, Б: 0, ОП: 0, total: 0 };
+
+  return (
+    <div className="p-6">
+      <h3 className="text-lg font-bold text-gray-900 mb-4">Информация о пропусках</h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="px-4 py-3 text-left font-semibold text-gray-700">ФИО ученика</th>
+              <th className="px-4 py-3 text-center font-semibold text-gray-700">Н</th>
+              <th className="px-4 py-3 text-center font-semibold text-gray-700">УП</th>
+              <th className="px-4 py-3 text-center font-semibold text-gray-700">Б</th>
+              <th className="px-4 py-3 text-center font-semibold text-gray-700">ОП</th>
+              <th className="px-4 py-3 text-center font-semibold text-gray-700 bg-gray-100">Итого</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedStudents.map(student => {
+              const studentAttendance = filterAttendanceByPeriod(student.id);
+              const counts = { Н: 0, УП: 0, Б: 0, ОП: 0 };
+              studentAttendance.forEach((a: any) => {
+                if (counts.hasOwnProperty(a.type)) {
+                  counts[a.type as keyof typeof counts]++;
+                }
+              });
+              const total = counts.Н + counts.УП + counts.Б + counts.ОП;
+              
+              // Добавляем к итогам
+              totals.Н += counts.Н;
+              totals.УП += counts.УП;
+              totals.Б += counts.Б;
+              totals.ОП += counts.ОП;
+              totals.total += total;
+              
+              return (
+                <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-gray-900">{student.lastName} {student.firstName}</td>
+                  <td className="px-4 py-3 text-center">
+                    {counts.Н > 0 ? (
+                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold bg-red-100 text-red-700">
+                        {counts.Н}
+                      </span>
+                    ) : <span className="text-gray-300">0</span>}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {counts.УП > 0 ? (
+                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold bg-blue-100 text-blue-700">
+                        {counts.УП}
+                      </span>
+                    ) : <span className="text-gray-300">0</span>}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {counts.Б > 0 ? (
+                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold bg-orange-100 text-orange-700">
+                        {counts.Б}
+                      </span>
+                    ) : <span className="text-gray-300">0</span>}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {counts.ОП > 0 ? (
+                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold bg-yellow-100 text-yellow-700">
+                        {counts.ОП}
+                      </span>
+                    ) : <span className="text-gray-300">0</span>}
+                  </td>
+                  <td className="px-4 py-3 text-center font-bold bg-gray-50">
+                    {total > 0 ? total : <span className="text-gray-300">0</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr className="bg-gray-100 font-semibold">
+              <td className="px-4 py-3 text-gray-900">Итого</td>
+              <td className="px-4 py-3 text-center text-red-700">{totals.Н}</td>
+              <td className="px-4 py-3 text-center text-blue-700">{totals.УП}</td>
+              <td className="px-4 py-3 text-center text-orange-700">{totals.Б}</td>
+              <td className="px-4 py-3 text-center text-yellow-700">{totals.ОП}</td>
+              <td className="px-4 py-3 text-center text-gray-900">{totals.total}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
   );
 };
 
