@@ -975,7 +975,7 @@ const Diary: React.FC<DiaryProps> = ({
                   {dayLessons.map((lesson: any) => {
                     // ONLY exact match — no fallback to prevent sharing between lessons
                     const entry = diaryEntries.find((e: any) => e.date === dateStr && e.subject === lesson.subject && e.lessonNumber === lesson.lessonNumber);
-                    const dayGrades = myGrades.filter(g => g.date === dateStr && g.subject === lesson.subject);
+                    const dayGrades = myGrades.filter(g => g.date === dateStr && g.subject === lesson.subject && g.lessonNumber === lesson.lessonNumber);
                     const testObj = entry?.testId ? tests.find((t: any) => t.id === entry.testId) : null;
 
                     const attempt = testObj ? testAttempts.find((a: any) => a.studentId === studentId && a.testId === testObj.id && a.date === dateStr) : null;
@@ -1017,40 +1017,40 @@ const Diary: React.FC<DiaryProps> = ({
                           {testObj && (
                             <div className="mt-2">
                               {isExempt ? (
-                                <div className="flex items-center gap-2 p-2.5 bg-red-50 rounded-xl border border-red-200">
-                                  <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                                <div className="flex items-start gap-2 p-2.5 bg-red-50 rounded-xl border border-red-200 min-w-0">
+                                  <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
                                   <div className="min-w-0">
-                                    <div className="text-xs font-semibold text-gray-700 truncate">{testObj.title}</div>
+                                    <div className="text-xs font-semibold text-gray-700 break-words">{testObj.title}</div>
                                     <div className="text-[10px] text-red-600">Освобождён от теста</div>
                                   </div>
                                 </div>
                               ) : attempt && !retakeAllowed ? (
-                                <div className="flex items-center gap-2 p-2.5 bg-success-50 rounded-xl border border-success-200">
-                                  <CheckCircle className="w-4 h-4 text-success-600 flex-shrink-0" />
+                                <div className="flex items-start gap-2 p-2.5 bg-success-50 rounded-xl border border-success-200 min-w-0">
+                                  <CheckCircle className="w-4 h-4 text-success-600 flex-shrink-0 mt-0.5" />
                                   <div className="min-w-0">
-                                    <div className="text-xs font-semibold text-gray-700 truncate">{testObj.title}</div>
+                                    <div className="text-xs font-semibold text-gray-700 break-words">{testObj.title}</div>
                                     <div className="text-[10px] text-gray-500">Оценка: {attempt.grade} ({attempt.percent}%)</div>
                                   </div>
                                 </div>
                               ) : retakeAllowed ? (
                                 <button onClick={() => setShowConfirm({ test: testObj, entry, variantId: assignment?.variantId })}
-                                  className="flex items-center gap-2 p-2.5 bg-warning-50 rounded-xl border border-warning-200 hover:bg-warning-100 transition-colors w-full text-left">
+                                  className="flex items-start gap-2 p-2.5 bg-warning-50 rounded-xl border border-warning-200 hover:bg-warning-100 transition-colors w-full text-left min-w-0">
                                   <div className="w-9 h-9 rounded-xl bg-warning-200 flex items-center justify-center flex-shrink-0">
                                     <Play className="w-4 h-4 text-warning-700" />
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="text-xs font-bold text-warning-900 truncate">{testObj.title}</div>
+                                    <div className="text-xs font-bold text-warning-900 break-words">{testObj.title}</div>
                                     <div className="text-[10px] text-warning-600">Пересдача доступна</div>
                                   </div>
                                 </button>
                               ) : (
                                 <button onClick={() => setShowConfirm({ test: testObj, entry, variantId: assignment?.variantId })}
-                                  className="flex items-center gap-2 p-2.5 bg-primary-50 rounded-xl border border-primary-200 hover:bg-primary-100 transition-colors w-full text-left group">
+                                  className="flex items-start gap-2 p-2.5 bg-primary-50 rounded-xl border border-primary-200 hover:bg-primary-100 transition-colors w-full text-left group min-w-0">
                                   <div className="w-9 h-9 rounded-xl bg-primary-200 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-300 transition-colors">
                                     <Play className="w-4 h-4 text-primary-700" />
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="text-xs font-bold text-primary-900 truncate">{testObj.title}</div>
+                                    <div className="text-xs font-bold text-primary-900 break-words">{testObj.title}</div>
                                     <div className="text-[10px] text-primary-600">
                                       {assignment?.variantId && testObj.variants
                                         ? `Вариант: ${testObj.variants.find((v: any) => v.id === assignment.variantId)?.name || '—'}`
