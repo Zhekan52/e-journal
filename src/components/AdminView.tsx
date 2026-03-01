@@ -2760,33 +2760,40 @@ const Journal: React.FC = () => {
                         }
                       }} className="w-4 h-4 rounded border-gray-300 text-primary-600" />
                     </td>
-                    <td className="px-3 py-2">
-                      <select value={entry?.testId || ''} onChange={e => {
-                        const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
-                        if (ent) {
-                          const prevTestId = ent.testId;
-                          setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, testId: e.target.value || undefined, testType: e.target.value ? 'real' as const : undefined } : de));
-                          
-                          // При назначении теста создаем колонку, при удалении - удаляем
-                          if (e.target.value && !prevTestId) {
-                            const hasCol = journalColumns.some(c => c.date === sl.date && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber));
-                            if (!hasCol) {
-                              const newCol = { id: `jc${Date.now()}`, date: sl.date, subject: selectedSubject, lessonNumber: sl.lessonNumber, type: 'test' };
-                              setJournalColumns(prev => [...prev, newCol]);
+                    <td className="px-3 py-2 min-w-[160px] max-w-[200px]">
+                      <div className="relative">
+                        <select value={entry?.testId || ''} onChange={e => {
+                          const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
+                          if (ent) {
+                            const prevTestId = ent.testId;
+                            setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, testId: e.target.value || undefined, testType: e.target.value ? 'real' as const : undefined } : de));
+                            
+                            // При назначении теста создаем колонку, при удалении - удаляем
+                            if (e.target.value && !prevTestId) {
+                              const hasCol = journalColumns.some(c => c.date === sl.date && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber));
+                              if (!hasCol) {
+                                const newCol = { id: `jc${Date.now()}`, date: sl.date, subject: selectedSubject, lessonNumber: sl.lessonNumber, type: 'test' };
+                                setJournalColumns(prev => [...prev, newCol]);
+                              }
+                            } else if (!e.target.value && prevTestId) {
+                              // Удаляем колонку теста и связанные оценки
+                              const testCol = journalColumns.find(c => c.date === sl.date && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber));
+                              if (testCol && setGrades) {
+                                setGrades(prev => prev.filter(g => !(g.date === sl.date && g.subject === selectedSubject && g.columnId === testCol.id)));
+                              }
+                              setJournalColumns(prev => prev.filter(c => !(c.date === sl.date && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber))));
                             }
-                          } else if (!e.target.value && prevTestId) {
-                            // Удаляем колонку теста и связанные оценки
-                            const testCol = journalColumns.find(c => c.date === sl.date && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber));
-                            if (testCol && setGrades) {
-                              setGrades(prev => prev.filter(g => !(g.date === sl.date && g.subject === selectedSubject && g.columnId === testCol.id)));
-                            }
-                            setJournalColumns(prev => prev.filter(c => !(c.date === sl.date && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber))));
                           }
-                        }
-                      }} className="w-full px-2 py-1.5 text-xs border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500">
-                        <option value="">—</option>
-                        {tests && Array.isArray(tests) && tests.filter(t => t.subject === selectedSubject).map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
-                      </select>
+                        }} className="w-full px-2 py-1.5 text-xs border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 truncate pr-6">
+                          <option value="">—</option>
+                          {tests && Array.isArray(tests) && tests.filter(t => t.subject === selectedSubject).map(t => <option key={t.id} value={t.id} title={t.title}>{t.title}</option>)}
+                        </select>
+                        {entry?.testId && (
+                          <div className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <div className="w-2 h-2 bg-violet-500 rounded-full"></div>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
