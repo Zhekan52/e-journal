@@ -121,7 +121,7 @@ export const Reports: React.FC = () => {
       </div>
 
       {/* Выбор периода */}
-      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-4 shadow-lg">
+      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-4 shadow-lg overflow-visible">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-gray-500" />
@@ -635,18 +635,6 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
                 );
               })}
             </tr>
-            <tr className="bg-blue-50">
-              <td className="px-4 py-4 text-left text-sm font-bold text-blue-900 sticky left-0 bg-blue-50 z-10">
-                Средний балл всего класса
-              </td>
-              {SUBJECTS.map(subject => (
-                <td key={subject} className="px-4 py-4 text-center">
-                  <span className="inline-flex px-2 py-1 rounded-lg text-sm font-bold bg-white text-blue-700 shadow-sm">
-                    {overallClassAverage >= 0 ? formatAvg(overallClassAverage) : '—'}
-                  </span>
-                </td>
-              ))}
-            </tr>
           </tfoot>
         </table>
       </div>
@@ -659,8 +647,20 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
               <TrendingUp className="w-6 h-6 text-green-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Общий процент успеваемости</div>
+              <div className="text-sm text-gray-600">Процент успеваемости</div>
               <div className="text-2xl font-bold text-gray-900">{successRate.toFixed(1)}%</div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
+              <BarChart3 className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <div className="text-sm text-gray-600">Средний балл класса</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {overallClassAverage >= 0 ? formatAvg(overallClassAverage) : '—'}
+              </div>
             </div>
           </div>
           
@@ -669,7 +669,7 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
               <Users className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Всего учеников</div>
+              <div className="text-sm text-gray-600">Учеников</div>
               <div className="text-2xl font-bold text-gray-900">{students.length}</div>
             </div>
           </div>
@@ -679,7 +679,7 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
               <FileText className="w-6 h-6 text-purple-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Всего предметов</div>
+              <div className="text-sm text-gray-600">Предметов</div>
               <div className="text-2xl font-bold text-gray-900">{SUBJECTS.length}</div>
             </div>
           </div>
