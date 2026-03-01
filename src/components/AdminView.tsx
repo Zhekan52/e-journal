@@ -1115,6 +1115,29 @@ const AttendanceModal: React.FC<{
         {/* Выбор режима и типа */}
         {selectedStudentId && (
           <div className="px-6 py-4 border-b border-gray-100 space-y-4">
+            {/* Показываем текущую отметку если есть */}
+            {currentAttendance && (
+              <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-200">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-amber-800">Текущая отметка:</span>
+                  {(() => {
+                    const attType = ATTENDANCE_TYPES.find(at => at.value === currentAttendance);
+                    return attType ? (
+                      <span className={`px-3 py-1 rounded-lg text-sm font-bold ${attType.bgColor} ${attType.color}`}>
+                        {attType.short} — {attType.label}
+                      </span>
+                    ) : null;
+                  })()}
+                </div>
+                <button
+                  onClick={removeAttendance}
+                  className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-100 rounded-lg transition-colors flex items-center gap-1"
+                >
+                  <Trash2 className="w-4 h-4" /> Удалить
+                </button>
+              </div>
+            )}
+
             {/* Режим "Весь день" */}
             <label className="flex items-center gap-3 cursor-pointer">
               <input
@@ -2449,9 +2472,9 @@ const Journal: React.FC = () => {
                       </th>
                     );
                   })}
-                  <th className="px-3 py-2 text-center text-xs font-medium text-gray-600 border-b border-gray-300 min-w-[56px]">Ср.</th>
-                  {showTrend && <th className="px-2 py-2 text-center text-xs font-medium text-gray-600 border-b border-r-2 border-gray-400 w-10">↕</th>}
-                  {showNotAsked && <th className={`px-2 py-2 text-center text-xs font-medium text-gray-600 border-b ${showTrend ? 'border-l-2 border-gray-400' : ''} w-10`}>⚠</th>}
+                  <th className="px-3 py-2 text-center text-xs font-medium text-gray-600 border-b border-r border-gray-300 min-w-[56px]">Ср.</th>
+                  {showTrend && <th className="px-2 py-2 text-center text-xs font-medium text-gray-600 border-b border-r border-gray-300 w-10">↕</th>}
+                  {showNotAsked && <th className={`px-2 py-2 text-center text-xs font-medium text-gray-600 border-b ${showTrend ? 'border-l border-gray-300' : ''} w-10`}>⚠</th>}
                 </tr>
               </thead>
               <tbody>
@@ -2585,7 +2608,7 @@ const Journal: React.FC = () => {
                           </React.Fragment>
                         );
                       })}
-                      <td className="px-2 py-1.5 text-center border-gray-300">
+                      <td className="px-2 py-1.5 text-center border-r border-gray-300">
                         {avg > 0 ? (
                           <span className={`font-bold text-sm ${avg >= 4.5 ? 'text-green-600' : avg >= 3.5 ? 'text-blue-600' : avg >= 2.5 ? 'text-yellow-600' : 'text-red-600'}`}>
                             {avg.toFixed(2)}
@@ -2593,13 +2616,13 @@ const Journal: React.FC = () => {
                         ) : <span className="text-gray-400">—</span>}
                       </td>
                       {showTrend && (
-                        <td className="px-2 py-1.5 text-center border-r-2 border-gray-400">
+                        <td className="px-2 py-1.5 text-center border-r border-gray-300">
                           {trend === 1 && <TrendingUp className="w-4 h-4 text-green-500 mx-auto" />}
                           {trend === -1 && <TrendingDown className="w-4 h-4 text-red-500 mx-auto" />}
                         </td>
                       )}
                       {showNotAsked && (
-                        <td className={`px-2 py-1.5 text-center ${showTrend ? 'border-l-2 border-gray-400' : ''}`}>
+                        <td className={`px-2 py-1.5 text-center ${showTrend ? 'border-l border-gray-300' : ''}`}>
                           {allDates.length > 0 && (last3WithoutGrade >= 3 || hasNoGradesAtAll) && (
                             <span title={hasNoGradesAtAll ? 'Нет оценок' : `Не спрашивали ${last3WithoutGrade} из последних 3 уроков`}>
                               <AlertTriangle className="w-4 h-4 text-amber-500 mx-auto" />
