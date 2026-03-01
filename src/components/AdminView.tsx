@@ -14,7 +14,7 @@ import {
   AlertTriangle, TrendingUp, TrendingDown, FileText,
   BarChart3, Award, ArrowLeft, RefreshCw, ChevronRight, Tag, Info,
   Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft,
-  CalendarDays, FileBarChart, Brain, Clock
+  CalendarDays, FileBarChart, Brain
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
@@ -1284,18 +1284,16 @@ const GradePickerPortal: React.FC<{
   currentGrade?: number;
   currentExcludeFromAverage?: boolean;
   currentReason?: string;
-  currentLate?: boolean;
   studentName?: string;
   date?: string;
-  onSelect: (v: number, excludeFromAverage?: boolean, reason?: string, late?: boolean) => void;
+  onSelect: (v: number, excludeFromAverage?: boolean, reason?: string) => void;
   onDelete?: () => void;
   onClose: () => void;
-}> = ({ anchorRect, currentGrade, currentExcludeFromAverage, currentReason, currentLate, studentName, date, onSelect, onDelete, onClose }) => {
+}> = ({ anchorRect, currentGrade, currentExcludeFromAverage, currentReason, studentName, date, onSelect, onDelete, onClose }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [excludeFromAverage, setExcludeFromAverage] = useState(currentExcludeFromAverage || false);
   const [reason, setReason] = useState(currentReason || '');
   const [showReasonInput, setShowReasonInput] = useState(!!currentReason);
-  const [late, setLate] = useState(currentLate || false);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -1314,35 +1312,24 @@ const GradePickerPortal: React.FC<{
     setShowReasonInput(!!currentReason);
   }, [currentReason]);
 
-  useEffect(() => {
-    setLate(currentLate || false);
-  }, [currentLate]);
-
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr + 'T00:00');
     return `${d.getDate()} ${MONTH_NAMES_GEN[d.getMonth()]}`;
   };
 
   const handleSelect = (v: number) => {
-    onSelect(v, excludeFromAverage, reason.trim() || undefined, late);
+    onSelect(v, excludeFromAverage, reason.trim() || undefined);
   };
 
   // Сохранить только основание (для уже выставленной оценки)
   const handleSaveReason = () => {
     if (currentGrade !== undefined) {
-      onSelect(currentGrade, excludeFromAverage, reason.trim() || undefined, late);
-    }
-  };
-
-  // Сохранить только опоздание (для уже выставленной оценки)
-  const handleSaveLate = () => {
-    if (currentGrade !== undefined) {
-      onSelect(currentGrade, excludeFromAverage, reason.trim() || undefined, late);
+      onSelect(currentGrade, excludeFromAverage, reason.trim() || undefined);
     }
   };
 
   const widgetW = 240;
-  const widgetH = currentGrade ? 300 : 180;
+  const widgetH = currentGrade ? 260 : 160;
   let top = anchorRect.bottom + 4;
   let left = anchorRect.left + anchorRect.width / 2 - widgetW / 2;
   if (top + widgetH > window.innerHeight) top = anchorRect.top - widgetH - 4;
@@ -1371,24 +1358,7 @@ const GradePickerPortal: React.FC<{
           </button>
         ))}
       </div>
-      
-      {/* Опоздание */}
       <label className="flex items-center gap-2 mt-2 px-1 cursor-pointer select-none">
-        <input
-          type="checkbox"
-          checked={late}
-          onChange={(e) => {
-            setLate(e.target.checked);
-            if (currentGrade !== undefined) {
-              onSelect(currentGrade, excludeFromAverage, reason.trim() || undefined, e.target.checked);
-            }
-          }}
-          className="w-4 h-4 text-orange-600 rounded border-gray-300 focus:ring-orange-500"
-        />
-        <span className="text-xs text-orange-600 font-medium">Опоздал (ОП)</span>
-      </label>
-      
-      <label className="flex items-center gap-2 mt-1 px-1 cursor-pointer select-none">
         <input
           type="checkbox"
           checked={excludeFromAverage}
@@ -1673,13 +1643,13 @@ const Journal: React.FC = () => {
     return result;
   };
 
-  const setGrade = (studentId: string, date: string, value: number, columnId?: string, lessonNumber?: number, excludeFromAverage?: boolean, reason?: string, late?: boolean) => {
+  const setGrade = (studentId: string, date: string, value: number, columnId?: string, lessonNumber?: number, excludeFromAverage?: boolean, reason?: string) => {
     setGrades(prev => {
       const existing = prev.find(g => g.studentId === studentId && g.date === date && g.subject === selectedSubject
         && (columnId ? g.columnId === columnId : !g.columnId)
         && (lessonNumber !== undefined ? g.lessonNumber === lessonNumber : true));
-      if (existing) return prev.map(g => g.id === existing.id ? { ...g, value, excludeFromAverage, reason, late } : g);
-      return [...prev, { id: `g${Date.now()}${Math.random().toString(36).slice(2, 6)}`, studentId, subject: selectedSubject, value, date, lessonNumber, columnId, excludeFromAverage, reason, late }];
+      if (existing) return prev.map(g => g.id === existing.id ? { ...g, value, excludeFromAverage, reason } : g);
+      return [...prev, { id: `g${Date.now()}${Math.random().toString(36).slice(2, 6)}`, studentId, subject: selectedSubject, value, date, lessonNumber, columnId, excludeFromAverage, reason }];
     });
   };
 
@@ -2509,7 +2479,7 @@ const Journal: React.FC = () => {
                         const isToday = highlightToday && sl.date === today;
                         return (
                           <React.Fragment key={sl.key}>
-                            <td className={`px-0.5 py-0.5 text-center border-r border-gray-300 relative ${isToday ? 'bg-green-50' : ''}`}>
+                            <td className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isToday ? 'bg-green-50' : ''}`}>
                               <button 
                                 onClick={e => {
                                   if (!isBlocked) {
@@ -2532,12 +2502,6 @@ const Journal: React.FC = () => {
                               >
                                 {showAttendance ? att?.type : (mainGrade?.value || '')}
                               </button>
-                              {/* Иконка опоздания */}
-                              {mainGrade?.late && !showAttendance && (
-                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center" title="Опоздал">
-                                  <Clock className="w-2.5 h-2.5 text-white" />
-                                </span>
-                              )}
                             </td>
                             {cols.map(c => {
                               const g = getGrade(student.id, sl.date, c.id, sl.lessonNumber);
@@ -2926,10 +2890,9 @@ const Journal: React.FC = () => {
             currentGrade={currentGradeData?.value}
             currentExcludeFromAverage={currentGradeData?.excludeFromAverage}
             currentReason={currentGradeData?.reason}
-            currentLate={currentGradeData?.late}
             studentName={student ? `${student.lastName} ${student.firstName}` : undefined}
             date={gradePickerState.date}
-            onSelect={(v, excludeFromAverage, reason, late) => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber, excludeFromAverage, reason, late); setGradePickerState(null); }}
+            onSelect={(v, excludeFromAverage, reason) => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber, excludeFromAverage, reason); setGradePickerState(null); }}
             onDelete={() => { deleteGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
             onClose={() => setGradePickerState(null)}
           />
