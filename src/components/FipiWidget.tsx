@@ -117,12 +117,15 @@ export const FipiWidget: React.FC = () => {
   // Генерация заданий на день (2 задания из 2 разных предметов)
   useEffect(() => {
     if (!user || user.role !== 'student') return;
+    if (fipiTasks.length === 0) return;
 
     // Проверяем, нужно ли обновить задания на сегодня
     // Проверяем по всем предметам - если хотя бы по одному предмету дата не сегодня, генерируем
+    const currentProgress = fipiProgress.filter(p => p.studentId === user.id);
     let needsGeneration = false;
+    
     SUBJECTS.forEach(subject => {
-      const subjProgress = getSubjectProgress(subject);
+      const subjProgress = currentProgress.find(p => p.subject === subject);
       if (!subjProgress || subjProgress.lastTaskDate !== today) {
         needsGeneration = true;
       }
@@ -136,21 +139,21 @@ export const FipiWidget: React.FC = () => {
     // Выбираем 2 разных предмета на основе seed (ID ученика + дата)
     const seed = `${user.id}_${today}`;
     
-    // Перемешиваем предметы на основе seed
-    const shuffledSubjects = [...SUBJECTS].sort((a, b) => {
-      const seedA = `${seed}_${a}`;
-      const seedB = `${seed}_${b}`;
-      return getSeededRandom(seedA) - getSeededRandom(seedB);
-    });
+    // Перемешиваем предметы на основе seed (Fisher-Yates)
+    const shuffled = [...SUBJECTS];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(getSeededRandom(`${seed}_${i}`) * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
     
     // Берём первые 2 предмета
-    const selectedSubjects = shuffledSubjects.slice(0, 2);
+    const selectedSubjects = shuffled.slice(0, 2);
     
     // Собираем задания для выбранных предметов
     const newTodayTasksBySubject: Record<string, string> = {};
     
     selectedSubjects.forEach(subject => {
-      const progress = getSubjectProgress(subject);
+      const progress = currentProgress.find(p => p.subject === subject);
       const subjectTasks = fipiTasks.filter(t => t.subject === subject);
       const completedIds = progress?.completedTasks || [];
       
@@ -158,8 +161,8 @@ export const FipiWidget: React.FC = () => {
       const availableTasks = subjectTasks.filter(t => !completedIds.includes(t.id));
       
       if (availableTasks.length > 0) {
-        // Выбираем задание на основе seed + предмет
-        const taskSeed = `${user.id}_${today}_${subject}`;
+        // Выбираем задание на основе seed + предмет + случайное число
+        const taskSeed = `${user.id}_${today}_${subject}_${Date.now()}`;
         const taskRandom = getSeededRandom(taskSeed);
         const randomIndex = Math.floor(taskRandom * availableTasks.length);
         newTodayTasksBySubject[subject] = availableTasks[randomIndex].id;
@@ -167,23 +170,17 @@ export const FipiWidget: React.FC = () => {
     });
 
     // Обновляем прогресс для всех предметов
-    SUBJECTS.forEach(subject => {
-      const progress = getSubjectProgress(subject);
-      if (!progress) return;
-
-      const taskId = newTodayTasksBySubject[subject] || null;
-
-      setFipiProgress(fipiProgress.map(p => 
-        p.id === progress.id 
-          ? { 
-              ...p, 
-              lastTaskDate: today, 
-              todayTasks: taskId ? [taskId] : []
-            }
-          : p
-      ));
-    });
-  }, [fipiTasks, fipiProgress, user, today]);
+    setFipiProgress(prev => prev.map(p => {
+      if (p.studentId !== user.id) return p;
+      
+      const taskId = newTodayTasksBySubject[p.subject] || null;
+      return {
+        ...p,
+        lastTaskDate: today,
+        todayTasks: taskId ? [taskId] : []
+      };
+    }));
+  }, [user, fipiTasks, fipiProgress, today]);
 
   // Загрузка сегодняшних заданий
   useEffect(() => {
@@ -253,45 +250,45 @@ export const FipiWidget: React.FC = () => {
 
     // Обновляем прогресс только при правильном ответе
     if (progress && correct) {
-      let newTotalPoints = progress.totalPoints;
-      let newCompletedTasks = [...progress.completedTasks];
+      // Проверяем, не был ли уже этот ответ правильным
+      const alreadyCompleted = progress.completedTasks.includes(currentTask.id);
+      
+      if (!alreadyCompleted) {
+        const newTotalPoints = progress.totalPoints + 1;
+        const newCompletedTasks = [...progress.completedTasks, currentTask.id];
 
-      if (!progress.completedTasks.includes(currentTask.id)) {
-        newTotalPoints += 1;
-        newCompletedTasks.push(currentTask.id);
-      }
+        // Проверяем порог для оценки
+        const reward = getReward(currentTask.subject);
+        const pointsRequired = reward?.pointsRequired || 10;
+        const previousPoints = progress.totalPoints;
+        
+        setFipiProgress(prev => prev.map(p => 
+          p.id === progress.id 
+            ? { 
+                ...p, 
+                totalPoints: newTotalPoints, 
+                completedTasks: newCompletedTasks,
+                pendingGrade: newTotalPoints >= pointsRequired 
+                  ? { subject: currentTask.subject, grade: reward?.grade || 5, pointsRequired }
+                  : p.pendingGrade
+              }
+            : p
+        ));
 
-      // Проверяем порог для оценки
-      const reward = getReward(currentTask.subject);
-      const pointsRequired = reward?.pointsRequired || 10;
-      const pendingGrade = newTotalPoints >= pointsRequired 
-        ? { subject: currentTask.subject, grade: reward?.grade || 5, pointsRequired }
-        : undefined;
-
-      setFipiProgress(fipiProgress.map(p => 
-        p.id === progress.id 
-          ? { 
-              ...p, 
-              totalPoints: newTotalPoints, 
-              completedTasks: newCompletedTasks,
-              pendingGrade
-            }
-          : p
-      ));
-
-      // Создаём уведомление при достижении порога
-      if (newTotalPoints >= pointsRequired && (!reward || progress.totalPoints < pointsRequired)) {
-        const notification: FipiNotification = {
-          id: generateId(),
-          studentId: user.id,
-          studentName: user.name,
-          subject: currentTask.subject,
-          grade: reward?.grade || 5,
-          pointsRequired,
-          createdAt: today,
-          acknowledged: false,
-        };
-        setFipiNotifications([...fipiNotifications, notification]);
+        // Создаём уведомление при достижении порога
+        if (newTotalPoints >= pointsRequired && previousPoints < pointsRequired) {
+          const notification: FipiNotification = {
+            id: generateId(),
+            studentId: user.id,
+            studentName: user.name,
+            subject: currentTask.subject,
+            grade: reward?.grade || 5,
+            pointsRequired,
+            createdAt: today,
+            acknowledged: false,
+          };
+          setFipiNotifications(prev => [...prev, notification]);
+        }
       }
     }
   };

@@ -3,11 +3,11 @@ import { useData } from '../context';
 import { SUBJECTS, getTodayString } from '../data';
 import type { FipiTask, FipiReward, FipiStudentProgress, FipiTaskAttempt, FipiNotification } from '../data';
 import {
-  Brain, Plus, Trash2, Edit2, Save, X, Award, Users, CheckCircle, XCircle, AlertCircle, Settings, Upload
+  Brain, Plus, Trash2, Edit2, Save, X, Award, Users, CheckCircle, XCircle, AlertCircle, Settings, Upload, UserPlus
 } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substring(2, 15);
-type FipiTab = 'tasks' | 'rewards' | 'students' | 'logs' | 'notifications';
+type FipiTab = 'tasks' | 'rewards' | 'students' | 'logs' | 'notifications' | 'assign';
 
 export const FipiTrainer: React.FC = () => {
   const { fipiTasks, setFipiTasks, fipiRewards, setFipiRewards, fipiProgress, setFipiProgress,
@@ -65,6 +65,7 @@ export const FipiTrainer: React.FC = () => {
     { id: 'tasks', label: 'Банк заданий', icon: <Brain className="w-5 h-5" /> },
     { id: 'rewards', label: 'Поощрения', icon: <Award className="w-5 h-5" /> },
     { id: 'students', label: 'Ученики', icon: <Users className="w-5 h-5" /> },
+    { id: 'assign', label: 'Назначить', icon: <UserPlus className="w-5 h-5" /> },
     { id: 'logs', label: 'Архив ответов', icon: <Award className="w-5 h-5" /> },
     { id: 'notifications', label: 'Уведомления', icon: <AlertCircle className="w-5 h-5" /> },
   ];
@@ -213,6 +214,15 @@ export const FipiTrainer: React.FC = () => {
         </div>
       )}
 
+      {activeTab === 'assign' && (
+        <AssignTasksToStudent 
+          students={students} 
+          fipiTasks={fipiTasks}
+          fipiProgress={fipiProgress}
+          setFipiProgress={setFipiProgress}
+        />
+      )}
+
       {activeTab === 'logs' && (
         <div className="bg-white/80 rounded-2xl border shadow-lg overflow-hidden">
           <table className="w-full">
@@ -269,6 +279,175 @@ export const FipiTrainer: React.FC = () => {
       )}
 
       {showTaskModal && <TaskModal task={editingTask} onSave={handleSaveTask} onClose={() => { setShowTaskModal(false); setEditingTask(null); }} />}
+    </div>
+  );
+};
+
+// Компонент для назначения заданий ученику вручную
+const AssignTasksToStudent: React.FC<{
+  students: any[];
+  fipiTasks: FipiTask[];
+  fipiProgress: FipiStudentProgress[];
+  setFipiProgress: any;
+}> = ({ students, fipiTasks, fipiProgress, setFipiProgress }) => {
+  const [selectedStudent, setSelectedStudent] = useState<string>('');
+  const [selectedSubject, setSelectedSubject] = useState<string>('');
+  const [selectedTaskId, setSelectedTaskId] = useState<string>('');
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const today = getTodayString();
+
+  // Получаем задания для выбранного предмета
+  const availableTasks = useMemo(() => {
+    if (!selectedSubject) return [];
+    return fipiTasks.filter(t => t.subject === selectedSubject);
+  }, [fipiTasks, selectedSubject]);
+
+  // Получаем прогресс выбранного ученика
+  const studentProgress = useMemo(() => {
+    if (!selectedStudent) return null;
+    return fipiProgress.find(p => p.studentId === selectedStudent && p.subject === selectedSubject);
+  }, [fipiProgress, selectedStudent, selectedSubject]);
+
+  const handleAssignTask = () => {
+    if (!selectedStudent || !selectedSubject || !selectedTaskId) {
+      setMessage({ type: 'error', text: 'Выберите ученика, предмет и задание' });
+      return;
+    }
+
+    // Находим прогресс ученика по этому предмету
+    const progress = fipiProgress.find(p => p.studentId === selectedStudent && p.subject === selectedSubject);
+    
+    if (progress) {
+      // Обновляем существующий прогресс
+      setFipiProgress(prev => prev.map(p => {
+        if (p.studentId === selectedStudent && p.subject === selectedSubject) {
+          return {
+            ...p,
+            lastTaskDate: today,
+            todayTasks: [selectedTaskId]
+          };
+        }
+        return p;
+      }));
+      setMessage({ type: 'success', text: `Задание назначено ученику!` });
+    } else {
+      // Создаём новый прогресс
+      const newProgress: FipiStudentProgress = {
+        id: generateId(),
+        studentId: selectedStudent,
+        subject: selectedSubject,
+        totalPoints: 0,
+        completedTasks: [],
+        lastTaskDate: today,
+        todayTasks: [selectedTaskId]
+      };
+      setFipiProgress(prev => [...prev, newProgress]);
+      setMessage({ type: 'success', text: `Задание назначено ученику!` });
+    }
+
+    // Сбрасываем форму
+    setSelectedTaskId('');
+  };
+
+  // Ученики без заданий на сегодня
+  const studentsWithoutTasks = students.filter(student => {
+    const progress = fipiProgress.filter(p => p.studentId === student.id);
+    const hasTodayTask = progress.some(p => p.lastTaskDate === today && p.todayTasks && p.todayTasks.length > 0);
+    return !hasTodayTask;
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white/80 rounded-2xl border p-6 shadow-lg">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">Назначить задание ученику</h3>
+        
+        {/* Выбор ученика */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Ученик</label>
+          <select
+            value={selectedStudent}
+            onChange={(e) => { setSelectedStudent(e.target.value); setSelectedSubject(''); setSelectedTaskId(''); }}
+            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl"
+          >
+            <option value="">Выберите ученика...</option>
+            {students.map(s => (
+              <option key={s.id} value={s.id}>{s.lastName} {s.firstName}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Выбор предмета */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Предмет</label>
+          <select
+            value={selectedSubject}
+            onChange={(e) => { setSelectedSubject(e.target.value); setSelectedTaskId(''); }}
+            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl"
+            disabled={!selectedStudent}
+          >
+            <option value="">Выберите предмет...</option>
+            {SUBJECTS.map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Выбор задания */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Задание</label>
+          <select
+            value={selectedTaskId}
+            onChange={(e) => setSelectedTaskId(e.target.value)}
+            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl"
+            disabled={!selectedSubject}
+          >
+            <option value="">Выберите задание...</option>
+            {availableTasks.map(t => (
+              <option key={t.id} value={t.id}>{t.question.slice(0, 60)}...</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Кнопка назначения */}
+        <button
+          onClick={handleAssignTask}
+          disabled={!selectedStudent || !selectedSubject || !selectedTaskId}
+          className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Назначить задание
+        </button>
+
+        {/* Сообщение */}
+        {message && (
+          <div className={`mt-4 p-3 rounded-xl ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+            {message.text}
+          </div>
+        )}
+      </div>
+
+      {/* Список учеников без заданий */}
+      {studentsWithoutTasks.length > 0 && (
+        <div className="bg-white/80 rounded-2xl border border-red-200 p-6 shadow-lg">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Ученики без заданий на сегодня</h3>
+          <div className="space-y-2">
+            {studentsWithoutTasks.map(s => (
+              <div key={s.id} className="flex items-center gap-3 p-3 bg-red-50 rounded-xl">
+                <div className="w-8 h-8 rounded-full bg-red-200 flex items-center justify-center text-red-700 font-bold text-sm">
+                  {s.lastName?.charAt(0)}{s.firstName?.charAt(0)}
+                </div>
+                <span className="font-medium">{s.lastName} {s.firstName}</span>
+                <button
+                  onClick={() => { setSelectedStudent(s.id); setMessage(null); }}
+                  className="ml-auto px-3 py-1 bg-blue-600 text-white text-sm rounded-lg"
+                >
+                  Назначить
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
