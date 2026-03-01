@@ -108,88 +108,94 @@ export const FipiWidget: React.FC = () => {
     });
   }, [user]);
 
-  // Псевдослучайный генератор на основе seed (studentId + date + subject)
-  // Гарантирует уникальные задания для каждого ученика
+  // Псевдослучайный генератор
   const getSeededRandom = (seed: string): number => {
     let hash = 0;
     for (let i = 0; i < seed.length; i++) {
       const char = seed.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
+      hash = hash & hash;
     }
-    return Math.abs(hash) / 2147483647; // Normalize to 0-1
+    return Math.abs(hash) / 2147483647;
   };
 
-  // Генерация заданий на день (2 задания из 2 разных предметов)
-  useEffect(() => {
+  // Генерация заданий - отдельная функция
+  const generateTodayTasks = () => {
     if (!user || user.role !== 'student') return;
     if (fipiTasks.length === 0) return;
-    if (tasksGenerated) return;
 
-    // Проверяем, сколько заданий уже есть на сегодня
+    // Текущий прогресс ученика
     const currentProgress = fipiProgress.filter(p => p.studentId === user.id);
-    const todayTaskCount = currentProgress.filter(p => p.lastTaskDate === today && p.todayTasks && p.todayTasks.length > 0).length;
     
-    // Если уже есть 2 задания - помечаем как сгенерированные и выходим
-    if (todayTaskCount >= 2) {
+    // Находим предметы, у которых уже есть задания на сегодня
+    const subjectsWithTodayTasks = new Set(
+      currentProgress
+        .filter(p => p.lastTaskDate === today && p.todayTasks && p.todayTasks.length > 0)
+        .map(p => p.subject)
+    );
+    
+    // Если уже есть 2 задания - не генерируем
+    if (subjectsWithTodayTasks.size >= 2) {
       setTasksGenerated(true);
       return;
     }
 
-    // Выбираем 2 разных предмета на основе seed (ID ученика + дата)
+    // Seed для перемешивания предметов
     const seed = `${user.id}_${today}`;
     
-    // Перемешиваем предметы на основе seed (Fisher-Yates)
+    // Перемешиваем все предметы
     const shuffled = [...SUBJECTS];
     for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(getSeededRandom(`${seed}_${i}`) * (i + 1));
+      const j = Math.floor(getSeededRandom(`${seed}_shuffle_${i}`) * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     
-    // Берём первые 2 предмета
-    const selectedSubjects = shuffled.slice(0, 2);
+    // Фильтруем: исключаем предметы, по которым уже есть задания на сегодня
+    const availableSubjects = shuffled.filter(s => !subjectsWithTodayTasks.has(s));
+    
+    // Выбираем нужное количество предметов (чтобы всего было 2)
+    const neededCount = 2 - subjectsWithTodayTasks.size;
+    const selectedSubjects = availableSubjects.slice(0, neededCount);
     
     // Собираем задания для выбранных предметов
-    const newTodayTasksBySubject: Record<string, string> = {};
+    const newTasksMap: Record<string, string> = {};
     
     selectedSubjects.forEach(subject => {
-      const progress = currentProgress.find(p => p.subject === subject);
+      const subjProgress = currentProgress.find(p => p.subject === subject);
       const subjectTasks = fipiTasks.filter(t => t.subject === subject);
-      const completedIds = progress?.completedTasks || [];
+      const completedIds = subjProgress?.completedTasks || [];
       
       // Доступные задания (не выполненные)
       const availableTasks = subjectTasks.filter(t => !completedIds.includes(t.id));
       
       if (availableTasks.length > 0) {
-        // Выбираем задание на основе seed + предмет
         const taskSeed = `${user.id}_${today}_${subject}`;
-        const taskRandom = getSeededRandom(taskSeed);
-        const randomIndex = Math.floor(taskRandom * availableTasks.length);
-        newTodayTasksBySubject[subject] = availableTasks[randomIndex].id;
+        const randomIndex = Math.floor(getSeededRandom(taskSeed) * availableTasks.length);
+        newTasksMap[subject] = availableTasks[randomIndex].id;
       }
     });
 
-    // Всё обновление делаем за один вызов setFipiProgress
+    // Обновляем прогресс
     setFipiProgress(prev => {
-      const updated = prev.map(p => {
-        if (p.studentId !== user.id) return p;
-        
-        // Если это один из выбранных предметов - обновляем
-        if (newTodayTasksBySubject[p.subject]) {
-          return {
-            ...p,
-            lastTaskDate: today,
-            todayTasks: [newTodayTasksBySubject[p.subject]]
-          };
-        }
-        return p;
-      });
+      let updated = [...prev];
+      const studentProgressIds = new Set(updated.filter(p => p.studentId === user.id).map(p => p.id));
       
-      // Добавляем новые записи для предметов, которых нет
-      const existingSubjects = new Set(updated.filter(p => p.studentId === user.id).map(p => p.subject));
-      
+      // Обновляем существующие записи или создаём новые
       selectedSubjects.forEach(subject => {
-        if (!existingSubjects.has(subject) && newTodayTasksBySubject[subject]) {
+        const taskId = newTasksMap[subject];
+        if (!taskId) return;
+        
+        const existingIdx = updated.findIndex(p => p.studentId === user.id && p.subject === subject);
+        
+        if (existingIdx >= 0) {
+          // Обновляем существующую запись
+          updated[existingIdx] = {
+            ...updated[existingIdx],
+            lastTaskDate: today,
+            todayTasks: [taskId]
+          };
+        } else {
+          // Создаём новую запись
           updated.push({
             id: generateId(),
             studentId: user.id,
@@ -197,7 +203,7 @@ export const FipiWidget: React.FC = () => {
             totalPoints: 0,
             completedTasks: [],
             lastTaskDate: today,
-            todayTasks: [newTodayTasksBySubject[subject]]
+            todayTasks: [taskId]
           });
         }
       });
@@ -205,9 +211,20 @@ export const FipiWidget: React.FC = () => {
       return updated;
     });
     
-    // Помечаем как сгенерированные
     setTasksGenerated(true);
-  }, [user, fipiTasks, fipiProgress, today]);
+  };
+
+  // Запускаем генерацию при загрузке
+  useEffect(() => {
+    generateTodayTasks();
+  }, []);
+
+  // Также запускаем при изменении данных
+  useEffect(() => {
+    if (!tasksGenerated && fipiTasks.length > 0) {
+      generateTodayTasks();
+    }
+  }, [fipiProgress, fipiTasks]);
 
   // Загрузка сегодняшних заданий
   useEffect(() => {
