@@ -455,8 +455,8 @@ export const FipiWidget: React.FC = () => {
         )}
       </div>
 
-      {/* Текущее задание - показываем если есть задания и не все правильно выполнены */}
-      {currentTask && !allCompleted && (
+      {/* Текущее задание - показываем только если есть неотвеченные задания и данные загружены */}
+      {currentTask && !allCompleted && pendingTasks.length > 0 && todayTasks.length > 0 && (
         <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
           <div className="flex items-center gap-2 mb-4">
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -571,8 +571,8 @@ export const FipiWidget: React.FC = () => {
             </div>
           )}
 
-          {/* Результат - показываем всегда после ответа */}
-          {showResult && (
+          {/* Результат - показываем после ответа только если есть ещё задания */}
+          {showResult && pendingTasks.length > 0 && (
             <div className={`rounded-xl p-6 ${isCorrect ? 'bg-green-50' : 'bg-red-50'}`}>
               <div className="flex items-center gap-3 mb-4">
                 {isCorrect ? (
