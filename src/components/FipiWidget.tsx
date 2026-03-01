@@ -4,7 +4,7 @@ import { SUBJECTS, getTodayString, getTodayDate } from '../data';
 import type { FipiTask, FipiStudentProgress, FipiTaskAttempt, FipiReward, FipiNotification } from '../data';
 import {
   Brain, CheckCircle, XCircle, ChevronRight, Award, Clock, RefreshCw,
-  Image as ImageIcon, Eye, X, Star, Trophy, Target
+  Image as ImageIcon, Eye, X, Star, Trophy, Target, Lock
 } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substring(2, 15);
@@ -41,8 +41,30 @@ export const FipiWidget: React.FC = () => {
   const [isCorrect, setIsCorrect] = useState(false);
   const [showImageModal, setShowImageModal] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [timeUntilTomorrow, setTimeUntilTomorrow] = useState<string>('');
 
   const today = getTodayString();
+
+  // Таймер до полуночи
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      const diff = tomorrow.getTime() - now.getTime();
+      
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      setTimeUntilTomorrow(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Получить или создать прогресс ученика
   const studentProgress = useMemo(() => {
@@ -92,11 +114,37 @@ export const FipiWidget: React.FC = () => {
     return Math.abs(hash) / 2147483647; // Normalize to 0-1
   };
 
-  // Генерация заданий на день
+  // Генерация заданий на день (2 задания из 2 разных предметов)
   useEffect(() => {
     if (!user || user.role !== 'student') return;
 
-    SUBJECTS.forEach(subject => {
+    // Проверяем, нужно ли обновить задания на сегодня
+    const firstSubjectProgress = getSubjectProgress(SUBJECTS[0]);
+    const lastDate = firstSubjectProgress?.lastTaskDate || '';
+
+    if (lastDate === today) {
+      // Задания уже сгенерированы на сегодня
+      return;
+    }
+
+    // Выбираем 2 разных предмета на основе seed
+    const seed = `${user.id}_${today}`;
+    const seededRandom = getSeededRandom(seed);
+    
+    // Перемешиваем предметы на основе seed
+    const shuffledSubjects = [...SUBJECTS].sort((a, b) => {
+      const seedA = `${seed}_${a}`;
+      const seedB = `${seed}_${b}`;
+      return getSeededRandom(seedA) - getSeededRandom(seedB);
+    });
+    
+    // Берём первые 2 предмета
+    const selectedSubjects = shuffledSubjects.slice(0, 2);
+    
+    // Собираем задания для выбранных предметов
+    const newTodayTasks: string[] = [];
+    
+    selectedSubjects.forEach(subject => {
       const progress = getSubjectProgress(subject);
       const subjectTasks = fipiTasks.filter(t => t.subject === subject);
       const completedIds = progress?.completedTasks || [];
@@ -104,39 +152,34 @@ export const FipiWidget: React.FC = () => {
       // Доступные задания (не выполненные)
       const availableTasks = subjectTasks.filter(t => !completedIds.includes(t.id));
       
-      // Если есть доступные задания, выбираем на основе seed (уникально для каждого ученика)
-      let newTodayTask: FipiTask | null = null;
       if (availableTasks.length > 0) {
-        // Seed включает: ID ученика + дата + предмет
-        // Это гарантирует одинаковые задания при каждом входе в тот же день
-        const seed = `${user.id}_${today}_${subject}`;
-        const seededRandom = getSeededRandom(seed);
-        const randomIndex = Math.floor(seededRandom * availableTasks.length);
-        newTodayTask = availableTasks[randomIndex];
+        // Выбираем задание на основе seed + предмет
+        const taskSeed = `${user.id}_${today}_${subject}`;
+        const taskRandom = getSeededRandom(taskSeed);
+        const randomIndex = Math.floor(taskRandom * availableTasks.length);
+        newTodayTasks.push(availableTasks[randomIndex].id);
       }
+    });
 
-      // Обновляем прогресс
-      if (progress) {
-        const todayTasksIds = progress.todayTasks || [];
-        const lastDate = progress.lastTaskDate;
+    // Обновляем прогресс для всех предметов
+    SUBJECTS.forEach(subject => {
+      const progress = getSubjectProgress(subject);
+      if (!progress) return;
 
-        // Если новый день, сбрасываем задания
-        if (lastDate !== today) {
-          const newTodayTasks = newTodayTask ? [newTodayTask.id] : [];
-          setFipiProgress(fipiProgress.map(p => 
-            p.id === progress.id 
-              ? { ...p, lastTaskDate: today, todayTasks: newTodayTasks }
-              : p
-          ));
-        } else if (newTodayTask && !todayTasksIds.includes(newTodayTask.id)) {
-          // Добавляем новое задание, если ещё не добавлено
-          setFipiProgress(fipiProgress.map(p => 
-            p.id === progress.id 
-              ? { ...p, todayTasks: [...todayTasksIds, newTodayTask!.id] }
-              : p
-          ));
-        }
-      }
+      const isSelectedSubject = selectedSubjects.includes(subject);
+      const taskId = isSelectedSubject 
+        ? newTodayTasks[selectedSubjects.indexOf(subject)]
+        : null;
+
+      setFipiProgress(fipiProgress.map(p => 
+        p.id === progress.id 
+          ? { 
+              ...p, 
+              lastTaskDate: today, 
+              todayTasks: taskId ? [taskId] : []
+            }
+          : p
+      ));
     });
   }, [fipiTasks]);
 
@@ -183,12 +226,12 @@ export const FipiWidget: React.FC = () => {
     };
     setFipiAttempts([...fipiAttempts, attempt]);
 
-    // Обновляем прогресс
-    if (progress) {
+    // Обновляем прогресс только при правильном ответе
+    if (progress && correct) {
       let newTotalPoints = progress.totalPoints;
       let newCompletedTasks = [...progress.completedTasks];
 
-      if (correct && !progress.completedTasks.includes(currentTask.id)) {
+      if (!progress.completedTasks.includes(currentTask.id)) {
         newTotalPoints += 1;
         newCompletedTasks.push(currentTask.id);
       }
@@ -212,7 +255,7 @@ export const FipiWidget: React.FC = () => {
       ));
 
       // Создаём уведомление при достижении порога
-      if (correct && newTotalPoints >= pointsRequired && (!reward || progress.totalPoints < pointsRequired)) {
+      if (newTotalPoints >= pointsRequired && (!reward || progress.totalPoints < pointsRequired)) {
         const notification: FipiNotification = {
           id: generateId(),
           studentId: user.id,
@@ -231,12 +274,32 @@ export const FipiWidget: React.FC = () => {
   // Переход к следующему заданию
   const handleNextTask = () => {
     setShowResult(false);
-    setAnswer(currentTask.type === 'multiple' ? [] : '');
-    if (currentTaskIndex < todayTasks.length - 1) {
-      setCurrentTaskIndex(currentTaskIndex + 1);
-    } else {
-      setCurrentTaskIndex(0);
+    setAnswer('');
+    
+    // Ищем следующее неотвеченное задание
+    const currentIndex = todayTasks.findIndex(t => t.id === currentTask?.id);
+    let foundNext = false;
+    
+    for (let i = currentIndex + 1; i < todayTasks.length; i++) {
+      if (!answeredTaskIds.has(todayTasks[i].id)) {
+        setCurrentTaskIndex(i);
+        foundNext = true;
+        break;
+      }
     }
+    
+    // Если не нашли вперёд, ищем с начала
+    if (!foundNext) {
+      for (let i = 0; i < currentIndex; i++) {
+        if (!answeredTaskIds.has(todayTasks[i].id)) {
+          setCurrentTaskIndex(i);
+          foundNext = true;
+          break;
+        }
+      }
+    }
+    
+    // Если все задания отвечены, остаёмся на текущем
   };
 
   // Если не ученик - не показываем виджет
@@ -264,13 +327,25 @@ export const FipiWidget: React.FC = () => {
     );
   }
 
-  // Проверяем, все ли задания выполнены
+  // Проверяем, все ли задания выполнены (правильно)
   const allCompleted = todayTasks.every(task => {
     const taskAttempt = fipiAttempts.find(a => 
-      a.taskId === task.id && a.studentId === user.id && a.date === today
+      a.taskId === task.id && a.studentId === user.id && a.date === today && a.correct
     );
-    return taskAttempt?.correct;
+    return !!taskAttempt;
   });
+
+  // Получаем задания, на которые уже даны ответы (любые - правильные или нет)
+  const answeredTaskIds = useMemo(() => {
+    return new Set(
+      fipiAttempts
+        .filter(a => a.studentId === user?.id && a.date === today)
+        .map(a => a.taskId)
+    );
+  }, [fipiAttempts, user?.id, today]);
+
+  // Получаем задания, которые ещё не отвечены
+  const pendingTasks = todayTasks.filter(task => !answeredTaskIds.has(task.id));
 
   return (
     <div className="space-y-4">
@@ -283,7 +358,13 @@ export const FipiWidget: React.FC = () => {
             </div>
             <div>
               <h3 className="font-bold text-gray-900">Ежедневный тренажёр ФИПИ</h3>
-              <p className="text-sm text-gray-500">{todayTasks.length} заданий на сегодня</p>
+              <p className="text-sm text-gray-500">
+                {allCompleted 
+                  ? 'Все выполнены' 
+                  : pendingTasks.length > 0 
+                    ? `${pendingTasks.length} из ${todayTasks.length} осталось`
+                    : 'Завершено'}
+              </p>
             </div>
           </div>
 
@@ -325,21 +406,21 @@ export const FipiWidget: React.FC = () => {
         </div>
 
         {/* Прогресс текущего задания */}
-        {currentTask && (
+        {currentTask && pendingTasks.length > 0 && (
           <div className="mt-4 flex items-center gap-4">
             <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all"
-                style={{ width: `${((currentTaskIndex + 1) / todayTasks.length) * 100}%` }}
+                style={{ width: `${((todayTasks.length - pendingTasks.length) / todayTasks.length) * 100}%` }}
               />
             </div>
-            <span className="text-sm text-gray-500">{currentTaskIndex + 1}/{todayTasks.length}</span>
+            <span className="text-sm text-gray-500">{todayTasks.length - pendingTasks.length}/{todayTasks.length}</span>
           </div>
         )}
       </div>
 
       {/* Текущее задание */}
-      {currentTask && !allCompleted && (
+      {currentTask && !allCompleted && pendingTasks.length > 0 && (
         <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
           <div className="flex items-center gap-2 mb-4">
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -497,8 +578,38 @@ export const FipiWidget: React.FC = () => {
         <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl border border-amber-200 p-8 text-center">
           <Trophy className="w-16 h-16 mx-auto mb-4 text-amber-500" />
           <h3 className="text-2xl font-bold text-gray-900 mb-2">Отлично!</h3>
-          <p className="text-gray-600">Вы выполнили все задания на сегодня</p>
-          <p className="text-sm text-gray-500 mt-2">Возвращайтесь завтра за новыми заданиями</p>
+          <p className="text-gray-600 mb-4">Все задания на сегодня выполнены</p>
+          
+          {/* Таймер до новых заданий */}
+          <div className="bg-white/80 rounded-xl p-4 inline-block">
+            <p className="text-sm text-gray-500 mb-1">Новые задания через:</p>
+            <div className="flex items-center justify-center gap-2">
+              <Clock className="w-5 h-5 text-purple-500" />
+              <span className="text-2xl font-bold text-gray-900 font-mono">{timeUntilTomorrow}</span>
+            </div>
+          </div>
+          
+          <p className="text-sm text-gray-500 mt-4">Возвращайтесь завтра</p>
+        </div>
+      )}
+
+      {/* Все задания отвечены (есть неправильные) */}
+      {!allCompleted && pendingTasks.length === 0 && todayTasks.length > 0 && (
+        <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-2xl border border-gray-200 p-8 text-center">
+          <Lock className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">Задания завершены</h3>
+          <p className="text-gray-600 mb-4">Вы ответили на все задания на сегодня</p>
+          
+          {/* Таймер до новых заданий */}
+          <div className="bg-white/80 rounded-xl p-4 inline-block">
+            <p className="text-sm text-gray-500 mb-1">Новые задания через:</p>
+            <div className="flex items-center justify-center gap-2">
+              <Clock className="w-5 h-5 text-purple-500" />
+              <span className="text-2xl font-bold text-gray-900 font-mono">{timeUntilTomorrow}</span>
+            </div>
+          </div>
+          
+          <p className="text-sm text-gray-500 mt-4">Возвращайтесь завтра</p>
         </div>
       )}
 
