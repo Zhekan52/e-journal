@@ -921,7 +921,7 @@ const AttendanceCalendar: React.FC = () => {
                 onClick={() => handleDateClick(date)}
                 disabled={!hasLessons}
                 className={`
-                  min-h-[80px] p-2 border-b border-r border-gray-100 transition-all
+                  min-h-[80px] p-2 border-b-2 border-r-2 border-gray-300 transition-all
                   ${!isCurrentMonth(date) ? 'bg-gray-30' : 'bg-white hover:bg-gray-50'}
                   ${isToday(date) ? 'bg-blue-50' : ''}
                   ${isSelected ? 'ring-2 ring-inset ring-primary-500 bg-primary-50' : ''}
@@ -1457,6 +1457,8 @@ const Journal: React.FC = () => {
   const [highlightToday, setHighlightToday] = useState(true);
   const [inputMode, setInputMode] = useState<'widget' | 'keyboard'>('widget');
   const [keyboardTarget, setKeyboardTarget] = useState<{ studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
+  const [periodStart, setPeriodStart] = useState<string>('');
+  const [periodEnd, setPeriodEnd] = useState<string>('');
 
   // Функция для получения ключа localStorage для настроек предмета
   const getSettingsKey = (subject: string) => `journal_settings_${subject}`;
@@ -1561,9 +1563,11 @@ const Journal: React.FC = () => {
     return lessons
       .filter(l => l.subject === selectedSubject)
       .filter(l => showFutureDates || l.date <= today)
+      .filter(l => !periodStart || l.date >= periodStart)
+      .filter(l => !periodEnd || l.date <= periodEnd)
       .map(l => ({ date: l.date, lessonNumber: l.lessonNumber, key: `${l.date}_${l.lessonNumber}` }))
       .sort((a, b) => a.date.localeCompare(b.date) || a.lessonNumber - b.lessonNumber);
-  }, [lessons, selectedSubject, showFutureDates]);
+  }, [lessons, selectedSubject, showFutureDates, periodStart, periodEnd]);
 
   // For backward compatibility, unique dates list
   const allDates = useMemo(() => {
@@ -2307,6 +2311,44 @@ const Journal: React.FC = () => {
               </div>
               <span className="text-sm text-gray-700">Подсветка сегодня</span>
             </label>
+          </div>
+          
+          {/* Выбор периода */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <h5 className="text-sm font-medium text-gray-700 mb-3">Выбор периода</h5>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">С:</label>
+                <input 
+                  type="date" 
+                  value={periodStart}
+                  onChange={e => setPeriodStart(e.target.value)}
+                  className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">По:</label>
+                <input 
+                  type="date" 
+                  value={periodEnd}
+                  onChange={e => setPeriodEnd(e.target.value)}
+                  className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              {(periodStart || periodEnd) && (
+                <button 
+                  onClick={() => { setPeriodStart(''); setPeriodEnd(''); }}
+                  className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Сбросить
+                </button>
+              )}
+            </div>
+            {(periodStart || periodEnd) && (
+              <p className="text-xs text-gray-500 mt-2">
+                Отображаются уроки за период: {periodStart || 'начало'} — {periodEnd || 'конец'}
+              </p>
+            )}
           </div>
         </div>
       )}
