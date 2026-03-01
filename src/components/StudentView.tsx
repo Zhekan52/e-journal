@@ -63,6 +63,27 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromA
     setShowTooltip(true);
   };
 
+  // Вычисляем позицию тултипа с учётом границ экрана
+  const getTooltipStyle = () => {
+    if (!tooltipPos) return {};
+    const tooltipWidth = 200; // примерная ширина тултипа
+    const padding = 10;
+    let left = tooltipPos.left;
+    
+    // Корректируем позицию, чтобы тултип не выходил за границы экрана
+    if (left - tooltipWidth / 2 < padding) {
+      left = padding + tooltipWidth / 2;
+    } else if (left + tooltipWidth / 2 > window.innerWidth - padding) {
+      left = window.innerWidth - padding - tooltipWidth / 2;
+    }
+    
+    return {
+      top: tooltipPos.top - 8,
+      left: left,
+      transform: 'translate(-50%, -100%)',
+    };
+  };
+
   return (
     <div className="relative inline-flex">
       <span 
@@ -85,12 +106,106 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromA
       </span>
       {showTooltip && tooltipText && tooltipPos && createPortal(
         <div 
+          className="fixed z-[100] px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-xl pointer-events-none max-w-[300px]"
+          style={{ 
+            ...getTooltipStyle(),
+            whiteSpace: 'normal'
+          }}
+        >
+          {tooltipText}
+          <div 
+            className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" 
+          />
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
+
+// ==================== TEST RESULT WITH TOOLTIP ====================
+interface TestResultWithTooltipProps {
+  grade: number;
+  percent: number;
+  testTitle: string;
+}
+
+const TestResultWithTooltip: React.FC<TestResultWithTooltipProps> = ({ grade, percent, testTitle }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
+  const gradeRef = useRef<HTMLSpanElement>(null);
+  const percentRef = useRef<HTMLSpanElement>(null);
+  
+  const tooltipText = `Тест: ${testTitle}`;
+
+  // Вычисляем позицию тултипа с учётом границ экрана
+  const getTooltipStyle = () => {
+    if (!tooltipPos) return {};
+    const tooltipWidth = Math.min(300, testTitle.length * 8 + 40); // динамическая ширина
+    const padding = 10;
+    let left = tooltipPos.left;
+    
+    // Корректируем позицию, чтобы тултип не выходил за границы экрана
+    if (left - tooltipWidth / 2 < padding) {
+      left = padding + tooltipWidth / 2;
+    } else if (left + tooltipWidth / 2 > window.innerWidth - padding) {
+      left = window.innerWidth - padding - tooltipWidth / 2;
+    }
+    
+    return {
+      top: tooltipPos.top - 8,
+      left: left,
+      transform: 'translate(-50%, -100%)',
+    };
+  };
+
+  const handleGradeMouseEnter = () => {
+    if (gradeRef.current) {
+      const rect = gradeRef.current.getBoundingClientRect();
+      setTooltipPos({
+        top: rect.top,
+        left: rect.left + rect.width / 2
+      });
+    }
+    setShowTooltip(true);
+  };
+
+  const handlePercentMouseEnter = () => {
+    if (percentRef.current) {
+      const rect = percentRef.current.getBoundingClientRect();
+      setTooltipPos({
+        top: rect.top,
+        left: rect.left + rect.width / 2
+      });
+    }
+    setShowTooltip(true);
+  };
+
+  return (
+    <div className="relative inline-flex items-center gap-1.5">
+      <span 
+        ref={gradeRef}
+        className="text-xs font-semibold text-success-700 cursor-help hover:underline"
+        onMouseEnter={handleGradeMouseEnter}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        {grade}
+      </span>
+      <span 
+        ref={percentRef}
+        className="text-[10px] text-gray-500 cursor-help hover:underline"
+        onMouseEnter={handlePercentMouseEnter}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        ({percent}%)
+      </span>
+      {showTooltip && tooltipPos && createPortal(
+        <div 
           className="fixed z-[100] px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-xl pointer-events-none"
           style={{ 
-            top: tooltipPos.top - 8, 
-            left: tooltipPos.left,
-            transform: 'translate(-50%, -100%)',
-            whiteSpace: 'nowrap'
+            ...getTooltipStyle(),
+            whiteSpace: 'normal',
+            maxWidth: '300px'
           }}
         >
           {tooltipText}
@@ -941,8 +1056,11 @@ const Diary: React.FC<DiaryProps> = ({
                               ) : attempt && !retakeAllowed ? (
                                 <div className="flex items-center gap-1.5 px-2 py-1 bg-success-50 rounded-lg border border-success-200">
                                   <CheckCircle className="w-3.5 h-3.5 text-success-600 flex-shrink-0" />
-                                  <span className="text-xs font-semibold text-success-700">{attempt.grade}</span>
-                                  <span className="text-[10px] text-gray-500">({attempt.percent}%)</span>
+                                  <TestResultWithTooltip 
+                                    grade={attempt.grade} 
+                                    percent={attempt.percent} 
+                                    testTitle={testObj?.title || 'Тест'} 
+                                  />
                                 </div>
                               ) : retakeAllowed ? (
                                 <button onClick={() => setShowConfirm({ test: testObj, entry, variantId: assignment?.variantId })}

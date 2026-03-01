@@ -24,6 +24,89 @@ import {
 
 type Tab = 'dashboard' | 'schedule' | 'journal' | 'attendance' | 'tests' | 'students' | 'lessonTypes' | 'reports' | 'fipi';
 
+// ==================== GRADE WITH TOOLTIP ====================
+interface GradeWithTooltipProps {
+  value: number;
+  testTitle?: string;
+}
+
+const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, testTitle }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const colorClass = value === 5 
+    ? 'bg-green-100 text-green-700' 
+    : value === 4 
+      ? 'bg-blue-100 text-blue-700' 
+      : value === 3 
+        ? 'bg-yellow-100 text-yellow-700' 
+        : 'bg-red-100 text-red-700';
+
+  const tooltipText = testTitle ? `Тест: ${testTitle}` : '';
+
+  const handleMouseEnter = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setTooltipPos({
+        top: rect.top,
+        left: rect.left + rect.width / 2
+      });
+    }
+    setShowTooltip(true);
+  };
+
+  // Вычисляем позицию тултипа с учётом границ экрана
+  const getTooltipStyle = () => {
+    if (!tooltipPos) return {};
+    const tooltipWidth = testTitle ? Math.min(300, testTitle.length * 8 + 40) : 150;
+    const padding = 10;
+    let left = tooltipPos.left;
+    
+    // Корректируем позицию, чтобы тултип не выходил за границы экрана
+    if (left - tooltipWidth / 2 < padding) {
+      left = padding + tooltipWidth / 2;
+    } else if (left + tooltipWidth / 2 > window.innerWidth - padding) {
+      left = window.innerWidth - padding - tooltipWidth / 2;
+    }
+    
+    return {
+      top: tooltipPos.top - 8,
+      left: left,
+      transform: 'translate(-50%, -100%)',
+    };
+  };
+
+  return (
+    <div className="relative inline-flex">
+      <button 
+        ref={triggerRef}
+        className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${colorClass}`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        {value}
+      </button>
+      {showTooltip && tooltipText && tooltipPos && createPortal(
+        <div 
+          className="fixed z-[100] px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-xl pointer-events-none"
+          style={{ 
+            ...getTooltipStyle(),
+            whiteSpace: 'normal',
+            maxWidth: '300px'
+          }}
+        >
+          {tooltipText}
+          <div 
+            className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" 
+          />
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
+
 export const AdminView: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -2358,30 +2441,66 @@ const Journal: React.FC = () => {
                             {cols.map(c => {
                               const g = getGrade(student.id, sl.date, c.id, sl.lessonNumber);
                               const isToday = highlightToday && sl.date === today;
+                              
+                              // Проверяем, является ли оценка оценкой за тест
+                              let testTitle: string | undefined;
+                              if (c.type === 'test' && g) {
+                                const entry = diaryEntries?.find((e: any) => e.date === sl.date && e.subject === selectedSubject && e.lessonNumber === sl.lessonNumber);
+                                if (entry?.testId) {
+                                  const test = tests?.find((t: any) => t.id === entry.testId);
+                                  if (test) {
+                                    testTitle = test.title;
+                                  }
+                                }
+                              }
+                              
                               return (
                                 <td key={c.id} className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isToday ? 'bg-green-50' : ''}`}>
-                                  <button 
-                                    onClick={e => {
-                                      if (!isBlocked) {
-                                        if (inputMode === 'keyboard') {
-                                          setKeyboardTarget({ studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
-                                        } else {
-                                          setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
+                                  {g ? (
+                                    c.type === 'test' && testTitle ? (
+                                      <GradeWithTooltip value={g.value} testTitle={testTitle} />
+                                    ) : (
+                                      <button 
+                                        onClick={e => {
+                                          if (!isBlocked) {
+                                            if (inputMode === 'keyboard') {
+                                              setKeyboardTarget({ studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
+                                            } else {
+                                              setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
+                                            }
+                                          }
+                                        }}
+                                        disabled={isBlocked}
+                                        className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                          inputMode === 'keyboard' && keyboardTarget?.studentId === student.id && keyboardTarget?.date === sl.date && keyboardTarget?.columnId === c.id && keyboardTarget?.lessonNumber === sl.lessonNumber
+                                            ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
+                                            : g.value === 5 ? 'bg-green-100 text-green-700' : g.value === 4 ? 'bg-blue-100 text-blue-700' : g.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                                        }`}
+                                        title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                                      >
+                                        {g.value}
+                                      </button>
+                                    )
+                                  ) : (
+                                    <button 
+                                      onClick={e => {
+                                        if (!isBlocked) {
+                                          if (inputMode === 'keyboard') {
+                                            setKeyboardTarget({ studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
+                                          } else {
+                                            setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
+                                          }
                                         }
-                                      }
-                                    }}
-                                    disabled={isBlocked}
-                                    className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
-                                      inputMode === 'keyboard' && keyboardTarget?.studentId === student.id && keyboardTarget?.date === sl.date && keyboardTarget?.columnId === c.id && keyboardTarget?.lessonNumber === sl.lessonNumber
-                                        ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
-                                        : g ?
-                                          (g.value === 5 ? 'bg-green-100 text-green-700' : g.value === 4 ? 'bg-blue-100 text-blue-700' : g.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                                      }}
+                                      disabled={isBlocked}
+                                      className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                        inputMode === 'keyboard' && keyboardTarget?.studentId === student.id && keyboardTarget?.date === sl.date && keyboardTarget?.columnId === c.id && keyboardTarget?.lessonNumber === sl.lessonNumber
+                                          ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
                                           : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'
-                                    }`}
-                                    title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
-                                  >
-                                    {g?.value || ''}
-                                  </button>
+                                      }`}
+                                      title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                                    />
+                                  )}
                                 </td>
                               );
                             })}
