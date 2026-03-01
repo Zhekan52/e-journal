@@ -120,17 +120,11 @@ export const FipiWidget: React.FC = () => {
     if (fipiTasks.length === 0) return;
 
     // Проверяем, нужно ли обновить задания на сегодня
-    // Проверяем по всем предметам - если хотя бы по одному предмету дата не сегодня, генерируем
     const currentProgress = fipiProgress.filter(p => p.studentId === user.id);
-    let needsGeneration = false;
     
     // Проверяем, есть ли хоть одно задание на сегодня
     const hasTodayTask = currentProgress.some(p => p.lastTaskDate === today && p.todayTasks && p.todayTasks.length > 0);
-    if (!hasTodayTask) {
-      needsGeneration = true;
-    }
-
-    if (!needsGeneration) {
+    if (hasTodayTask) {
       // Задания уже сгенерированы на сегодня
       return;
     }
@@ -160,50 +154,53 @@ export const FipiWidget: React.FC = () => {
       const availableTasks = subjectTasks.filter(t => !completedIds.includes(t.id));
       
       if (availableTasks.length > 0) {
-        // Выбираем задание на основе seed + предмет + случайное число
-        const taskSeed = `${user.id}_${today}_${subject}_${Date.now()}`;
+        // Выбираем задание на основе seed + предмет
+        const taskSeed = `${user.id}_${today}_${subject}`;
         const taskRandom = getSeededRandom(taskSeed);
         const randomIndex = Math.floor(taskRandom * availableTasks.length);
         newTodayTasksBySubject[subject] = availableTasks[randomIndex].id;
       }
     });
 
-    // Обновляем прогресс для всех предметов
-    setFipiProgress(prev => {
-      const updated = prev.map(p => {
-        if (p.studentId !== user.id) return p;
-        
-        const taskId = newTodayTasksBySubject[p.subject] || null;
-        if (taskId) {
-          return {
-            ...p,
-            lastTaskDate: today,
-            todayTasks: [taskId]
-          };
-        }
-        return p;
-      });
+    // Создаём или обновляем прогресс для выбранных предметов
+    const newProgressEntries: FipiStudentProgress[] = [];
+    
+    selectedSubjects.forEach(subject => {
+      const taskId = newTodayTasksBySubject[subject];
+      if (!taskId) return;
       
-      // Добавляем новые записи прогресса для предметов, которых нет
-      SUBJECTS.forEach(subject => {
-        if (!updated.find(p => p.studentId === user.id && p.subject === subject)) {
-          const taskId = newTodayTasksBySubject[subject];
-          if (taskId) {
-            updated.push({
-              id: generateId(),
-              studentId: user.id,
-              subject,
-              totalPoints: 0,
-              completedTasks: [],
+      const existingProgress = currentProgress.find(p => p.subject === subject);
+      
+      if (existingProgress) {
+        // Обновляем существующую запись
+        setFipiProgress(prev => prev.map(p => {
+          if (p.studentId === user.id && p.subject === subject) {
+            return {
+              ...p,
               lastTaskDate: today,
               todayTasks: [taskId]
-            });
+            };
           }
-        }
-      });
-      
-      return updated;
+          return p;
+        }));
+      } else {
+        // Создаём новую запись прогресса
+        newProgressEntries.push({
+          id: generateId(),
+          studentId: user.id,
+          subject,
+          totalPoints: 0,
+          completedTasks: [],
+          lastTaskDate: today,
+          todayTasks: [taskId]
+        });
+      }
     });
+
+    // Добавляем новые записи прогресса
+    if (newProgressEntries.length > 0) {
+      setFipiProgress(prev => [...prev, ...newProgressEntries]);
+    }
   }, [user, fipiTasks, fipiProgress, today]);
 
   // Загрузка сегодняшних заданий
