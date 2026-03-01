@@ -6,7 +6,7 @@ import {
   Filter, User, BarChart3, AlertCircle
 } from 'lucide-react';
 
-type ReportTab = 'student' | 'class' | 'attendance';
+type ReportTab = 'student' | 'class' | 'attendance' | 'statistics';
 
 interface DateRange {
   start: string;
@@ -56,9 +56,28 @@ export const Reports: React.FC = () => {
     setStudentSearch('');
   }, [activeTab]);
 
+  // Автоматическая установка фильтра дат при входе на вкладку отчётов
+  // Начальная дата — день выставления самой первой оценки
+  // Конечная дата — день выставления последней оценки
+  useEffect(() => {
+    if (grades.length > 0) {
+      const sortedGrades = [...grades].sort((a, b) => a.date.localeCompare(b.date));
+      const firstGradeDate = sortedGrades[0]?.date;
+      const lastGradeDate = sortedGrades[sortedGrades.length - 1]?.date;
+      
+      if (firstGradeDate && lastGradeDate) {
+        setDateRange({
+          start: firstGradeDate,
+          end: lastGradeDate
+        });
+      }
+    }
+  }, []); // Пустой массив — выполняется только при монтировании
+
   const tabs: { id: ReportTab; label: string; icon: React.ReactNode }[] = [
     { id: 'student', label: 'Табель ученика', icon: <User className="w-5 h-5" /> },
     { id: 'class', label: 'Успеваемость класса', icon: <BarChart3 className="w-5 h-5" /> },
+    { id: 'statistics', label: 'Статистика', icon: <TrendingUp className="w-5 h-5" /> },
     { id: 'attendance', label: 'Пропуски', icon: <AlertCircle className="w-5 h-5" /> },
   ];
 
@@ -70,7 +89,7 @@ export const Reports: React.FC = () => {
       `${s.lastName} ${s.firstName}`.toLowerCase().includes(search)
     );
   }, [students, studentSearch]);
-
+    
   // Установить период "За весь период" - по первой и последней оценке
   const setFullPeriod = () => {
     if (grades.length > 0) {
@@ -148,7 +167,7 @@ export const Reports: React.FC = () => {
               За весь период
             </button>
           </div>
-
+          
           <button
             onClick={() => setShowDatePicker(!showDatePicker)}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
@@ -227,6 +246,17 @@ export const Reports: React.FC = () => {
           students={students}
           grades={grades}
           dateRange={dateRange}
+        />
+      )}
+      {activeTab === 'statistics' && (
+        <StatisticsReport 
+          students={students}
+          grades={grades}
+          dateRange={dateRange}
+          selectedStudent={selectedStudent}
+          setSelectedStudent={setSelectedStudent}
+          studentSearch={studentSearch}
+          setStudentSearch={setStudentSearch}
         />
       )}
       {activeTab === 'attendance' && (
@@ -540,6 +570,29 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
     return sum / allGradesInRange.length;
   }, [grades, dateRange]);
 
+  // Рассчитать общий средний балл каждого ученика по всем предметам
+  const studentOverallAverages = useMemo(() => {
+    const result: Record<string, number> = {};
+    
+    students.forEach(student => {
+      // Получаем все оценки ученика за период (исключая серые оценки)
+      const studentAllGrades = grades.filter(g => 
+        g.studentId === student.id && 
+        isDateInRange(g.date, dateRange) &&
+        !g.excludeFromAverage
+      );
+      
+      if (studentAllGrades.length > 0) {
+        const sum = studentAllGrades.reduce((acc, g) => acc + g.value, 0);
+        result[student.id] = sum / studentAllGrades.length;
+      } else {
+        result[student.id] = -1; // Нет оценок
+      }
+    });
+    
+    return result;
+  }, [students, grades, dateRange]);
+
   // Отсортировать учеников по фамилии
   const sortedStudents = [...students].sort((a, b) => 
     `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`)
@@ -573,6 +626,9 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
                   {subject}
                 </th>
               ))}
+              <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700 min-w-[100px] bg-blue-50">
+                Общий средний балл
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -602,6 +658,24 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
                     </td>
                   );
                 })}
+                <td className="px-4 py-3 text-center bg-blue-50/50">
+                  {(() => {
+                    const overallAvg = studentOverallAverages[student.id] ?? -1;
+                    if (overallAvg >= 0) {
+                      return (
+                        <span className={`inline-flex px-3 py-1.5 rounded-lg text-sm font-bold ${
+                          overallAvg >= 4.5 ? 'bg-green-200 text-green-800' :
+                          overallAvg >= 3.5 ? 'bg-blue-200 text-blue-800' :
+                          overallAvg >= 2.5 ? 'bg-yellow-200 text-yellow-800' :
+                          'bg-red-200 text-red-800'
+                        }`}>
+                          {formatAvg(overallAvg)}
+                        </span>
+                      );
+                    }
+                    return <span className="text-gray-300">—</span>;
+                  })()}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -624,6 +698,15 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
                   </td>
                 );
               })}
+              <td className="px-4 py-4 text-center bg-blue-100">
+                {overallClassAverage >= 0 ? (
+                  <span className="inline-flex px-3 py-1.5 rounded-lg text-sm font-bold bg-white text-gray-900 shadow-sm">
+                    {formatAvg(overallClassAverage)}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">—</span>
+                )}
+              </td>
             </tr>
           </tfoot>
         </table>
@@ -675,6 +758,330 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+// ==================== ОТЧЁТ СТАТИСТИКА ====================
+interface StatisticsReportProps {
+  students: any[];
+  grades: any[];
+  dateRange: DateRange;
+  selectedStudent: string;
+  setSelectedStudent: (id: string) => void;
+  studentSearch: string;
+  setStudentSearch: (s: string) => void;
+}
+
+// Определение статуса ученика
+function getStudentStatus(average: number): { label: string; className: string } {
+  if (average >= 4.5) return { label: 'Отличник', className: 'bg-green-100 text-green-700 border-green-200' };
+  if (average >= 3.5) return { label: 'Хорошист', className: 'bg-blue-100 text-blue-700 border-blue-200' };
+  if (average >= 2.5) return { label: 'Троечник', className: 'bg-yellow-100 text-yellow-700 border-yellow-200' };
+  return { label: 'Неуспевающий', className: 'bg-red-100 text-red-700 border-red-200' };
+}
+
+const StatisticsReport: React.FC<StatisticsReportProps> = ({
+  students,
+  grades,
+  dateRange,
+  selectedStudent,
+  setSelectedStudent,
+  studentSearch,
+  setStudentSearch
+}) => {
+  // Рассчитать общий средний балл каждого ученика
+  const studentOverallAverages = useMemo(() => {
+    const result: Record<string, number> = {};
+    
+    students.forEach(student => {
+      const studentAllGrades = grades.filter(g => 
+        g.studentId === student.id && 
+        isDateInRange(g.date, dateRange) &&
+        !g.excludeFromAverage
+      );
+      
+      if (studentAllGrades.length > 0) {
+        const sum = studentAllGrades.reduce((acc, g) => acc + g.value, 0);
+        result[student.id] = sum / studentAllGrades.length;
+      } else {
+        result[student.id] = -1;
+      }
+    });
+    
+    return result;
+  }, [students, grades, dateRange]);
+
+  // Рассчитать средний балл каждого ученика по каждому предмету
+  const studentSubjectAverages = useMemo(() => {
+    const result: Record<string, Record<string, number>> = {};
+    
+    students.forEach(student => {
+      result[student.id] = {};
+      SUBJECTS.forEach(subject => {
+        const subjectGrades = grades.filter(g => 
+          g.studentId === student.id && 
+          g.subject === subject && 
+          isDateInRange(g.date, dateRange) &&
+          !g.excludeFromAverage
+        );
+        
+        if (subjectGrades.length > 0) {
+          const sum = subjectGrades.reduce((acc, g) => acc + g.value, 0);
+          result[student.id][subject] = sum / subjectGrades.length;
+        } else {
+          result[student.id][subject] = -1;
+        }
+      });
+    });
+    
+    return result;
+  }, [students, grades, dateRange]);
+
+  // Рейтинг учеников по общему среднему баллу
+  const overallRatings = useMemo(() => {
+    const ratings = students
+      .map(student => ({
+        studentId: student.id,
+        average: studentOverallAverages[student.id] ?? -1
+      }))
+      .filter(r => r.average >= 0)
+      .sort((a, b) => b.average - a.average);
+    
+    return ratings;
+  }, [students, studentOverallAverages]);
+
+  // Рейтинг учеников по каждому предмету
+  const subjectRatings = useMemo(() => {
+    const result: Record<string, { studentId: string; average: number }[]> = {};
+    
+    SUBJECTS.forEach(subject => {
+      result[subject] = students
+        .map(student => ({
+          studentId: student.id,
+          average: studentSubjectAverages[student.id]?.[subject] ?? -1
+        }))
+        .filter(r => r.average >= 0)
+        .sort((a, b) => b.average - a.average);
+    });
+    
+    return result;
+  }, [students, studentSubjectAverages]);
+
+  // Получить место ученика в рейтинге
+  const getRatingPosition = (studentId: string, ratings: { studentId: string; average: number }[]): number => {
+    const position = ratings.findIndex(r => r.studentId === studentId);
+    return position >= 0 ? position + 1 : -1;
+  };
+
+  const selectedStudentData = students.find(s => s.id === selectedStudent);
+  
+  // Получить статистику для выбранного ученика
+  const studentStats = useMemo(() => {
+    if (!selectedStudent) return null;
+    
+    const overallAverage = studentOverallAverages[selectedStudent] ?? -1;
+    const overallPosition = getRatingPosition(selectedStudent, overallRatings);
+    const totalStudents = overallRatings.length;
+    const status = overallAverage >= 0 ? getStudentStatus(overallAverage) : null;
+    
+    const subjectStats = SUBJECTS.map(subject => ({
+      subject,
+      average: studentSubjectAverages[selectedStudent]?.[subject] ?? -1,
+      position: getRatingPosition(selectedStudent, subjectRatings[subject]),
+      totalInSubject: subjectRatings[subject].length
+    }));
+    
+    return {
+      overallAverage,
+      overallPosition,
+      totalStudents,
+      status,
+      subjectStats
+    };
+  }, [selectedStudent, studentOverallAverages, studentSubjectAverages, overallRatings, subjectRatings]);
+
+  return (
+    <div className="space-y-6">
+      {/* Выбор ученика */}
+      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Выберите ученика</h3>
+        
+        <div className="relative">
+          <input
+            type="text"
+            value={studentSearch}
+            onChange={(e) => setStudentSearch(e.target.value)}
+            placeholder="Поиск по ФИО..."
+            className="w-full px-4 py-3 pl-11 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        </div>
+
+        {studentSearch && (
+          <div className="mt-2 max-h-48 overflow-y-auto border border-gray-200 rounded-xl">
+            {students.length === 0 ? (
+              <p className="p-4 text-gray-500 text-center">Нет учеников</p>
+            ) : (
+              students.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    setSelectedStudent(s.id);
+                    setStudentSearch(`${s.lastName} ${s.firstName}`);
+                  }}
+                  className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 ${
+                    selectedStudent === s.id ? 'bg-blue-50' : ''
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-medium">
+                    {s.lastName?.charAt(0)}{s.firstName?.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900">{s.lastName} {s.firstName}</div>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Статистика ученика */}
+      {selectedStudent && selectedStudentData && studentStats && (
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-xl font-bold text-gray-900">
+              Статистика ученика
+            </h3>
+            <p className="text-gray-500 mt-1">
+              {selectedStudentData.lastName} {selectedStudentData.firstName} · {formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}
+            </p>
+          </div>
+
+          <div className="p-6 space-y-6">
+            {/* Общая статистика */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Общий средний балл */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-100">
+                <div className="text-sm text-gray-600 mb-1">Общий средний балл</div>
+                <div className="text-3xl font-bold text-gray-900">
+                  {studentStats.overallAverage >= 0 ? studentStats.overallAverage.toFixed(2) : '—'}
+                </div>
+              </div>
+
+              {/* Место в рейтинге */}
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-5 border border-purple-100">
+                <div className="text-sm text-gray-600 mb-1">Место в общем рейтинге</div>
+                <div className="text-3xl font-bold text-gray-900">
+                  {studentStats.overallPosition > 0 
+                    ? `${studentStats.overallPosition} из ${studentStats.totalStudents}`
+                    : '—'
+                  }
+                </div>
+              </div>
+
+              {/* Статус */}
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-100">
+                <div className="text-sm text-gray-600 mb-1">Статус</div>
+                {studentStats.status ? (
+                  <div className={`inline-flex px-4 py-2 rounded-lg text-lg font-bold border ${studentStats.status.className}`}>
+                    {studentStats.status.label}
+                  </div>
+                ) : (
+                  <div className="text-lg font-bold text-gray-400">—</div>
+                )}
+              </div>
+            </div>
+
+            {/* Рейтинг по предметам */}
+            <div className="border-t border-gray-100 pt-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Рейтинг по предметам</h4>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Предмет</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Средний балл</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Место в рейтинге</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Позиция</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {studentStats.subjectStats.map(stat => (
+                      <tr key={stat.subject} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-4">
+                          <span className="font-medium text-gray-900">{stat.subject}</span>
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          {stat.average >= 0 ? (
+                            <span className={`inline-flex px-3 py-1.5 rounded-lg text-sm font-semibold ${
+                              stat.average >= 4.5 ? 'bg-green-100 text-green-700' :
+                              stat.average >= 3.5 ? 'bg-blue-100 text-blue-700' :
+                              stat.average >= 2.5 ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {stat.average.toFixed(2)}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          {stat.position > 0 ? (
+                            <span className="text-gray-900 font-medium">
+                              {stat.position} из {stat.totalInSubject}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          {stat.position > 0 && stat.totalInSubject > 0 ? (
+                            <div className="flex items-center justify-center">
+                              <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                                <div 
+                                  className={`h-2 rounded-full ${
+                                    stat.position === 1 ? 'bg-yellow-400' :
+                                    stat.position <= 3 ? 'bg-blue-400' :
+                                    'bg-gray-400'
+                                  }`}
+                                  style={{ width: `${((stat.totalInSubject - stat.position + 1) / stat.totalInSubject) * 100}%` }}
+                                />
+                              </div>
+                              <span className={`text-xs font-bold ${
+                                stat.position === 1 ? 'text-yellow-600' :
+                                stat.position <= 3 ? 'text-blue-600' :
+                                'text-gray-500'
+                              }`}>
+                                {stat.position === 1 ? '🥇' :
+                                 stat.position === 2 ? '🥈' :
+                                 stat.position === 3 ? '🥉' :
+                                 `#${stat.position}`}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Подсказка, если ученик не выбран */}
+      {!selectedStudent && (
+        <div className="bg-gray-50 rounded-xl p-8 text-center">
+          <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500">Выберите ученика, чтобы увидеть его статистику</p>
+        </div>
+      )}
     </div>
   );
 };
