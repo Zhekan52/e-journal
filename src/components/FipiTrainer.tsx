@@ -276,6 +276,16 @@ interface TaskModalProps { task: FipiTask | null; onSave: (task: FipiTask) => vo
 
 const TaskModal: React.FC<TaskModalProps> = ({ task, onSave, onClose }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Инициализация options из task или пустой массив
+  const initialOptions = task?.options && task.options.length > 0 
+    ? task.options 
+    : [{ id: 'o1', text: '' }, { id: 'o2', text: '' }];
+  
+  // Инициализация correctAnswer для single/multiple
+  const initialCorrectOption = task?.correctOptionId || '';
+  const initialCorrectOptions = Array.isArray(task?.correctAnswer) ? task.correctAnswer : [];
+
   const [form, setForm] = useState({ 
     subject: task?.subject || 'Математика', 
     type: task?.type || 'text' as const, 
@@ -283,7 +293,19 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onSave, onClose }) => {
     image: task?.image || '', 
     correctAnswer: task?.correctAnswer || '' 
   });
+  const [options, setOptions] = useState<{ id: string; text: string }[]>(initialOptions);
+  const [correctOptionId, setCorrectOptionId] = useState<string>(initialCorrectOption);
+  const [correctOptionIds, setCorrectOptionIds] = useState<string[]>(initialCorrectOptions);
   const [showImage, setShowImage] = useState(!!task?.image);
+
+  // Сброс options при изменении типа
+  useEffect(() => {
+    if (form.type === 'text') {
+      setOptions([{ id: 'o1', text: '' }, { id: 'o2', text: '' }]);
+      setCorrectOptionId('');
+      setCorrectOptionIds([]);
+    }
+  }, [form.type]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -315,16 +337,66 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onSave, onClose }) => {
     }
   };
 
+  // Добавить вариант ответа
+  const addOption = () => {
+    setOptions([...options, { id: `o${Date.now()}`, text: '' }]);
+  };
+
+  // Удалить вариант ответа
+  const removeOption = (id: string) => {
+    if (options.length <= 2) {
+      alert('Должно быть минимум 2 варианта');
+      return;
+    }
+    setOptions(options.filter(o => o.id !== id));
+    // Убираем из правильных ответов
+    setCorrectOptionIds(correctOptionIds.filter(oid => oid !== id));
+    if (correctOptionId === id) setCorrectOptionId('');
+  };
+
+  // Обновить текст варианта
+  const updateOption = (id: string, text: string) => {
+    setOptions(options.map(o => o.id === id ? { ...o, text } : o));
+  };
+
+  // Переключить правильный ответ для multiple
+  const toggleCorrectOption = (id: string) => {
+    if (correctOptionIds.includes(id)) {
+      setCorrectOptionIds(correctOptionIds.filter(oid => oid !== id));
+    } else {
+      setCorrectOptionIds([...correctOptionIds, id]);
+    }
+  };
+
   const handleSubmit = () => {
     if (!form.question) return;
+
+    let finalCorrectAnswer: string | string[];
+    let finalCorrectOptionId: string | undefined;
+    let finalOptions: { id: string; text: string }[] | undefined;
+
+    if (form.type === 'text') {
+      finalCorrectAnswer = form.correctAnswer as string;
+      finalOptions = undefined;
+    } else if (form.type === 'single') {
+      finalCorrectOptionId = correctOptionId;
+      finalCorrectAnswer = correctOptionId;
+      finalOptions = options;
+    } else {
+      // multiple
+      finalCorrectAnswer = correctOptionIds;
+      finalOptions = options;
+    }
+
     onSave({ 
       id: task?.id || generateId(), 
       subject: form.subject, 
       type: form.type, 
       question: form.question, 
       image: form.image || undefined, 
-      options: [], 
-      correctAnswer: form.correctAnswer, 
+      options: finalOptions, 
+      correctAnswer: finalCorrectAnswer, 
+      correctOptionId: finalCorrectOptionId,
       createdAt: task?.createdAt || getTodayString(), 
       updatedAt: getTodayString() 
     });
@@ -441,19 +513,97 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onSave, onClose }) => {
             )}
           </div>
 
-          {/* Ответ (только для текстового типа) */}
-          {form.type === 'text' && (
+          {/* Блок ответа в зависимости от типа */}
+          {form.type === 'text' ? (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Правильный ответ
               </label>
               <input
                 type="text"
-                value={form.correctAnswer}
+                value={form.correctAnswer as string}
                 onChange={(e) => setForm({ ...form, correctAnswer: e.target.value })}
                 placeholder="Введите правильный ответ..."
                 className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Варианты ответа
+                <span className="ml-2 text-xs text-gray-400 font-normal">
+                  ({form.type === 'single' ? 'выберите правильный' : 'отметьте все правильные'})
+                </span>
+              </label>
+              
+              <div className="space-y-2">
+                {options.map((option, index) => (
+                  <div key={option.id} className="flex items-center gap-2">
+                    {/* Чекбокс или радио для выбора правильного ответа */}
+                    {form.type === 'single' ? (
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="correctOption"
+                          checked={correctOptionId === option.id}
+                          onChange={() => setCorrectOptionId(option.id)}
+                          className="w-5 h-5 text-green-600 focus:ring-green-500"
+                        />
+                      </label>
+                    ) : (
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={correctOptionIds.includes(option.id)}
+                          onChange={() => toggleCorrectOption(option.id)}
+                          className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+                        />
+                      </label>
+                    )}
+                    
+                    {/* Номер варианта */}
+                    <span className="text-sm text-gray-400 w-6">{String.fromCharCode(65 + index)}.</span>
+                    
+                    {/* Поле ввода варианта */}
+                    <input
+                      type="text"
+                      value={option.text}
+                      onChange={(e) => updateOption(option.id, e.target.value)}
+                      placeholder={`Вариант ${String.fromCharCode(65 + index)}`}
+                      className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                    
+                    {/* Кнопка удаления */}
+                    <button
+                      type="button"
+                      onClick={() => removeOption(option.id)}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Удалить вариант"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Кнопка добавления варианта */}
+              <button
+                type="button"
+                onClick={addOption}
+                className="mt-3 flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                Добавить вариант
+              </button>
+              
+              {/* Подсказка о правильном ответе */}
+              {(form.type === 'single' && !correctOptionId) || (form.type === 'multiple' && correctOptionIds.length === 0) ? (
+                <p className="mt-2 text-sm text-amber-600">Выберите правильный ответ</p>
+              ) : form.type === 'single' ? (
+                <p className="mt-2 text-sm text-green-600">Правильный ответ: {String.fromCharCode(65 + options.findIndex(o => o.id === correctOptionId))}</p>
+              ) : (
+                <p className="mt-2 text-sm text-green-600">Правильные ответы: {correctOptionIds.map(id => String.fromCharCode(65 + options.findIndex(o => o.id === id))).join(', ')}</p>
+              )}
             </div>
           )}
         </div>
