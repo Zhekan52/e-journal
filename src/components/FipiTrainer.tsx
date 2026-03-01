@@ -135,36 +135,81 @@ export const FipiTrainer: React.FC = () => {
       )}
 
       {activeTab === 'students' && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {students.map(student => {
-            const progress = fipiProgress.filter(p => p.studentId === student.id);
-            return (
-              <div key={student.id} className="bg-white/80 rounded-2xl border p-6 shadow-lg">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold">
-                    {student.lastName?.charAt(0)}{student.firstName?.charAt(0)}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900">Прогресс учеников</h3>
+            <span className="text-sm text-gray-500">Сегодня: {getTodayString()}</span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {students.map(student => {
+              const progress = fipiProgress.filter(p => p.studentId === student.id);
+              const today = getTodayString();
+              
+              // Получаем сегодняшние задания ученика
+              const todayTasks: { subject: string; taskId: string; completed: boolean }[] = [];
+              SUBJECTS.forEach(subject => {
+                const p = progress.find(x => x.subject === subject);
+                if (p && p.lastTaskDate === today && p.todayTasks && p.todayTasks.length > 0) {
+                  p.todayTasks.forEach(taskId => {
+                    const attempt = fipiAttempts.find(a => a.taskId === taskId && a.date === today && a.correct);
+                    todayTasks.push({ subject, taskId, completed: !!attempt });
+                  });
+                }
+              });
+              
+              const hasTodayTasks = todayTasks.length > 0;
+              
+              return (
+                <div key={student.id} className={`bg-white/80 rounded-2xl border p-6 shadow-lg ${!hasTodayTasks ? 'border-red-200 bg-red-50/50' : ''}`}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold">
+                      {student.lastName?.charAt(0)}{student.firstName?.charAt(0)}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold">{student.lastName} {student.firstName}</h3>
+                      {!hasTodayTasks && (
+                        <span className="text-xs text-red-500 font-medium">Нет заданий на сегодня</span>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold">{student.lastName} {student.firstName}</h3>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {SUBJECTS.map(subject => {
-                    const p = progress.find(x => x.subject === subject);
-                    const r = fipiRewards.find(x => x.subject === subject);
-                    const pts = p?.totalPoints || 0;
-                    const req = r?.pointsRequired || 10;
-                    return (
-                      <div key={subject}>
-                        <div className="flex justify-between text-sm"><span>{subject}</span><span>{pts}/{req}</span></div>
-                        <div className="h-2 bg-gray-100 rounded-full"><div className={`h-full rounded-full ${pts >= req ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(100, (pts/req)*100)}%` }} /></div>
+                  
+                  {/* Сегодняшние задания */}
+                  {hasTodayTasks && (
+                    <div className="mb-4 p-3 bg-green-50 rounded-xl">
+                      <p className="text-xs font-medium text-gray-500 mb-2">Задания на сегодня:</p>
+                      <div className="space-y-1">
+                        {todayTasks.map((t, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-sm">
+                            <span className="truncate flex-1">{t.subject}</span>
+                            {t.completed ? (
+                              <span className="text-green-600 text-xs">✓</span>
+                            ) : (
+                              <span className="text-orange-500 text-xs">⏳</span>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    );
-                  })}
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    {SUBJECTS.map(subject => {
+                      const p = progress.find(x => x.subject === subject);
+                      const r = fipiRewards.find(x => x.subject === subject);
+                      const pts = p?.totalPoints || 0;
+                      const req = r?.pointsRequired || 10;
+                      return (
+                        <div key={subject}>
+                          <div className="flex justify-between text-sm"><span>{subject}</span><span>{pts}/{req}</span></div>
+                          <div className="h-2 bg-gray-100 rounded-full"><div className={`h-full rounded-full ${pts >= req ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(100, (pts/req)*100)}%` }} /></div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
 

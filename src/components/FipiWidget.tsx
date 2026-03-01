@@ -119,17 +119,22 @@ export const FipiWidget: React.FC = () => {
     if (!user || user.role !== 'student') return;
 
     // Проверяем, нужно ли обновить задания на сегодня
-    const firstSubjectProgress = getSubjectProgress(SUBJECTS[0]);
-    const lastDate = firstSubjectProgress?.lastTaskDate || '';
+    // Проверяем по всем предметам - если хотя бы по одному предмету дата не сегодня, генерируем
+    let needsGeneration = false;
+    SUBJECTS.forEach(subject => {
+      const subjProgress = getSubjectProgress(subject);
+      if (!subjProgress || subjProgress.lastTaskDate !== today) {
+        needsGeneration = true;
+      }
+    });
 
-    if (lastDate === today) {
+    if (!needsGeneration) {
       // Задания уже сгенерированы на сегодня
       return;
     }
 
-    // Выбираем 2 разных предмета на основе seed
+    // Выбираем 2 разных предмета на основе seed (ID ученика + дата)
     const seed = `${user.id}_${today}`;
-    const seededRandom = getSeededRandom(seed);
     
     // Перемешиваем предметы на основе seed
     const shuffledSubjects = [...SUBJECTS].sort((a, b) => {
@@ -142,7 +147,7 @@ export const FipiWidget: React.FC = () => {
     const selectedSubjects = shuffledSubjects.slice(0, 2);
     
     // Собираем задания для выбранных предметов
-    const newTodayTasks: string[] = [];
+    const newTodayTasksBySubject: Record<string, string> = {};
     
     selectedSubjects.forEach(subject => {
       const progress = getSubjectProgress(subject);
@@ -157,7 +162,7 @@ export const FipiWidget: React.FC = () => {
         const taskSeed = `${user.id}_${today}_${subject}`;
         const taskRandom = getSeededRandom(taskSeed);
         const randomIndex = Math.floor(taskRandom * availableTasks.length);
-        newTodayTasks.push(availableTasks[randomIndex].id);
+        newTodayTasksBySubject[subject] = availableTasks[randomIndex].id;
       }
     });
 
@@ -166,10 +171,7 @@ export const FipiWidget: React.FC = () => {
       const progress = getSubjectProgress(subject);
       if (!progress) return;
 
-      const isSelectedSubject = selectedSubjects.includes(subject);
-      const taskId = isSelectedSubject 
-        ? newTodayTasks[selectedSubjects.indexOf(subject)]
-        : null;
+      const taskId = newTodayTasksBySubject[subject] || null;
 
       setFipiProgress(fipiProgress.map(p => 
         p.id === progress.id 
@@ -181,7 +183,7 @@ export const FipiWidget: React.FC = () => {
           : p
       ));
     });
-  }, [fipiTasks]);
+  }, [fipiTasks, fipiProgress, user, today]);
 
   // Загрузка сегодняшних заданий
   useEffect(() => {
