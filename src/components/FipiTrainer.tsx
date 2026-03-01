@@ -202,13 +202,19 @@ export const FipiTrainer: React.FC = () => {
               const today = getTodayString();
               
               // Получаем сегодняшние задания ученика
-              const todayTasks: { subject: string; taskId: string; completed: boolean }[] = [];
+              const todayTasks: { subject: string; taskId: string; completed: boolean; answered: boolean }[] = [];
               SUBJECTS.forEach(subject => {
                 const p = progress.find(x => x.subject === subject);
                 if (p && p.lastTaskDate === today && p.todayTasks && p.todayTasks.length > 0) {
                   p.todayTasks.forEach(taskId => {
-                    const attempt = fipiAttempts.find(a => a.taskId === taskId && a.date === today && a.correct);
-                    todayTasks.push({ subject, taskId, completed: !!attempt });
+                    const attempt = fipiAttempts.find(a => a.taskId === taskId && a.date === today);
+                    const correctAttempt = attempt && attempt.correct;
+                    todayTasks.push({ 
+                      subject, 
+                      taskId, 
+                      completed: !!correctAttempt,
+                      answered: !!attempt
+                    });
                   });
                 }
               });
@@ -239,6 +245,8 @@ export const FipiTrainer: React.FC = () => {
                             <span className="truncate flex-1">{t.subject}</span>
                             {t.completed ? (
                               <span className="text-green-600 text-xs">✓</span>
+                            ) : t.answered ? (
+                              <span className="text-red-500 text-xs">✗</span>
                             ) : (
                               <span className="text-orange-500 text-xs">⏳</span>
                             )}

@@ -140,8 +140,8 @@ export const FipiWidget: React.FC = () => {
       return;
     }
 
-    // Seed для перемешивания предметов
-    const seed = `${user.id}_${today}`;
+    // Seed для перемешивания предметов (добавляем случайность чтобы у всех были разные)
+    const seed = `${user.id}_${today}_${Date.now()}`;
     
     // Перемешиваем все предметы
     const shuffled = [...SUBJECTS];
@@ -169,7 +169,7 @@ export const FipiWidget: React.FC = () => {
       const availableTasks = subjectTasks.filter(t => !completedIds.includes(t.id));
       
       if (availableTasks.length > 0) {
-        const taskSeed = `${user.id}_${today}_${subject}`;
+        const taskSeed = `${user.id}_${today}_${subject}_${Date.now()}`;
         const randomIndex = Math.floor(getSeededRandom(taskSeed) * availableTasks.length);
         newTasksMap[subject] = availableTasks[randomIndex].id;
       }
@@ -178,7 +178,6 @@ export const FipiWidget: React.FC = () => {
     // Обновляем прогресс
     setFipiProgress(prev => {
       let updated = [...prev];
-      const studentProgressIds = new Set(updated.filter(p => p.studentId === user.id).map(p => p.id));
       
       // Обновляем существующие записи или создаём новые
       selectedSubjects.forEach(subject => {
@@ -214,17 +213,12 @@ export const FipiWidget: React.FC = () => {
     setTasksGenerated(true);
   };
 
-  // Запускаем генерацию при загрузке
+  // Запускаем генерацию при загрузке и при изменении данных
   useEffect(() => {
-    generateTodayTasks();
-  }, []);
-
-  // Также запускаем при изменении данных
-  useEffect(() => {
-    if (!tasksGenerated && fipiTasks.length > 0) {
+    if (user && user.role === 'student' && fipiTasks.length > 0) {
       generateTodayTasks();
     }
-  }, [fipiProgress, fipiTasks]);
+  }, [user, fipiTasks, fipiProgress]);
 
   // Загрузка сегодняшних заданий
   useEffect(() => {
@@ -448,7 +442,7 @@ export const FipiWidget: React.FC = () => {
         </div>
 
         {/* Прогресс текущего задания */}
-        {currentTask && pendingTasks.length > 0 && (
+        {currentTask && todayTasks.length > 0 && (
           <div className="mt-4 flex items-center gap-4">
             <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
               <div 
@@ -461,8 +455,8 @@ export const FipiWidget: React.FC = () => {
         )}
       </div>
 
-      {/* Текущее задание */}
-      {currentTask && !allCompleted && pendingTasks.length > 0 && (
+      {/* Текущее задание - показываем если есть задания и не все правильно выполнены */}
+      {currentTask && !allCompleted && (
         <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
           <div className="flex items-center gap-2 mb-4">
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -501,8 +495,8 @@ export const FipiWidget: React.FC = () => {
             )}
           </div>
 
-          {/* Варианты ответа */}
-          {!showResult && (
+          {/* Варианты ответа - показываем только если результат еще не показан */}
+          {!showResult && pendingTasks.length > 0 && (
             <div className="space-y-3">
               {currentTask.type === 'text' && (
                 <input
@@ -577,7 +571,7 @@ export const FipiWidget: React.FC = () => {
             </div>
           )}
 
-          {/* Результат */}
+          {/* Результат - показываем всегда после ответа */}
           {showResult && (
             <div className={`rounded-xl p-6 ${isCorrect ? 'bg-green-50' : 'bg-red-50'}`}>
               <div className="flex items-center gap-3 mb-4">
@@ -603,13 +597,24 @@ export const FipiWidget: React.FC = () => {
                   )}
                 </div>
               </div>
-              <button
-                onClick={handleNextTask}
-                className="w-full py-3 bg-white border-2 border-gray-200 rounded-xl font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
-              >
-                {currentTaskIndex < todayTasks.length - 1 ? 'Следующее задание' : 'К первому заданию'}
-                <ChevronRight className="w-5 h-5" />
-              </button>
+              
+              {/* Кнопка перехода - только если есть еще задания */}
+              {pendingTasks.length > 1 && (
+                <button
+                  onClick={handleNextTask}
+                  className="w-full py-3 bg-white border-2 border-gray-200 rounded-xl font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  Следующее задание
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              )}
+              
+              {/* Если это было последнее задание */}
+              {pendingTasks.length <= 1 && (
+                <div className="text-center py-2">
+                  <p className="text-sm text-gray-500">Это было последнее задание на сегодня</p>
+                </div>
+              )}
             </div>
           )}
         </div>
