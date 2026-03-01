@@ -71,12 +71,24 @@ export const Reports: React.FC = () => {
     );
   }, [students, studentSearch]);
 
-  // Установить период "За весь период"
+  // Установить период "За весь период" - по первой и последней оценке
   const setFullPeriod = () => {
-    setDateRange({
-      start: getSchoolYearStart(),
-      end: getTodayString()
-    });
+    if (grades.length > 0) {
+      // Найти первую и последнюю оценку
+      const sortedGrades = [...grades].sort((a, b) => a.date.localeCompare(b.date));
+      const firstGradeDate = sortedGrades[0]?.date || getSchoolYearStart();
+      const lastGradeDate = sortedGrades[sortedGrades.length - 1]?.date || getTodayString();
+      
+      setDateRange({
+        start: firstGradeDate,
+        end: lastGradeDate
+      });
+    } else {
+      setDateRange({
+        start: getSchoolYearStart(),
+        end: getTodayString()
+      });
+    }
   };
 
   // Установить период "За неделю"
@@ -148,7 +160,7 @@ export const Reports: React.FC = () => {
             </button>
 
             {showDatePicker && (
-              <div className="absolute top-full left-0 mt-2 p-4 bg-white rounded-xl shadow-xl border border-gray-200 z-10 min-w-[300px]">
+              <div className="absolute top-full left-0 mt-2 p-4 bg-white rounded-xl shadow-xl border border-gray-200 z-50 min-w-[300px]">
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">Дата начала</label>
@@ -249,7 +261,7 @@ const StudentReport: React.FC<StudentReportProps> = ({
   studentSearch,
   setStudentSearch
 }) => {
-  // Получить оценки ученика за период
+  // Получить оценки ученика за период (включая серые для отображения, но они не влияют на средний)
   const studentGrades = useMemo(() => {
     if (!selectedStudent) return {};
     const filtered = grades.filter(g => 
@@ -271,14 +283,32 @@ const StudentReport: React.FC<StudentReportProps> = ({
     return grouped;
   }, [grades, selectedStudent, dateRange]);
 
-  // Рассчитать средний балл по предмету
+  // Рассчитать средний балл по предмету (исключая серые оценки)
   const calculateAverage = (subjectGrades: any[]): string => {
-    if (subjectGrades.length === 0) return '—';
-    const sum = subjectGrades.reduce((acc, g) => acc + g.value, 0);
-    return (sum / subjectGrades.length).toFixed(2);
+    const validGrades = subjectGrades.filter(g => !g.excludeFromAverage);
+    if (validGrades.length === 0) return '—';
+    const sum = validGrades.reduce((acc, g) => acc + g.value, 0);
+    return (sum / validGrades.length).toFixed(2);
   };
 
   const selectedStudentData = students.find(s => s.id === selectedStudent);
+
+  // Рассчитать общий средний балл ученика по всем предметам
+  const overallStudentAverage = useMemo(() => {
+    let totalSum = 0;
+    let count = 0;
+    
+    SUBJECTS.forEach(subject => {
+      const subjectGrades = studentGrades[subject] || [];
+      const validGrades = subjectGrades.filter((g: any) => !g.excludeFromAverage);
+      if (validGrades.length > 0) {
+        totalSum += validGrades.reduce((acc: number, g: any) => acc + g.value, 0);
+        count += validGrades.length;
+      }
+    });
+    
+    return count > 0 ? (totalSum / count).toFixed(2) : null;
+  }, [studentGrades]);
 
   return (
     <div className="space-y-6">
@@ -364,11 +394,13 @@ const StudentReport: React.FC<StudentReportProps> = ({
                               <span
                                 key={idx}
                                 className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm font-semibold ${
-                                  g.value >= 4 ? 'bg-green-100 text-green-700' :
-                                  g.value >= 3 ? 'bg-blue-100 text-blue-700' :
-                                  'bg-red-100 text-red-700'
+                                  g.excludeFromAverage 
+                                    ? 'bg-gray-200 text-gray-400' :
+                                    g.value >= 4 ? 'bg-green-100 text-green-700' :
+                                    g.value >= 3 ? 'bg-blue-100 text-blue-700' :
+                                    'bg-red-100 text-red-700'
                                 }`}
-                                title={`${g.date}`}
+                                title={`${g.date}${g.excludeFromAverage ? ' (не влияет на средний балл)' : ''}`}
                               >
                                 {g.value}
                               </span>
@@ -396,6 +428,28 @@ const StudentReport: React.FC<StudentReportProps> = ({
                   );
                 })}
               </tbody>
+              <tfoot className="bg-blue-50">
+                <tr>
+                  <td className="px-6 py-4">
+                    <span className="font-bold text-blue-900">Общий средний балл</span>
+                  </td>
+                  <td className="px-6 py-4"></td>
+                  <td className="px-6 py-4 text-center">
+                    {overallStudentAverage ? (
+                      <span className={`inline-flex items-center justify-center px-4 py-2 rounded-lg text-base font-bold ${
+                        parseFloat(overallStudentAverage) >= 4.5 ? 'bg-green-200 text-green-800' :
+                        parseFloat(overallStudentAverage) >= 3.5 ? 'bg-blue-200 text-blue-800' :
+                        parseFloat(overallStudentAverage) >= 2.5 ? 'bg-yellow-200 text-yellow-800' :
+                        'bg-red-200 text-red-800'
+                      }`}>
+                        {overallStudentAverage}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
@@ -412,7 +466,7 @@ interface ClassReportProps {
 }
 
 const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }) => {
-  // Рассчитать средний балл каждого ученика по каждому предмету
+  // Рассчитать средний балл каждого ученика по каждому предмету (исключая серые оценки)
   const studentSubjectAverages = useMemo(() => {
     const result: Record<string, Record<string, number>> = {};
     
@@ -422,7 +476,8 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
         const subjectGrades = grades.filter(g => 
           g.studentId === student.id && 
           g.subject === subject && 
-          isDateInRange(g.date, dateRange)
+          isDateInRange(g.date, dateRange) &&
+          !g.excludeFromAverage // Исключаем серые оценки
         );
         
         if (subjectGrades.length > 0) {
@@ -475,6 +530,24 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
     });
     
     return totalGrades > 0 ? (passingGrades / totalGrades) * 100 : 0;
+  }, [students, studentSubjectAverages]);
+
+  // Рассчитать общий средний балл класса (по всем предметам)
+  const overallClassAverage = useMemo(() => {
+    let totalSum = 0;
+    let count = 0;
+    
+    students.forEach(student => {
+      SUBJECTS.forEach(subject => {
+        const avg = studentSubjectAverages[student.id]?.[subject];
+        if (avg !== undefined && avg >= 0) {
+          totalSum += avg;
+          count++;
+        }
+      });
+    });
+    
+    return count > 0 ? totalSum / count : -1;
   }, [students, studentSubjectAverages]);
 
   // Отсортировать учеников по фамилии
@@ -561,6 +634,18 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
                   </td>
                 );
               })}
+            </tr>
+            <tr className="bg-blue-50">
+              <td className="px-4 py-4 text-left text-sm font-bold text-blue-900 sticky left-0 bg-blue-50 z-10">
+                Средний балл всего класса
+              </td>
+              {SUBJECTS.map(subject => (
+                <td key={subject} className="px-4 py-4 text-center">
+                  <span className="inline-flex px-2 py-1 rounded-lg text-sm font-bold bg-white text-blue-700 shadow-sm">
+                    {overallClassAverage >= 0 ? formatAvg(overallClassAverage) : '—'}
+                  </span>
+                </td>
+              ))}
             </tr>
           </tfoot>
         </table>
