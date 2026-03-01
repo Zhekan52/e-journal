@@ -406,7 +406,7 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
                     <td className="px-3 py-3 text-center font-bold border-gray-300">
                       {avg !== null ? (
                         <span className={`inline-flex items-center justify-center w-11 h-9 rounded-xl text-sm font-bold ${avg >= 4.5 ? 'bg-success-100 text-success-700' : avg >= 3.5 ? 'bg-primary-100 text-primary-700' : avg >= 2.5 ? 'bg-warning-100 text-warning-700' : 'bg-danger-100 text-danger-700'}`}>
-                          {avg.toFixed(1)}
+                          {avg.toFixed(2)}
                         </span>
                       ) : (
                         <span className="text-gray-400">—</span>
