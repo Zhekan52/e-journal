@@ -421,7 +421,7 @@ export const FipiWidget: React.FC = () => {
                       <Trophy className="absolute -top-1 -right-1 w-4 h-4 text-amber-500" />
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 truncate w-14">{subject.slice(0, 6)}</p>
+                  <p className="text-xs text-gray-500">{subject}</p>
                 </div>
               );
             })}
@@ -598,8 +598,8 @@ export const FipiWidget: React.FC = () => {
                 </div>
               </div>
               
-              {/* Кнопка перехода - только если есть еще задания */}
-              {pendingTasks.length > 1 && (
+              {/* Кнопка перехода - только если есть ещё неотвеченные задания */}
+              {answeredTaskIds.size < todayTasks.length && (
                 <button
                   onClick={handleNextTask}
                   className="w-full py-3 bg-white border-2 border-gray-200 rounded-xl font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
@@ -609,8 +609,8 @@ export const FipiWidget: React.FC = () => {
                 </button>
               )}
               
-              {/* Если это было последнее задание */}
-              {pendingTasks.length <= 1 && (
+              {/* Если это было последнее задание - показываем только когда все задания отвечены */}
+              {answeredTaskIds.size >= todayTasks.length && (
                 <div className="text-center py-2">
                   <p className="text-sm text-gray-500">Это было последнее задание на сегодня</p>
                 </div>
