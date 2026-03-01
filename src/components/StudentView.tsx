@@ -448,7 +448,6 @@ const Diary: React.FC<DiaryProps> = ({
   const [testStartTime, setTestStartTime] = useState(0);
   const [testFinished, setTestFinished] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
-  const [showCorrectAnswers, setShowCorrectAnswers] = useState(false);
 
   const finishTestRef = useRef<() => void>();
 
@@ -566,7 +565,6 @@ const Diary: React.FC<DiaryProps> = ({
     setTestFinished(false);
     setTestResult(null);
     setShowConfirm(null);
-    setShowCorrectAnswers(false);
     setSelectedVariantId(null);
   };
 
@@ -611,7 +609,7 @@ const Diary: React.FC<DiaryProps> = ({
         <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
           <div className="mb-6">
             <span className="text-xs font-medium text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full">Вопрос {currentQuestion + 1}</span>
-            <h3 className="text-lg font-semibold text-gray-900 mt-3" dangerouslySetInnerHTML={{ __html: q.text }}></h3>
+            <h3 className="text-lg font-semibold text-gray-900 mt-3 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: q.text }}></h3>
             {q.formula && (
               <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 flex items-center justify-center">
                 <span
@@ -722,89 +720,6 @@ const Diary: React.FC<DiaryProps> = ({
 
   // Test result screen
   if (takingTest && testFinished && testResult) {
-    if (showCorrectAnswers) {
-      const test = takingTest.test;
-      // Используем вопросы выбранного варианта или основной список
-      const questions = takingTest.variantId
-        ? test.variants?.find((v: any) => v.id === takingTest.variantId)?.questions || test.questions
-        : test.questions;
-      return (
-        <div className="animate-fadeIn max-w-3xl mx-auto">
-          <button onClick={() => setShowCorrectAnswers(false)} className="flex items-center gap-2 text-primary-600 hover:text-primary-700 mb-4 font-medium">
-            <ArrowLeft className="w-4 h-4" /> Назад к результатам
-          </button>
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Разбор ответов</h2>
-          <div className="space-y-4">
-            {questions.map((q: any, qi: number) => {
-              const userAnswer = answers[q.id];
-              let isCorrect = false;
-              if (q.type === 'single') {
-                const correctOpt = q.options.find((o: any) => o.correct);
-                isCorrect = correctOpt && userAnswer === correctOpt.id;
-              } else if (q.type === 'multiple') {
-                const correctIds = q.options.filter((o: any) => o.correct).map((o: any) => o.id).sort();
-                const selected = (Array.isArray(userAnswer) ? userAnswer : []).sort();
-                isCorrect = JSON.stringify(correctIds) === JSON.stringify(selected);
-              } else if (q.type === 'text') {
-                isCorrect = typeof userAnswer === 'string' && q.correctAnswer &&
-                  userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
-              }
-              return (
-                <div key={q.id} className={`p-4 rounded-2xl border-2 ${isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
-                  <div className="flex items-start gap-3">
-                    <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${isCorrect ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}`}>{qi + 1}</span>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900" dangerouslySetInnerHTML={{ __html: q.text }}></p>
-                      {q.formula && (
-                        <div className="mt-1 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 flex items-center justify-center">
-                          <span
-                            dangerouslySetInnerHTML={{
-                              __html: katex.renderToString(q.formula, {
-                                throwOnError: false,
-                                displayMode: true,
-                              }),
-                            }}
-                            className="text-base dark:text-blue-300"
-                          />
-                        </div>
-                      )}
-                      {q.type === 'text' ? (
-                        <div className="mt-2 text-sm">
-                          <span className="text-gray-500">Ваш ответ: </span>
-                          <span className={isCorrect ? 'text-green-700 font-medium' : 'text-red-700 font-medium'}>{(userAnswer as string) || '—'}</span>
-                          {!isCorrect && <span className="text-green-700 ml-2">(Верно: {q.correctAnswer})</span>}
-                        </div>
-                      ) : (
-                        <div className="mt-2 space-y-1">
-                          {q.options.map((opt: any) => {
-                            const sel = q.type === 'single' ? userAnswer === opt.id : (Array.isArray(userAnswer) ? userAnswer.includes(opt.id) : false);
-                            return (
-                              <div key={opt.id} className={`flex items-center gap-2 text-sm px-2 py-1 rounded ${
-                                sel && opt.correct ? 'text-green-700 font-medium bg-green-100' :
-                                sel && !opt.correct ? 'text-red-700 font-medium bg-red-100' :
-                                !sel && opt.correct ? 'text-green-600 bg-green-50' :
-                                'text-gray-500'
-                              }`}>
-                                {sel ? (opt.correct ? '✓' : '✗') : opt.correct ? '○' : '·'} {opt.text}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <button onClick={() => { setTakingTest(null); setTestFinished(false); setTestResult(null); setShowCorrectAnswers(false); }}
-            className="mt-6 w-full px-6 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors">
-            Вернуться в дневник
-          </button>
-        </div>
-      );
-    }
-
     const resultColor = testResult.grade >= 4 ? 'green' : testResult.grade === 3 ? 'yellow' : 'red';
     return (
       <div className="animate-fadeIn max-w-lg mx-auto">
@@ -836,16 +751,10 @@ const Diary: React.FC<DiaryProps> = ({
 
           <p className="text-sm text-green-700 bg-green-50 px-4 py-2 rounded-lg">✓ Оценка выставлена в журнал</p>
 
-          <div className="flex flex-col gap-3 mt-6">
-            <button onClick={() => setShowCorrectAnswers(true)}
-              className="w-full px-6 py-3 bg-violet-600 text-white rounded-xl font-medium hover:bg-violet-700 transition-colors">
-              Посмотреть правильные ответы
-            </button>
-            <button onClick={() => { setTakingTest(null); setTestFinished(false); setTestResult(null); }}
-              className="w-full px-6 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors">
-              Вернуться в дневник
-            </button>
-          </div>
+          <button onClick={() => { setTakingTest(null); setTestFinished(false); setTestResult(null); }}
+            className="w-full mt-6 px-6 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors">
+            Вернуться в дневник
+          </button>
         </div>
       </div>
     );
