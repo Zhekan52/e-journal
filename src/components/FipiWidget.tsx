@@ -80,6 +80,18 @@ export const FipiWidget: React.FC = () => {
     });
   }, [user]);
 
+  // Псевдослучайный генератор на основе seed (studentId + date + subject)
+  // Гарантирует уникальные задания для каждого ученика
+  const getSeededRandom = (seed: string): number => {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      const char = seed.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash) / 2147483647; // Normalize to 0-1
+  };
+
   // Генерация заданий на день
   useEffect(() => {
     if (!user || user.role !== 'student') return;
@@ -92,10 +104,14 @@ export const FipiWidget: React.FC = () => {
       // Доступные задания (не выполненные)
       const availableTasks = subjectTasks.filter(t => !completedIds.includes(t.id));
       
-      // Если есть доступные задания, выбираем случайное
+      // Если есть доступные задания, выбираем на основе seed (уникально для каждого ученика)
       let newTodayTask: FipiTask | null = null;
       if (availableTasks.length > 0) {
-        const randomIndex = Math.floor(Math.random() * availableTasks.length);
+        // Seed включает: ID ученика + дата + предмет
+        // Это гарантирует одинаковые задания при каждом входе в тот же день
+        const seed = `${user.id}_${today}_${subject}`;
+        const seededRandom = getSeededRandom(seed);
+        const randomIndex = Math.floor(seededRandom * availableTasks.length);
         newTodayTask = availableTasks[randomIndex];
       }
 
