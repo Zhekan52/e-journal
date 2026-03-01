@@ -27,6 +27,7 @@ export interface Grade {
   columnId?: string;
   excludeFromAverage?: boolean; // Если true — не учитывается при расчёте среднего балла
   reason?: string; // Основание для оценки (за что поставлена)
+  late?: boolean; // Опоздание — если true, рядом с оценкой показывается иконка опоздания
 }
 
 export interface DiaryEntryAttachment {
