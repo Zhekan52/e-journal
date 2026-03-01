@@ -42,8 +42,14 @@ export const FipiWidget: React.FC = () => {
   const [showImageModal, setShowImageModal] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [timeUntilTomorrow, setTimeUntilTomorrow] = useState<string>('');
+  const [tasksGenerated, setTasksGenerated] = useState(false);
 
   const today = getTodayString();
+
+  // Сбрасываем флаг генерации при смене даты
+  useEffect(() => {
+    setTasksGenerated(false);
+  }, [today]);
 
   // Таймер до полуночи
   useEffect(() => {
@@ -118,14 +124,15 @@ export const FipiWidget: React.FC = () => {
   useEffect(() => {
     if (!user || user.role !== 'student') return;
     if (fipiTasks.length === 0) return;
+    if (tasksGenerated) return;
 
-    // Проверяем, нужно ли обновить задания на сегодня
+    // Проверяем, сколько заданий уже есть на сегодня
     const currentProgress = fipiProgress.filter(p => p.studentId === user.id);
+    const todayTaskCount = currentProgress.filter(p => p.lastTaskDate === today && p.todayTasks && p.todayTasks.length > 0).length;
     
-    // Проверяем, есть ли хоть одно задание на сегодня
-    const hasTodayTask = currentProgress.some(p => p.lastTaskDate === today && p.todayTasks && p.todayTasks.length > 0);
-    if (hasTodayTask) {
-      // Задания уже сгенерированы на сегодня
+    // Если уже есть 2 задания - помечаем как сгенерированные и выходим
+    if (todayTaskCount >= 2) {
+      setTasksGenerated(true);
       return;
     }
 
@@ -164,14 +171,11 @@ export const FipiWidget: React.FC = () => {
 
     // Всё обновление делаем за один вызов setFipiProgress
     setFipiProgress(prev => {
-      let hasChanges = false;
-      
       const updated = prev.map(p => {
         if (p.studentId !== user.id) return p;
         
         // Если это один из выбранных предметов - обновляем
         if (newTodayTasksBySubject[p.subject]) {
-          hasChanges = true;
           return {
             ...p,
             lastTaskDate: today,
@@ -186,7 +190,6 @@ export const FipiWidget: React.FC = () => {
       
       selectedSubjects.forEach(subject => {
         if (!existingSubjects.has(subject) && newTodayTasksBySubject[subject]) {
-          hasChanges = true;
           updated.push({
             id: generateId(),
             studentId: user.id,
@@ -199,11 +202,11 @@ export const FipiWidget: React.FC = () => {
         }
       });
       
-      // Если изменений нет, возвращаем как есть
-      if (!hasChanges) return prev;
-      
       return updated;
     });
+    
+    // Помечаем как сгенерированные
+    setTasksGenerated(true);
   }, [user, fipiTasks, fipiProgress, today]);
 
   // Загрузка сегодняшних заданий
