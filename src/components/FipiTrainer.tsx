@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useData } from '../context';
 import { SUBJECTS, getTodayString } from '../data';
 import type { FipiTask, FipiReward, FipiStudentProgress, FipiTaskAttempt, FipiNotification } from '../data';
 import {
-  Brain, Plus, Trash2, Edit2, Save, X, Award, Users, CheckCircle, XCircle, AlertCircle, Settings
+  Brain, Plus, Trash2, Edit2, Save, X, Award, Users, CheckCircle, XCircle, AlertCircle, Settings, Upload
 } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substring(2, 15);
@@ -275,25 +275,204 @@ const RewardsEditor: React.FC<{ rewards: FipiReward[]; onSave: (r: FipiReward) =
 interface TaskModalProps { task: FipiTask | null; onSave: (task: FipiTask) => void; onClose: () => void; }
 
 const TaskModal: React.FC<TaskModalProps> = ({ task, onSave, onClose }) => {
-  const [form, setForm] = useState({ subject: task?.subject || 'Математика', type: task?.type || 'text' as const, question: task?.question || '', image: task?.image || '', correctAnswer: task?.correctAnswer || '' });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [form, setForm] = useState({ 
+    subject: task?.subject || 'Математика', 
+    type: task?.type || 'text' as const, 
+    question: task?.question || '', 
+    image: task?.image || '', 
+    correctAnswer: task?.correctAnswer || '' 
+  });
+  const [showImage, setShowImage] = useState(!!task?.image);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Пожалуйста, выберите изображение');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Размер файла не должен превышать 5MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm({ ...form, image: reader.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setForm({ ...form, image: '' });
+    setShowImage(false);
+  };
+
+  const toggleImage = (checked: boolean) => {
+    setShowImage(checked);
+    if (!checked) {
+      setForm({ ...form, image: '' });
+    }
+  };
 
   const handleSubmit = () => {
     if (!form.question) return;
-    onSave({ id: task?.id || generateId(), subject: form.subject, type: form.type, question: form.question, image: form.image || undefined, options: [], correctAnswer: form.correctAnswer, createdAt: task?.createdAt || getTodayString(), updatedAt: getTodayString() });
+    onSave({ 
+      id: task?.id || generateId(), 
+      subject: form.subject, 
+      type: form.type, 
+      question: form.question, 
+      image: form.image || undefined, 
+      options: [], 
+      correctAnswer: form.correctAnswer, 
+      createdAt: task?.createdAt || getTodayString(), 
+      updatedAt: getTodayString() 
+    });
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-xl">
-        <div className="flex justify-between mb-4"><h3 className="text-xl font-bold">{task ? 'Редактировать' : 'Новое задание'}</h3><button onClick={onClose}><X className="w-5 h-5" /></button></div>
-        <div className="space-y-4">
-          <div><label className="block text-sm mb-1">Предмет</label><select value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className="w-full p-2 border rounded">{SUBJECTS.map(s => <option key={s}>{s}</option>)}</select></div>
-          <div><label className="block text-sm mb-1">Тип</label><div className="flex gap-2">{['text', 'single', 'multiple'].map(t => <button key={t} onClick={() => setForm({ ...form, type: t as any })} className={`flex-1 p-2 rounded ${form.type === t ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>{t === 'text' ? 'Краткий' : t === 'single' ? 'Выбор' : 'Множеств.'}</button>)}</div></div>
-          <div><label className="block text-sm mb-1">Вопрос</label><textarea value={form.question} onChange={(e) => setForm({ ...form, question: e.target.value })} rows={3} className="w-full p-2 border rounded" /></div>
-          <div><label className="block text-sm mb-1">Изображение (URL)</label><input type="url" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} className="w-full p-2 border rounded" /></div>
-          {form.type === 'text' && <div><label className="block text-sm mb-1">Ответ</label><input value={form.correctAnswer} onChange={(e) => setForm({ ...form, correctAnswer: e.target.value })} className="w-full p-2 border rounded" /></div>}
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-5 border-b border-gray-100">
+          <h3 className="text-xl font-bold text-gray-900">{task ? 'Редактировать задание' : 'Новое задание'}</h3>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
         </div>
-        <div className="flex gap-3 mt-6"><button onClick={onClose} className="flex-1 p-3 bg-gray-100 rounded">Отмена</button><button onClick={handleSubmit} disabled={!form.question} className="flex-1 p-3 bg-blue-600 text-white rounded disabled:opacity-50">Сохранить</button></div>
+        
+        <div className="p-5 space-y-5">
+          {/* Предмет и тип в одной строке */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Предмет</label>
+              <select 
+                value={form.subject} 
+                onChange={(e) => setForm({ ...form, subject: e.target.value })} 
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+              >
+                {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Тип ответа</label>
+              <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+                {[
+                  { value: 'text', label: 'Краткий' },
+                  { value: 'single', label: 'Выбор' },
+                  { value: 'multiple', label: 'Множеств.' }
+                ].map(t => (
+                  <button 
+                    key={t.value}
+                    type="button"
+                    onClick={() => setForm({ ...form, type: t.value as any })} 
+                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all ${form.type === t.value ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Текст вопроса */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Текст вопроса
+            </label>
+            <textarea
+              value={form.question}
+              onChange={(e) => setForm({ ...form, question: e.target.value })}
+              placeholder="Введите текст вопроса..."
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[100px] resize-y"
+            />
+          </div>
+
+          {/* Изображение - флажок */}
+          <div>
+            <label className="flex items-center gap-3 cursor-pointer mb-2">
+              <input
+                type="checkbox"
+                checked={showImage}
+                onChange={(e) => toggleImage(e.target.checked)}
+                className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Прикрепить изображение</span>
+            </label>
+            
+            {showImage && (
+              <div className="ml-8">
+                {!form.image ? (
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-primary-400 hover:text-primary-600 hover:bg-gray-50 transition-all"
+                    >
+                      <Upload className="w-5 h-5" />
+                      <span className="text-sm">Загрузить изображение</span>
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <span className="text-xs text-gray-400">Максимум 5MB</span>
+                  </div>
+                ) : (
+                  <div className="relative group">
+                    <img
+                      src={form.image}
+                      alt="Question image"
+                      className="max-h-64 w-auto rounded-lg border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                      title="Удалить изображение"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Ответ (только для текстового типа) */}
+          {form.type === 'text' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Правильный ответ
+              </label>
+              <input
+                type="text"
+                value={form.correctAnswer}
+                onChange={(e) => setForm({ ...form, correctAnswer: e.target.value })}
+                placeholder="Введите правильный ответ..."
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-3 p-5 border-t border-gray-100 bg-gray-50">
+          <button 
+            onClick={onClose} 
+            className="flex-1 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+          >
+            Отмена
+          </button>
+          <button 
+            onClick={handleSubmit} 
+            disabled={!form.question}
+            className="flex-1 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/20 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Сохранить
+          </button>
+        </div>
       </div>
     </div>
   );
