@@ -491,63 +491,54 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
     return result;
   }, [students, grades, dateRange]);
 
-  // Рассчитать средний балл класса по каждому предмету
+  // Рассчитать средний балл класса по каждому предмету (правильно: среднее всех оценок по предмету)
   const classSubjectAverages = useMemo(() => {
     const result: Record<string, number> = {};
     
     SUBJECTS.forEach(subject => {
-      let totalSum = 0;
-      let count = 0;
+      // Получаем все оценки по предмету за период (исключая серые оценки)
+      const subjectAllGrades = grades.filter(g => 
+        g.subject === subject && 
+        isDateInRange(g.date, dateRange) &&
+        !g.excludeFromAverage
+      );
       
-      students.forEach(student => {
-        const avg = studentSubjectAverages[student.id]?.[subject];
-        if (avg !== undefined && avg >= 0) {
-          totalSum += avg;
-          count++;
-        }
-      });
-      
-      result[subject] = count > 0 ? totalSum / count : -1;
+      if (subjectAllGrades.length > 0) {
+        const sum = subjectAllGrades.reduce((acc, g) => acc + g.value, 0);
+        result[subject] = sum / subjectAllGrades.length;
+      } else {
+        result[subject] = -1;
+      }
     });
     
     return result;
-  }, [students, studentSubjectAverages]);
+  }, [grades, dateRange]);
 
-  // Рассчитать общий процент успеваемости (оценки 3 и выше)
+  // Рассчитать общий процент успеваемости (правильно: по всем оценкам за период)
   const successRate = useMemo(() => {
-    let totalGrades = 0;
-    let passingGrades = 0;
+    // Получаем все оценки за период (исключая серые оценки)
+    const allGradesInRange = grades.filter(g => 
+      isDateInRange(g.date, dateRange) && !g.excludeFromAverage
+    );
     
-    students.forEach(student => {
-      SUBJECTS.forEach(subject => {
-        const avg = studentSubjectAverages[student.id]?.[subject];
-        if (avg !== undefined && avg >= 0) {
-          totalGrades++;
-          if (avg >= 3) passingGrades++;
-        }
-      });
-    });
+    if (allGradesInRange.length === 0) return 0;
     
-    return totalGrades > 0 ? (passingGrades / totalGrades) * 100 : 0;
-  }, [students, studentSubjectAverages]);
+    const passingGrades = allGradesInRange.filter(g => g.value >= 3).length;
+    return (passingGrades / allGradesInRange.length) * 100;
+  }, [grades, dateRange]);
 
   // Рассчитать общий средний балл класса (по всем предметам)
   const overallClassAverage = useMemo(() => {
-    let totalSum = 0;
-    let count = 0;
+    // Получаем все оценки за период (исключая серые оценки)
+    const allGradesInRange = grades.filter(g => 
+      isDateInRange(g.date, dateRange) && !g.excludeFromAverage
+    );
     
-    students.forEach(student => {
-      SUBJECTS.forEach(subject => {
-        const avg = studentSubjectAverages[student.id]?.[subject];
-        if (avg !== undefined && avg >= 0) {
-          totalSum += avg;
-          count++;
-        }
-      });
-    });
+    if (allGradesInRange.length === 0) return -1;
     
-    return count > 0 ? totalSum / count : -1;
-  }, [students, studentSubjectAverages]);
+    const sum = allGradesInRange.reduce((acc, g) => acc + g.value, 0);
+    return sum / allGradesInRange.length;
+  }, [grades, dateRange]);
 
   // Отсортировать учеников по фамилии
   const sortedStudents = [...students].sort((a, b) => 
