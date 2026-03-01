@@ -124,12 +124,11 @@ export const FipiWidget: React.FC = () => {
     const currentProgress = fipiProgress.filter(p => p.studentId === user.id);
     let needsGeneration = false;
     
-    SUBJECTS.forEach(subject => {
-      const subjProgress = currentProgress.find(p => p.subject === subject);
-      if (!subjProgress || subjProgress.lastTaskDate !== today) {
-        needsGeneration = true;
-      }
-    });
+    // Проверяем, есть ли хоть одно задание на сегодня
+    const hasTodayTask = currentProgress.some(p => p.lastTaskDate === today && p.todayTasks && p.todayTasks.length > 0);
+    if (!hasTodayTask) {
+      needsGeneration = true;
+    }
 
     if (!needsGeneration) {
       // Задания уже сгенерированы на сегодня
@@ -170,16 +169,41 @@ export const FipiWidget: React.FC = () => {
     });
 
     // Обновляем прогресс для всех предметов
-    setFipiProgress(prev => prev.map(p => {
-      if (p.studentId !== user.id) return p;
+    setFipiProgress(prev => {
+      const updated = prev.map(p => {
+        if (p.studentId !== user.id) return p;
+        
+        const taskId = newTodayTasksBySubject[p.subject] || null;
+        if (taskId) {
+          return {
+            ...p,
+            lastTaskDate: today,
+            todayTasks: [taskId]
+          };
+        }
+        return p;
+      });
       
-      const taskId = newTodayTasksBySubject[p.subject] || null;
-      return {
-        ...p,
-        lastTaskDate: today,
-        todayTasks: taskId ? [taskId] : []
-      };
-    }));
+      // Добавляем новые записи прогресса для предметов, которых нет
+      SUBJECTS.forEach(subject => {
+        if (!updated.find(p => p.studentId === user.id && p.subject === subject)) {
+          const taskId = newTodayTasksBySubject[subject];
+          if (taskId) {
+            updated.push({
+              id: generateId(),
+              studentId: user.id,
+              subject,
+              totalPoints: 0,
+              completedTasks: [],
+              lastTaskDate: today,
+              todayTasks: [taskId]
+            });
+          }
+        }
+      });
+      
+      return updated;
+    });
   }, [user, fipiTasks, fipiProgress, today]);
 
   // Загрузка сегодняшних заданий
@@ -298,30 +322,29 @@ export const FipiWidget: React.FC = () => {
     setShowResult(false);
     setAnswer('');
     
-    // Ищем следующее неотвеченное задание
-    const currentIndex = todayTasks.findIndex(t => t.id === currentTask?.id);
-    let foundNext = false;
-    
-    for (let i = currentIndex + 1; i < todayTasks.length; i++) {
-      if (!answeredTaskIds.has(todayTasks[i].id)) {
-        setCurrentTaskIndex(i);
-        foundNext = true;
-        break;
+    // Проверяем, есть ли ещё неотвеченные задания в сегодняшних
+    if (pendingTasks.length > 0) {
+      // Находим индекс текущего задания
+      const currentIndex = todayTasks.findIndex(t => t.id === currentTask?.id);
+      
+      // Ищем следующее неотвеченное
+      for (let i = currentIndex + 1; i < todayTasks.length; i++) {
+        if (!answeredTaskIds.has(todayTasks[i].id)) {
+          setCurrentTaskIndex(i);
+          return;
+        }
       }
-    }
-    
-    // Если не нашли вперёд, ищем с начала
-    if (!foundNext) {
+      
+      // Если не нашли вперёд, ищем с начала
       for (let i = 0; i < currentIndex; i++) {
         if (!answeredTaskIds.has(todayTasks[i].id)) {
           setCurrentTaskIndex(i);
-          foundNext = true;
-          break;
+          return;
         }
       }
     }
     
-    // Если все задания отвечены, остаёмся на текущем
+    // Если все задания отвечены, показываем экран завершения
   };
 
   // Нет заданий

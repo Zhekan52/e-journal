@@ -18,6 +18,11 @@ export const FipiTrainer: React.FC = () => {
   const [editingTask, setEditingTask] = useState<FipiTask | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
 
+  // Модальное окно для выставления оценки
+  const [showGradeModal, setShowGradeModal] = useState(false);
+  const [pendingGradeNotification, setPendingGradeNotification] = useState<FipiNotification | null>(null);
+  const [gradeDate, setGradeDate] = useState<string>('');
+
   const filteredTasks = useMemo(() => selectedSubject === 'all' ? fipiTasks : fipiTasks.filter(t => t.subject === selectedSubject), [fipiTasks, selectedSubject]);
 
   useEffect(() => {
@@ -58,7 +63,57 @@ export const FipiTrainer: React.FC = () => {
     setFipiAttempts(fipiAttempts.map(a => a.id === attemptId ? { ...a, manuallyApproved: true, correct: true, pointsEarned: 1 } : a));
   };
 
-  const handleConfirmGrade = (notification: FipiNotification) => setFipiNotifications(fipiNotifications.filter(n => n.id !== notification.id));
+  // Открыть модальное окно для выставления оценки
+  const handleOpenGradeModal = (notification: FipiNotification) => {
+    setPendingGradeNotification(notification);
+    setGradeDate(getTodayString()); // По умолчанию сегодня
+    setShowGradeModal(true);
+  };
+
+  // Подтвердить выставление оценки
+  const handleConfirmGrade = () => {
+    if (!pendingGradeNotification || !gradeDate) return;
+    
+    const notification = pendingGradeNotification;
+    
+    // Сбрасываем прогресс ученика по этому предмету
+    setFipiProgress(prev => prev.map(p => {
+      if (p.studentId === notification.studentId && p.subject === notification.subject) {
+        return {
+          ...p,
+          totalPoints: 0,
+          completedTasks: [],
+          pendingGrade: undefined
+        };
+      }
+      return p;
+    }));
+
+    // Добавляем запись в историю о выставленной оценке
+    const gradeRecord = {
+      notificationId: notification.id,
+      studentId: notification.studentId,
+      studentName: notification.studentName,
+      subject: notification.subject,
+      grade: notification.grade,
+      pointsRequired: notification.pointsRequired,
+      earnedAt: notification.createdAt, // Когда ученик набрал баллы
+      gradedAt: gradeDate, // Когда админ выставил оценку
+    };
+    
+    // Сохраняем в localStorage для истории
+    const history = JSON.parse(localStorage.getItem('fipiGradeHistory') || '[]');
+    localStorage.setItem('fipiGradeHistory', JSON.stringify([...history, gradeRecord]));
+    
+    // Удаляем уведомление
+    setFipiNotifications(fipiNotifications.filter(n => n.id !== notification.id));
+    
+    // Закрываем модалку
+    setShowGradeModal(false);
+    setPendingGradeNotification(null);
+    setGradeDate('');
+  };
+
   const handleAcknowledgeNotification = (id: string) => setFipiNotifications(fipiNotifications.map(n => n.id === id ? { ...n, acknowledged: true } : n));
 
   const tabs: { id: FipiTab; label: string; icon: React.ReactNode }[] = [
@@ -269,12 +324,56 @@ export const FipiTrainer: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => handleConfirmGrade(notif)} className="px-4 py-2 bg-green-600 text-white rounded">Выставить</button>
+                  <button onClick={() => handleOpenGradeModal(notif)} className="px-4 py-2 bg-green-600 text-white rounded">Выставить</button>
                   <button onClick={() => handleAcknowledgeNotification(notif.id)} className="px-4 py-2 bg-gray-100 rounded">Закрыть</button>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Модальное окно выставления оценки */}
+      {showGradeModal && pendingGradeNotification && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Выставить оценку</h3>
+            <div className="space-y-4">
+              <div className="p-4 bg-amber-50 rounded-xl">
+                <p className="font-medium">
+                  Ученик <b>{pendingGradeNotification.studentName}</b> набрал {pendingGradeNotification.pointsRequired} баллов по <b>{pendingGradeNotification.subject}</b>
+                </p>
+                <p className="text-2xl font-bold text-green-600 mt-2">Оценка: {pendingGradeNotification.grade}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  На какое число выставить оценку в журнал?
+                </label>
+                <input
+                  type="date"
+                  value={gradeDate}
+                  onChange={(e) => setGradeDate(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => { setShowGradeModal(false); setPendingGradeNotification(null); }}
+                className="flex-1 px-4 py-2 bg-gray-100 rounded-xl"
+              >
+                Отмена
+              </button>
+              <button 
+                onClick={handleConfirmGrade}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-xl font-medium"
+              >
+                Выставить
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
