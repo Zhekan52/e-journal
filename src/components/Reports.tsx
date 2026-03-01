@@ -121,7 +121,7 @@ export const Reports: React.FC = () => {
       </div>
 
       {/* Выбор периода */}
-      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-4 shadow-lg overflow-visible">
+      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-4 shadow-lg">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-gray-500" />
@@ -149,48 +149,47 @@ export const Reports: React.FC = () => {
             </button>
           </div>
 
-          <div className="relative">
-            <button
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
-            >
-              <Filter className="w-4 h-4" />
-              {formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}
-              {showDatePicker ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
-
-            {showDatePicker && (
-              <div className="absolute top-full left-0 mt-2 p-4 bg-white rounded-xl shadow-xl border border-gray-200 z-50 min-w-[300px]">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Дата начала</label>
-                    <input
-                      type="date"
-                      value={dateRange.start}
-                      onChange={(e) => setDateRange(p => ({ ...p, start: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Дата окончания</label>
-                    <input
-                      type="date"
-                      value={dateRange.end}
-                      onChange={(e) => setDateRange(p => ({ ...p, end: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <button
-                    onClick={() => setShowDatePicker(false)}
-                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    Применить
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => setShowDatePicker(!showDatePicker)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+          >
+            <Filter className="w-4 h-4" />
+            {formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}
+            {showDatePicker ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
         </div>
+
+        {/* Раскрывающаяся панель фильтра дат */}
+        {showDatePicker && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-sm font-medium text-gray-600 mb-1">Дата начала</label>
+                <input
+                  type="date"
+                  value={dateRange.start}
+                  onChange={(e) => setDateRange(p => ({ ...p, start: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-sm font-medium text-gray-600 mb-1">Дата окончания</label>
+                <input
+                  type="date"
+                  value={dateRange.end}
+                  onChange={(e) => setDateRange(p => ({ ...p, end: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <button
+                onClick={() => setShowDatePicker(false)}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                Применить
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Вкладки отчётов */}
