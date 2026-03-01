@@ -205,6 +205,29 @@ export const FipiWidget: React.FC = () => {
   const progress = currentTask ? getSubjectProgress(currentTask.subject) : undefined;
   const reward = currentTask ? getReward(currentTask.subject) : undefined;
 
+  // Если не ученик - не показываем виджет
+  if (!user || user.role !== 'student') return null;
+
+  // Проверяем, все ли задания выполнены (правильно)
+  const allCompleted = todayTasks.every(task => {
+    const taskAttempt = fipiAttempts.find(a => 
+      a.taskId === task.id && a.studentId === user.id && a.date === today && a.correct
+    );
+    return !!taskAttempt;
+  });
+
+  // Получаем задания, на которые уже даны ответы (любые - правильные или нет)
+  const answeredTaskIds = useMemo(() => {
+    return new Set(
+      fipiAttempts
+        .filter(a => a.studentId === user?.id && a.date === today)
+        .map(a => a.taskId)
+    );
+  }, [fipiAttempts, user?.id, today]);
+
+  // Получаем задания, которые ещё не отвечены
+  const pendingTasks = todayTasks.filter(task => !answeredTaskIds.has(task.id));
+
   // Обработка ответа
   const handleSubmitAnswer = () => {
     if (!currentTask || !user) return;
@@ -302,9 +325,6 @@ export const FipiWidget: React.FC = () => {
     // Если все задания отвечены, остаёмся на текущем
   };
 
-  // Если не ученик - не показываем виджет
-  if (!user || user.role !== 'student') return null;
-
   // Нет заданий
   if (todayTasks.length === 0) {
     return (
@@ -327,26 +347,6 @@ export const FipiWidget: React.FC = () => {
     );
   }
 
-  // Проверяем, все ли задания выполнены (правильно)
-  const allCompleted = todayTasks.every(task => {
-    const taskAttempt = fipiAttempts.find(a => 
-      a.taskId === task.id && a.studentId === user.id && a.date === today && a.correct
-    );
-    return !!taskAttempt;
-  });
-
-  // Получаем задания, на которые уже даны ответы (любые - правильные или нет)
-  const answeredTaskIds = useMemo(() => {
-    return new Set(
-      fipiAttempts
-        .filter(a => a.studentId === user?.id && a.date === today)
-        .map(a => a.taskId)
-    );
-  }, [fipiAttempts, user?.id, today]);
-
-  // Получаем задания, которые ещё не отвечены
-  const pendingTasks = todayTasks.filter(task => !answeredTaskIds.has(task.id));
-
   return (
     <div className="space-y-4">
       {/* Заголовок */}
@@ -367,7 +367,7 @@ export const FipiWidget: React.FC = () => {
               </p>
             </div>
           </div>
-
+          
           {/* Прогресс по предметам */}
           <div className="flex items-center gap-4">
             {SUBJECTS.map(subject => {
