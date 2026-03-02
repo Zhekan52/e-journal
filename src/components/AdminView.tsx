@@ -14,7 +14,7 @@ import {
   AlertTriangle, TrendingUp, TrendingDown, FileText,
   BarChart3, Award, ArrowLeft, RefreshCw, ChevronRight, Tag, Info,
   Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft,
-  CalendarDays, FileBarChart, Brain
+  CalendarDays, FileBarChart, Brain, Clock
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
@@ -2106,33 +2106,42 @@ const Journal: React.FC = () => {
                         {(() => {
                           const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
                           const at = att ? ATTENDANCE_TYPES.find(at => at.value === att.type) : null;
-                          // Если есть посещаемость — показываем её на всю клетку, иначе оценку
-                          const showAttendance = !!att;
-                          // Блокируем кнопку если есть посещаемость (нельзя ставить оценку)
-                          const isBlocked = showAttendance;
+                          // Если есть посещаемость (кроме опоздания) — показываем её на всю клетку, иначе оценку
+                          const showAttendance = att && att.type !== 'ОП';
+                          // Блокируем кнопку только при наличии посещаемости (кроме опоздания)
+                          const isBlocked = att && att.type !== 'ОП';
+                          const isLateness = att && att.type === 'ОП';
                           return (
-                            <button
-                              onClick={e => {
-                                if (!isBlocked) {
-                                  if (inputMode === 'keyboard') {
-                                    setKeyboardTarget({ studentId: s.id, date: lessonPageDate, lessonNumber: lessonPageLessonNum });
-                                  } else {
-                                    setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, lessonNumber: lessonPageLessonNum });
+                            <div className="relative inline-block">
+                              <button 
+                                onClick={e => {
+                                  if (!isBlocked) {
+                                    if (inputMode === 'keyboard') {
+                                      setKeyboardTarget({ studentId: s.id, date: lessonPageDate, lessonNumber: lessonPageLessonNum });
+                                    } else {
+                                      setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, lessonNumber: lessonPageLessonNum });
+                                    }
                                   }
-                                }
-                              }}
-                              disabled={isBlocked}
-                              className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
-                                inputMode === 'keyboard' && keyboardTarget?.studentId === s.id && keyboardTarget?.date === lessonPageDate && keyboardTarget?.lessonNumber === lessonPageLessonNum && !keyboardTarget?.columnId
-                                  ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
-                                  : showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
-                                    (mainGrade.excludeFromAverage ? 'bg-gray-200 text-gray-500' : mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'
-                              }`}
-                              title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
-                            >
-                              {showAttendance ? att?.type : (mainGrade?.value || '')}
-                            </button>
+                                }}
+                                disabled={isBlocked}
+                                className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                  inputMode === 'keyboard' && keyboardTarget?.studentId === s.id && keyboardTarget?.date === lessonPageDate && keyboardTarget?.lessonNumber === lessonPageLessonNum && !keyboardTarget?.columnId
+                                    ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
+                                    : showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
+                                      (mainGrade.excludeFromAverage ? 'bg-gray-200 text-gray-500' : mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                                      : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'
+                                }`}
+                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                              >
+                                {showAttendance ? att?.type : (mainGrade?.value || '')}
+                              </button>
+                              {/* Индикатор опоздания */}
+                              {isLateness && (
+                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-100 rounded-full flex items-center justify-center border border-orange-200" title="Опоздание">
+                                  <Clock className="w-2.5 h-2.5 text-orange-600" />
+                                </div>
+                              )}
+                            </div>
                           );
                         })()}
                       </td>
@@ -2141,30 +2150,39 @@ const Journal: React.FC = () => {
                         <td className="px-1 py-2 text-center border-r border-gray-300">
                           {(() => {
                             const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
-                            const isBlocked = !!att;
+                            const isBlocked = att && att.type !== 'ОП';
+                            const isLateness = att && att.type === 'ОП';
                             return (
-                              <button 
-                                onClick={e => {
-                                  if (!isBlocked) {
-                                    if (inputMode === 'keyboard') {
-                                      setKeyboardTarget({ studentId: s.id, date: lessonPageDate, columnId: hwCol?.id, lessonNumber: lessonPageLessonNum });
-                                    } else {
-                                      setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: hwCol?.id, lessonNumber: lessonPageLessonNum });
+                              <div className="relative inline-block">
+                                <button 
+                                  onClick={e => {
+                                    if (!isBlocked) {
+                                      if (inputMode === 'keyboard') {
+                                        setKeyboardTarget({ studentId: s.id, date: lessonPageDate, columnId: hwCol?.id, lessonNumber: lessonPageLessonNum });
+                                      } else {
+                                        setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: hwCol?.id, lessonNumber: lessonPageLessonNum });
+                                      }
                                     }
-                                  }
-                                }}
-                                disabled={isBlocked}
-                                className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
-                                  inputMode === 'keyboard' && keyboardTarget?.studentId === s.id && keyboardTarget?.date === lessonPageDate && keyboardTarget?.columnId === hwCol?.id && keyboardTarget?.lessonNumber === lessonPageLessonNum
-                                    ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
-                                    : hwGrade ?
-                                      (hwGrade.value === 5 ? 'bg-green-100 text-green-700' : hwGrade.value === 4 ? 'bg-blue-100 text-blue-700' : hwGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                                      : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'
-                                }`}
-                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
-                              >
-                                {hwGrade?.value || ''}
-                              </button>
+                                  }}
+                                  disabled={isBlocked}
+                                  className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                    inputMode === 'keyboard' && keyboardTarget?.studentId === s.id && keyboardTarget?.date === lessonPageDate && keyboardTarget?.columnId === hwCol?.id && keyboardTarget?.lessonNumber === lessonPageLessonNum
+                                      ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
+                                      : hwGrade ?
+                                        (hwGrade.value === 5 ? 'bg-green-100 text-green-700' : hwGrade.value === 4 ? 'bg-blue-100 text-blue-700' : hwGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'
+                                  }`}
+                                  title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                                >
+                                  {hwGrade?.value || ''}
+                                </button>
+                                {/* Индикатор опоздания */}
+                                {isLateness && (
+                                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-100 rounded-full flex items-center justify-center border border-orange-200" title="Опоздание">
+                                    <Clock className="w-2.5 h-2.5 text-orange-600" />
+                                  </div>
+                                )}
+                              </div>
                             );
                           })()}
                         </td>
@@ -2173,31 +2191,40 @@ const Journal: React.FC = () => {
                       {cols.filter(c => c.type !== 'homework').map(c => {
                         const g = getGrade(s.id, lessonPageDate, c.id, lessonPageLessonNum);
                         const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
-                        const isBlocked = !!att;
+                        const isBlocked = att && att.type !== 'ОП';
+                        const isLateness = att && att.type === 'ОП';
                         return (
                           <td key={c.id} className="px-1 py-2 text-center border-r border-gray-300">
-                            <button
-                              onClick={e => {
-                                if (!isBlocked) {
-                                  if (inputMode === 'keyboard') {
-                                    setKeyboardTarget({ studentId: s.id, date: lessonPageDate, columnId: c.id, lessonNumber: lessonPageLessonNum });
-                                  } else {
-                                    setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: c.id, lessonNumber: lessonPageLessonNum });
+                            <div className="relative inline-block">
+                              <button
+                                onClick={e => {
+                                  if (!isBlocked) {
+                                    if (inputMode === 'keyboard') {
+                                      setKeyboardTarget({ studentId: s.id, date: lessonPageDate, columnId: c.id, lessonNumber: lessonPageLessonNum });
+                                    } else {
+                                      setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: s.id, date: lessonPageDate, columnId: c.id, lessonNumber: lessonPageLessonNum });
+                                    }
                                   }
-                                }
-                              }}
-                              disabled={isBlocked}
-                              className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
-                                inputMode === 'keyboard' && keyboardTarget?.studentId === s.id && keyboardTarget?.date === lessonPageDate && keyboardTarget?.columnId === c.id && keyboardTarget?.lessonNumber === lessonPageLessonNum
-                                  ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
-                                  : g ?
-                                    (g.value === 5 ? 'bg-green-100 text-green-700' : g.value === 4 ? 'bg-blue-100 text-blue-700' : g.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'
-                              }`}
-                              title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
-                            >
-                              {g?.value || ''}
-                            </button>
+                                }}
+                                disabled={isBlocked}
+                                className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                  inputMode === 'keyboard' && keyboardTarget?.studentId === s.id && keyboardTarget?.date === lessonPageDate && keyboardTarget?.columnId === c.id && keyboardTarget?.lessonNumber === lessonPageLessonNum
+                                    ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
+                                    : g ?
+                                      (g.value === 5 ? 'bg-green-100 text-green-700' : g.value === 4 ? 'bg-blue-100 text-blue-700' : g.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                                      : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'
+                                }`}
+                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                              >
+                                {g?.value || ''}
+                              </button>
+                              {/* Индикатор опоздания */}
+                              {isLateness && (
+                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-100 rounded-full flex items-center justify-center border border-orange-200" title="Опоздание">
+                                  <Clock className="w-2.5 h-2.5 text-orange-600" />
+                                </div>
+                              )}
+                            </div>
                           </td>
                         );
                       })}
@@ -2472,36 +2499,45 @@ const Journal: React.FC = () => {
                         const mainGrade = getGrade(student.id, sl.date, undefined, sl.lessonNumber);
                         const att = getAttendanceMark(student.id, sl.date);
                         const at = att ? ATTENDANCE_TYPES.find(a => a.value === att.type) : null;
-                        // Если есть посещаемость — показываем её на всю клетку, иначе оценку
-                        const showAttendance = !!att;
-                        // Блокируем кнопку если есть посещаемость (нельзя ставить оценку)
-                        const isBlocked = showAttendance;
+                        // Если есть посещаемость (кроме опоздания) — показываем её на всю клетку, иначе оценку
+                        const showAttendance = att && att.type !== 'ОП';
+                        // Блокируем кнопку только при наличии посещаемости (кроме опоздания)
+                        const isBlocked = att && att.type !== 'ОП';
+                        const isLateness = att && att.type === 'ОП';
                         const isToday = highlightToday && sl.date === today;
                         return (
                           <React.Fragment key={sl.key}>
                             <td className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isToday ? 'bg-green-50' : ''}`}>
-                              <button 
-                                onClick={e => {
-                                  if (!isBlocked) {
-                                    if (inputMode === 'keyboard') {
-                                      setKeyboardTarget({ studentId: student.id, date: sl.date, lessonNumber: sl.lessonNumber });
-                                    } else {
-                                      setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, lessonNumber: sl.lessonNumber });
+                              <div className="relative">
+                                <button 
+                                  onClick={e => {
+                                    if (!isBlocked) {
+                                      if (inputMode === 'keyboard') {
+                                        setKeyboardTarget({ studentId: student.id, date: sl.date, lessonNumber: sl.lessonNumber });
+                                      } else {
+                                        setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, lessonNumber: sl.lessonNumber });
+                                      }
                                     }
-                                  }
-                                }}
-                                disabled={isBlocked}
-                                className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
-                                  inputMode === 'keyboard' && keyboardTarget?.studentId === student.id && keyboardTarget?.date === sl.date && keyboardTarget?.lessonNumber === sl.lessonNumber && !keyboardTarget?.columnId
-                                    ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
-                                    : showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
-                                      (mainGrade.excludeFromAverage ? 'bg-gray-200 text-gray-500' : mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
-                                      : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'
-                                }`}
-                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
-                              >
-                                {showAttendance ? att?.type : (mainGrade?.value || '')}
-                              </button>
+                                  }}
+                                  disabled={isBlocked}
+                                  className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                    inputMode === 'keyboard' && keyboardTarget?.studentId === student.id && keyboardTarget?.date === sl.date && keyboardTarget?.lessonNumber === sl.lessonNumber && !keyboardTarget?.columnId
+                                      ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
+                                      : showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
+                                        (mainGrade.excludeFromAverage ? 'bg-gray-200 text-gray-500' : mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                                        : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'
+                                  }`}
+                                  title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                                >
+                                  {showAttendance ? att?.type : (mainGrade?.value || '')}
+                                </button>
+                                {/* Индикатор опоздания */}
+                                {isLateness && (
+                                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-100 rounded-full flex items-center justify-center border border-orange-200" title="Опоздание">
+                                    <Clock className="w-2.5 h-2.5 text-orange-600" />
+                                  </div>
+                                )}
+                              </div>
                             </td>
                             {cols.map(c => {
                               const g = getGrade(student.id, sl.date, c.id, sl.lessonNumber);
@@ -2521,9 +2557,32 @@ const Journal: React.FC = () => {
                               
                               return (
                                 <td key={c.id} className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isToday ? 'bg-green-50' : ''}`}>
-                                  {g ? (
-                                    c.type === 'test' && testTitle ? (
-                                      <GradeWithTooltip value={g.value} testTitle={testTitle} />
+                                  <div className="relative inline-block">
+                                    {g ? (
+                                      c.type === 'test' && testTitle ? (
+                                        <GradeWithTooltip value={g.value} testTitle={testTitle} />
+                                      ) : (
+                                        <button 
+                                          onClick={e => {
+                                            if (!isBlocked) {
+                                              if (inputMode === 'keyboard') {
+                                                setKeyboardTarget({ studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
+                                              } else {
+                                                setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
+                                              }
+                                            }
+                                          }}
+                                          disabled={isBlocked}
+                                          className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                            inputMode === 'keyboard' && keyboardTarget?.studentId === student.id && keyboardTarget?.date === sl.date && keyboardTarget?.columnId === c.id && keyboardTarget?.lessonNumber === sl.lessonNumber
+                                              ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
+                                              : g.value === 5 ? 'bg-green-100 text-green-700' : g.value === 4 ? 'bg-blue-100 text-blue-700' : g.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                                          }`}
+                                          title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                                        >
+                                          {g.value}
+                                        </button>
+                                      )
                                     ) : (
                                       <button 
                                         onClick={e => {
@@ -2539,33 +2598,18 @@ const Journal: React.FC = () => {
                                         className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
                                           inputMode === 'keyboard' && keyboardTarget?.studentId === student.id && keyboardTarget?.date === sl.date && keyboardTarget?.columnId === c.id && keyboardTarget?.lessonNumber === sl.lessonNumber
                                             ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
-                                            : g.value === 5 ? 'bg-green-100 text-green-700' : g.value === 4 ? 'bg-blue-100 text-blue-700' : g.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                                            : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'
                                         }`}
                                         title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
-                                      >
-                                        {g.value}
-                                      </button>
-                                    )
-                                  ) : (
-                                    <button 
-                                      onClick={e => {
-                                        if (!isBlocked) {
-                                          if (inputMode === 'keyboard') {
-                                            setKeyboardTarget({ studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
-                                          } else {
-                                            setGradePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date, columnId: c.id, lessonNumber: sl.lessonNumber });
-                                          }
-                                        }
-                                      }}
-                                      disabled={isBlocked}
-                                      className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
-                                        inputMode === 'keyboard' && keyboardTarget?.studentId === student.id && keyboardTarget?.date === sl.date && keyboardTarget?.columnId === c.id && keyboardTarget?.lessonNumber === sl.lessonNumber
-                                          ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
-                                          : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'
-                                      }`}
-                                      title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
-                                    />
-                                  )}
+                                      />
+                                    )}
+                                    {/* Индикатор опоздания для доп. колонок */}
+                                    {isLateness && (
+                                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-100 rounded-full flex items-center justify-center border border-orange-200" title="Опоздание">
+                                        <Clock className="w-2.5 h-2.5 text-orange-600" />
+                                      </div>
+                                    )}
+                                  </div>
                                 </td>
                               );
                             })}
@@ -2606,7 +2650,6 @@ const Journal: React.FC = () => {
       {/* TOPICS TAB */}
       {journalTab === 'topics' && (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-300 text-xs text-gray-700">
@@ -2616,7 +2659,7 @@ const Journal: React.FC = () => {
                 <th className="px-3 py-2 text-left min-w-[200px]">Тема урока</th>
                 <th className="px-3 py-2 text-left min-w-[200px]">Домашнее задание</th>
                 <th className="px-3 py-2 text-center w-16">Пров. ДЗ</th>
-                <th className="px-3 py-2 text-left min-w-[200px]">Тест</th>
+                <th className="px-3 py-2 text-left w-40">Тест</th>
               </tr>
             </thead>
             <tbody>
@@ -2762,10 +2805,7 @@ const Journal: React.FC = () => {
                       }} className="w-4 h-4 rounded border-gray-300 text-primary-600" />
                     </td>
                     <td className="px-3 py-2">
-                      <select 
-                        value={entry?.testId || ''} 
-                        title={testObj?.title || ''}
-                        onChange={e => {
+                      <select value={entry?.testId || ''} onChange={e => {
                         const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
                         if (ent) {
                           const prevTestId = ent.testId;
@@ -2787,9 +2827,9 @@ const Journal: React.FC = () => {
                             setJournalColumns(prev => prev.filter(c => !(c.date === sl.date && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber))));
                           }
                         }
-                      }} className="w-full px-2 py-1.5 text-xs border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 truncate">
+                      }} className="w-full px-2 py-1.5 text-xs border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500">
                         <option value="">—</option>
-                        {tests && Array.isArray(tests) && tests.filter(t => t.subject === selectedSubject).map(t => <option key={t.id} value={t.id} title={t.title}>{t.title}</option>)}
+                        {tests && Array.isArray(tests) && tests.filter(t => t.subject === selectedSubject).map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
                       </select>
                     </td>
                   </tr>
@@ -2800,7 +2840,6 @@ const Journal: React.FC = () => {
               )}
             </tbody>
           </table>
-          </div>
         </div>
       )}
 

@@ -496,9 +496,10 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
                         ? attendance.find((a: any) => a.studentId === studentId && a.date === d && a.subject === subject)
                         : null;
                       const at = att ? ATTENDANCE_TYPES.find((a: any) => a.value === att.type) : null;
+                      const isLateness = att && att.type === 'ОП';
                       
-                      // Если есть посещаемость — показываем её, иначе оценки
-                      if (att) {
+                      // Если есть посещаемость (кроме опоздания) — показываем её
+                      if (att && !isLateness) {
                         return (
                           <td key={d} className="px-1.5 py-2 text-center border-r border-gray-200">
                             <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold ${at?.bgColor} ${at?.color}`}>
@@ -510,10 +511,19 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
                       
                       return (
                         <td key={d} className="px-1.5 py-2 text-center border-r border-gray-200 overflow-visible">
-                          <div className="flex flex-wrap gap-1 justify-center overflow-visible">
-                            {vals.map((gradeObj: any, i: number) => (
-                              <GradeWithTooltip key={i} value={gradeObj.value} excludeFromAverage={gradeObj.excludeFromAverage} reason={gradeObj.reason} size="sm" />
-                            ))}
+                          <div className="relative inline-flex">
+                            <div className="flex flex-wrap gap-1 justify-center overflow-visible">
+                              {vals.map((gradeObj: any, i: number) => (
+                                <GradeWithTooltip key={i} value={gradeObj.value} excludeFromAverage={gradeObj.excludeFromAverage} reason={gradeObj.reason} size="sm" />
+                              ))}
+                              {vals.length === 0 && <span className="text-gray-400">—</span>}
+                            </div>
+                            {/* Индикатор опоздания */}
+                            {isLateness && (
+                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-100 rounded-full flex items-center justify-center border border-orange-200" title="Опоздание">
+                                <Clock className="w-2.5 h-2.5 text-orange-600" />
+                              </div>
+                            )}
                           </div>
                         </td>
                       );
@@ -1025,9 +1035,6 @@ const Diary: React.FC<DiaryProps> = ({
                     // Если ученик освобождён от теста
                     const isExempt = assignment?.assigned === false;
 
-                    // Проверка срока выполнения теста (deadline)
-                    const isDeadlineExpired = assignment?.deadlineDate ? assignment.deadlineDate < getTodayString() : false;
-
                     return (
                       <tr key={lesson.id} className="border-b border-gray-200 hover:bg-gray-50/80 transition-colors">
                         <td className="px-4 py-3 text-gray-500 font-bold border-r border-gray-200">{lesson.lessonNumber}</td>
@@ -1055,11 +1062,6 @@ const Diary: React.FC<DiaryProps> = ({
                                 <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 rounded-lg border border-red-200">
                                   <AlertCircle className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
                                   <span className="text-xs font-semibold text-red-700">Освобождён</span>
-                                </div>
-                              ) : isDeadlineExpired ? (
-                                <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded-lg border border-gray-200" title={`Срок выполнения истёк ${assignment?.deadlineDate ? '(' + assignment.deadlineDate + ')' : ''}`}>
-                                  <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                                  <span className="text-xs font-semibold text-gray-500">Срок истёк</span>
                                 </div>
                               ) : attempt && !retakeAllowed ? (
                                 <div className="flex items-center gap-1.5 px-2 py-1 bg-success-50 rounded-lg border border-success-200">
@@ -1094,9 +1096,10 @@ const Diary: React.FC<DiaryProps> = ({
                               ? attendance.find((a: any) => a.studentId === studentId && a.date === dateStr && a.subject === lesson.subject)
                               : null;
                             const at = att ? ATTENDANCE_TYPES.find((a: any) => a.value === att.type) : null;
+                            const isLateness = att && att.type === 'ОП';
                             
-                            // Если есть посещаемость — показываем её, иначе оценки
-                            if (att) {
+                            // Если есть посещаемость (кроме опоздания) — показываем её
+                            if (att && !isLateness) {
                               return (
                                 <span className={`inline-flex items-center justify-center w-9 h-9 rounded-xl text-sm font-bold ${at?.bgColor} ${at?.color}`}>
                                   {att.type}
@@ -1106,28 +1109,36 @@ const Diary: React.FC<DiaryProps> = ({
                             
                             // Иначе показываем оценки
                             return (
-                              <div className="flex flex-wrap gap-1.5 justify-center overflow-visible">
-                                {dayGrades.map((g: any, i: number) => {
-                                  // Проверяем, является ли оценка оценкой за тест
-                                  let testTitle: string | undefined;
-                                  if (g.columnId) {
-                                    const col = journalColumns.find((c: any) => c.id === g.columnId && c.type === 'test');
-                                    if (col) {
-                                      // Ищем diaryEntry для этой даты и предмета
-                                      const entry = diaryEntries.find((e: any) => e.date === dateStr && e.subject === lesson.subject && e.lessonNumber === lesson.lessonNumber);
-                                      if (entry?.testId) {
-                                        const test = tests.find((t: any) => t.id === entry.testId);
-                                        if (test) {
-                                          testTitle = test.title;
+                              <div className="relative inline-flex">
+                                <div className="flex flex-wrap gap-1.5 justify-center overflow-visible">
+                                  {dayGrades.map((g: any, i: number) => {
+                                    // Проверяем, является ли оценка оценкой за тест
+                                    let testTitle: string | undefined;
+                                    if (g.columnId) {
+                                      const col = journalColumns.find((c: any) => c.id === g.columnId && c.type === 'test');
+                                      if (col) {
+                                        // Ищем diaryEntry для этой даты и предмета
+                                        const entry = diaryEntries.find((e: any) => e.date === dateStr && e.subject === lesson.subject && e.lessonNumber === lesson.lessonNumber);
+                                        if (entry?.testId) {
+                                          const test = tests.find((t: any) => t.id === entry.testId);
+                                          if (test) {
+                                            testTitle = test.title;
+                                          }
                                         }
                                       }
                                     }
-                                  }
-                                  return (
-                                    <GradeWithTooltip key={i} value={g.value} excludeFromAverage={g.excludeFromAverage} reason={g.reason} testTitle={testTitle} size="md" />
-                                  );
-                                })}
-                                {dayGrades.length === 0 && <span className="text-gray-400">—</span>}
+                                    return (
+                                      <GradeWithTooltip key={i} value={g.value} excludeFromAverage={g.excludeFromAverage} reason={g.reason} testTitle={testTitle} size="md" />
+                                    );
+                                  })}
+                                  {dayGrades.length === 0 && <span className="text-gray-400">—</span>}
+                                </div>
+                                {/* Индикатор опоздания */}
+                                {isLateness && (
+                                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-100 rounded-full flex items-center justify-center border border-orange-200" title="Опоздание">
+                                    <Clock className="w-2.5 h-2.5 text-orange-600" />
+                                  </div>
+                                )}
                               </div>
                             );
                           })()}
