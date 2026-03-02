@@ -687,6 +687,47 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
               </tr>
             ))}
           </tbody>
+          {/* Итоговая строка - средний балл по предметам */}
+          <tfoot className="bg-blue-50 border-t-2 border-blue-200">
+            <tr>
+              <td className="px-4 py-3 sticky left-0 bg-blue-50 z-10 font-bold text-blue-900 border-r border-blue-200">
+                Средний балл по предмету
+              </td>
+              {SUBJECTS.map(subject => {
+                const avg = classSubjectAverages[subject] ?? -1;
+                return (
+                  <td key={subject} className="px-4 py-3 text-center border-r border-blue-100">
+                    {avg >= 0 ? (
+                      <span className={`inline-flex px-2 py-1 rounded-lg text-sm font-bold ${
+                        avg >= 4.5 ? 'bg-green-200 text-green-800' :
+                        avg >= 3.5 ? 'bg-blue-200 text-blue-800' :
+                        avg >= 2.5 ? 'bg-yellow-200 text-yellow-800' :
+                        'bg-red-200 text-red-800'
+                      }`}>
+                        {formatAvg(avg)}
+                      </span>
+                    ) : (
+                      <span className="text-gray-300">—</span>
+                    )}
+                  </td>
+                );
+              })}
+              <td className="px-4 py-3 text-center bg-blue-100 border-l-2 border-blue-300">
+                {overallClassAverage >= 0 ? (
+                  <span className={`inline-flex px-3 py-1.5 rounded-lg text-sm font-bold ${
+                    overallClassAverage >= 4.5 ? 'bg-green-300 text-green-900' :
+                    overallClassAverage >= 3.5 ? 'bg-blue-300 text-blue-900' :
+                    overallClassAverage >= 2.5 ? 'bg-yellow-300 text-yellow-900' :
+                    'bg-red-300 text-red-900'
+                  }`}>
+                    {formatAvg(overallClassAverage)}
+                  </span>
+                ) : (
+                  <span className="text-gray-300">—</span>
+                )}
+              </td>
+            </tr>
+          </tfoot>
         </table>
       </div>
 
