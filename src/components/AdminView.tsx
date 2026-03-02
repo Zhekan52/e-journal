@@ -1231,29 +1231,6 @@ const AttendanceModal: React.FC<{
               </div>
             )}
 
-            {/* Выбор типа отметки */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Тип отметки:</label>
-              <div className="flex flex-wrap gap-2">
-                {ATTENDANCE_TYPES.map(type => (
-                  <button
-                    key={type.value}
-                    onClick={() => setSelectedType(type.value)}
-                    disabled={selectedLessons.length === 0 && wholeDay === false}
-                    className={`
-                      px-4 py-2 rounded-lg text-sm font-bold transition-all
-                      ${selectedType === type.value 
-                        ? 'ring-2 ring-offset-2 ring-gray-400' 
-                        : ''
-                      } ${type.bgColor} ${type.color}
-                      ${(selectedLessons.length === 0 && wholeDay === false) ? 'opacity-50 cursor-not-allowed' : ''}
-                    `}
-                  >
-                    {type.short} — {type.label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         )}
 
