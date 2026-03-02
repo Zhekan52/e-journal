@@ -1025,12 +1025,8 @@ const Diary: React.FC<DiaryProps> = ({
                     // Если ученик освобождён от теста
                     const isExempt = assignment?.assigned === false;
 
-                    // Проверка срока выполнения (deadline)
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const deadlineDate = assignment?.deadlineDate ? new Date(assignment.deadlineDate + 'T00:00:00') : null;
-                    const isDeadlineExpired = deadlineDate && deadlineDate < today;
-                    const daysUntilDeadline = deadlineDate ? Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : null;
+                    // Проверка срока выполнения теста (deadline)
+                    const isDeadlineExpired = assignment?.deadlineDate ? assignment.deadlineDate < getTodayString() : false;
 
                     return (
                       <tr key={lesson.id} className="border-b border-gray-200 hover:bg-gray-50/80 transition-colors">
@@ -1055,15 +1051,15 @@ const Diary: React.FC<DiaryProps> = ({
                           )}
                           {testObj && (
                             <div className="mt-2">
-                              {isDeadlineExpired ? (
-                                <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded-lg border border-gray-200 opacity-60">
-                                  <Clock className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
-                                  <span className="text-xs font-semibold text-gray-500">Срок истёк</span>
-                                </div>
-                              ) : isExempt ? (
+                              {isExempt ? (
                                 <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 rounded-lg border border-red-200">
                                   <AlertCircle className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
                                   <span className="text-xs font-semibold text-red-700">Освобождён</span>
+                                </div>
+                              ) : isDeadlineExpired ? (
+                                <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded-lg border border-gray-200" title={`Срок выполнения истёк ${assignment?.deadlineDate ? '(' + assignment.deadlineDate + ')' : ''}`}>
+                                  <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                                  <span className="text-xs font-semibold text-gray-500">Срок истёк</span>
                                 </div>
                               ) : attempt && !retakeAllowed ? (
                                 <div className="flex items-center gap-1.5 px-2 py-1 bg-success-50 rounded-lg border border-success-200">
@@ -1085,11 +1081,6 @@ const Diary: React.FC<DiaryProps> = ({
                                   className="flex items-center gap-1.5 px-2 py-1 bg-primary-50 rounded-lg border border-primary-200 hover:bg-primary-100 transition-colors">
                                   <Play className="w-3.5 h-3.5 text-primary-700" />
                                   <span className="text-xs font-bold text-primary-900">Тест</span>
-                                  {deadlineDate && daysUntilDeadline !== null && daysUntilDeadline >= 0 && (
-                                    <span className={`text-[10px] font-medium ml-1 ${daysUntilDeadline <= 1 ? 'text-red-600' : daysUntilDeadline <= 3 ? 'text-amber-600' : 'text-gray-500'}`}>
-                                      ({daysUntilDeadline === 0 ? 'сегодня' : daysUntilDeadline === 1 ? 'завтра' : `${daysUntilDeadline} дн.`})
-                                    </span>
-                                  )}
                                 </button>
                               )}
                             </div>
