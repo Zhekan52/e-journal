@@ -2606,6 +2606,7 @@ const Journal: React.FC = () => {
       {/* TOPICS TAB */}
       {journalTab === 'topics' && (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-300 text-xs text-gray-700">
@@ -2761,7 +2762,10 @@ const Journal: React.FC = () => {
                       }} className="w-4 h-4 rounded border-gray-300 text-primary-600" />
                     </td>
                     <td className="px-3 py-2">
-                      <select value={entry?.testId || ''} onChange={e => {
+                      <select 
+                        value={entry?.testId || ''} 
+                        title={testObj?.title || ''}
+                        onChange={e => {
                         const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
                         if (ent) {
                           const prevTestId = ent.testId;
@@ -2796,6 +2800,7 @@ const Journal: React.FC = () => {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
