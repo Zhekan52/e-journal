@@ -1115,26 +1115,62 @@ const AttendanceModal: React.FC<{
         {/* Выбор режима и типа */}
         {selectedStudentId && (
           <div className="px-6 py-4 border-b border-gray-100 space-y-4">
-            {/* Показываем текущую отметку если есть */}
+            {/* Показываем текущую отметку если есть - с быстрым изменением типа */}
             {currentAttendance && (
-              <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-200">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-amber-800">Текущая отметка:</span>
-                  {(() => {
-                    const attType = ATTENDANCE_TYPES.find(at => at.value === currentAttendance);
-                    return attType ? (
-                      <span className={`px-3 py-1 rounded-lg text-sm font-bold ${attType.bgColor} ${attType.color}`}>
-                        {attType.short} — {attType.label}
-                      </span>
-                    ) : null;
-                  })()}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-200">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-amber-800">Текущая отметка:</span>
+                    {(() => {
+                      const attType = ATTENDANCE_TYPES.find(at => at.value === currentAttendance);
+                      return attType ? (
+                        <span className={`px-3 py-1 rounded-lg text-sm font-bold ${attType.bgColor} ${attType.color}`}>
+                          {attType.short} — {attType.label}
+                        </span>
+                      ) : null;
+                    })()}
+                  </div>
+                  <button
+                    onClick={removeAttendance}
+                    className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-100 rounded-lg transition-colors flex items-center gap-1"
+                  >
+                    <Trash2 className="w-4 h-4" /> Удалить
+                  </button>
                 </div>
-                <button
-                  onClick={removeAttendance}
-                  className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-100 rounded-lg transition-colors flex items-center gap-1"
-                >
-                  <Trash2 className="w-4 h-4" /> Удалить
-                </button>
+                {/* Быстрое изменение типа */}
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Быстро изменить тип:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {ATTENDANCE_TYPES.map(type => (
+                      <button
+                        key={type.value}
+                        onClick={() => {
+                          setSelectedType(type.value);
+                          // Автоматически применить при клике
+                          if (wholeDay) {
+                            onSetAttendance(selectedStudentId!, date, type.value);
+                          } else if (selectedLessons.length > 0) {
+                            selectedLessons.forEach(lessonNumber => {
+                              const lesson = lessons.find(l => l.lessonNumber === lessonNumber);
+                              if (lesson) {
+                                onSetAttendanceForLesson(selectedStudentId!, date, lesson.subject, lessonNumber, type.value);
+                              }
+                            });
+                          }
+                        }}
+                        className={`
+                          px-3 py-2 rounded-lg text-sm font-bold transition-all
+                          ${currentAttendance === type.value 
+                            ? 'ring-2 ring-offset-2 ring-gray-400' 
+                            : 'hover:scale-105'
+                          } ${type.bgColor} ${type.color}
+                        `}
+                      >
+                        {type.short} — {type.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1159,7 +1195,7 @@ const AttendanceModal: React.FC<{
             {/* Выбор уроков (если не весь день) */}
             {!wholeDay && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Или выберите конкретные уроки:</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Выберите конкретные уроки:</label>
                 <div className="flex flex-wrap gap-2">
                   {lessons.map(lesson => {
                     const isSelected = selectedLessons.includes(lesson.lessonNumber);
@@ -1169,13 +1205,19 @@ const AttendanceModal: React.FC<{
                     return (
                       <button
                         key={lesson.lessonNumber}
-                        onClick={() => toggleLesson(lesson.lessonNumber)}
+                        onClick={() => {
+                          toggleLesson(lesson.lessonNumber);
+                          // Если урок уже отмечен - показать текущий тип
+                          if (!isSelected && currentType) {
+                            setSelectedType(currentType);
+                          }
+                        }}
                         className={`
                           px-3 py-2 rounded-lg text-sm font-medium transition-all
                           ${isSelected 
                             ? 'bg-primary-100 text-primary-700 ring-2 ring-primary-500' 
                             : currentType 
-                              ? `${attType?.bgColor} ${attType?.color}`
+                              ? `${attType?.bgColor} ${attType?.color} ring-1 ring-gray-300`
                               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                           }
                         `}
@@ -1216,33 +1258,37 @@ const AttendanceModal: React.FC<{
         )}
 
         {/* Кнопки действий */}
-        <div className="px-6 py-4 border-t border-gray-200 flex gap-3 justify-end bg-gray-50">
-          {selectedStudentId && selectedType && selectedLessons.length > 0 && (
+        <div className="px-6 py-4 border-t border-gray-200 flex gap-3 justify-between bg-gray-50">
+          <div>
+            {selectedStudentId && (
+              <button
+                onClick={removeAttendance}
+                className="px-5 py-2.5 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 transition-colors font-medium flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" /> Удалить отметку
+              </button>
+            )}
+          </div>
+          <div className="flex gap-3">
             <button
-              onClick={removeAttendance}
-              className="px-5 py-2.5 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 transition-colors font-medium flex items-center gap-2"
+              onClick={onClose}
+              className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
             >
-              <Trash2 className="w-4 h-4" /> Удалить отметку
+              Закрыть
             </button>
-          )}
-          <button
-            onClick={onClose}
-            className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
-          >
-            Отмена
-          </button>
-          <button
-            onClick={applyAttendance}
-            disabled={!selectedStudentId || !selectedType || (selectedLessons.length === 0 && !wholeDay)}
-            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/20 font-medium disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            <Save className="w-4 h-4" /> Применить
-          </button>
+            <button
+              onClick={applyAttendance}
+              disabled={!selectedStudentId || !selectedType || (selectedLessons.length === 0 && !wholeDay)}
+              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/20 font-medium disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" /> Применить
+            </button>
+          </div>
         </div>
 
-        {/* Список учеников с отметками */}
+        {/* Список учеников с отметками - кликабельный */}
         <div className="flex-1 overflow-auto p-6">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3">Отметки на {formatDate(date)}:</h4>
+          <h4 className="text-sm font-semibold text-gray-700 mb-3">Отметки на {formatDate(date)} (кликните для редактирования):</h4>
           <div className="space-y-2">
             {sortedStudents.map(student => {
               const studentAttendance = attendance.filter(a => a.studentId === student.id && a.date === date);
@@ -1254,8 +1300,27 @@ const AttendanceModal: React.FC<{
                 byType[a.type] = (byType[a.type] || 0) + 1;
               });
               
+              // Определяем основной тип (если все одинаковые)
+              const types = Object.keys(byType);
+              const isUniform = types.length === 1;
+              const mainType = isUniform ? types[0] : null;
+              
               return (
-                <div key={student.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                <button
+                  key={student.id}
+                  onClick={() => {
+                    setSelectedStudentId(student.id);
+                    setWholeDay(true);
+                    setSelectedLessons(lessons.map(l => l.lessonNumber));
+                    // Если все отметки одинаковые - выбираем этот тип
+                    if (mainType) {
+                      setSelectedType(mainType as AttendanceRecord['type']);
+                    } else {
+                      setSelectedType(null);
+                    }
+                  }}
+                  className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-primary-50 rounded-xl transition-colors border border-transparent hover:border-primary-200"
+                >
                   <span className="font-medium text-gray-900">{student.lastName} {student.firstName}</span>
                   <div className="flex gap-1">
                     {Object.entries(byType).map(([type, count]) => {
@@ -1267,10 +1332,13 @@ const AttendanceModal: React.FC<{
                       );
                     })}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
+          {sortedStudents.every(s => attendance.filter(a => a.studentId === s.id && a.date === date).length === 0) && (
+            <p className="text-center text-gray-500 py-4">Нет отметок о посещаемости</p>
+          )}
         </div>
       </div>
     </div>,
