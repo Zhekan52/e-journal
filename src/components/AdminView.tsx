@@ -2754,25 +2754,37 @@ const Journal: React.FC = () => {
                     <td className="px-3 py-2">
                       {lt?.type ? (
                         <div className="flex items-center gap-2">
-                          <select value={lt?.type || ''} onChange={e => {
-                            const newValue = e.target.value;
-                            setLessonTypes(prev => {
-                              const slotKey = `${sl.date}_${selectedSubject}_${sl.lessonNumber}`;
-                              if (newValue === '') {
-                                // Удалить тип урока
-                                return prev.filter(l => {
-                                  const lKey = `${l.date}_${l.subject}_${l.lessonNumber}`;
-                                  return lKey !== slotKey;
+                          {/* Анимированный бейдж типа урока */}
+                          <div className="relative group">
+                            <button
+                              className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-300 hover:scale-105 ${customLessonTypes.find(c => c.value === lt.type)?.color || 'bg-gray-100 text-gray-700'}`}
+                            >
+                              {customLessonTypes.find(c => c.value === lt.type)?.short || lt.type}
+                            </button>
+                            {/* Выпадающий список при клике */}
+                            <select 
+                              value={lt?.type || ''} 
+                              onChange={e => {
+                                const newValue = e.target.value;
+                                setLessonTypes(prev => {
+                                  const slotKey = `${sl.date}_${selectedSubject}_${sl.lessonNumber}`;
+                                  if (newValue === '') {
+                                    return prev.filter(l => {
+                                      const lKey = `${l.date}_${l.subject}_${l.lessonNumber}`;
+                                      return lKey !== slotKey;
+                                    });
+                                  }
+                                  const existing = prev.find(l => l.date === sl.date && l.subject === selectedSubject && (l.lessonNumber === sl.lessonNumber || (!l.lessonNumber && !sl.lessonNumber)));
+                                  if (existing) return prev.map(l => l.id === existing.id ? { ...l, type: newValue, lessonNumber: sl.lessonNumber } : l);
+                                  return [...prev, { id: `lt${Date.now()}`, date: sl.date, subject: selectedSubject, type: newValue, lessonNumber: sl.lessonNumber }];
                                 });
-                              }
-                              const existing = prev.find(l => l.date === sl.date && l.subject === selectedSubject && (l.lessonNumber === sl.lessonNumber || (!l.lessonNumber && !sl.lessonNumber)));
-                              if (existing) return prev.map(l => l.id === existing.id ? { ...l, type: newValue, lessonNumber: sl.lessonNumber } : l);
-                              return [...prev, { id: `lt${Date.now()}`, date: sl.date, subject: selectedSubject, type: newValue, lessonNumber: sl.lessonNumber }];
-                            });
-                          }} className={`flex-1 px-2 py-1.5 text-sm border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 ${customLessonTypes.find(c => c.value === lt.type)?.color || 'bg-gray-100 text-gray-700'}`}>
-                            <option value="">—</option>
-                            {customLessonTypes && Array.isArray(customLessonTypes) && customLessonTypes.map(clt => <option key={clt.id} value={clt.value}>{clt.label}</option>)}
-                          </select>
+                              }}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            >
+                              <option value="">—</option>
+                              {customLessonTypes && Array.isArray(customLessonTypes) && customLessonTypes.map(clt => <option key={clt.id} value={clt.value}>{clt.label}</option>)}
+                            </select>
+                          </div>
                           <button onClick={() => {
                             setLessonTypes(prev => {
                               const slotKey = `${sl.date}_${selectedSubject}_${sl.lessonNumber}`;
