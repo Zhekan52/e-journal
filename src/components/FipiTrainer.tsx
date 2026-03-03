@@ -3,7 +3,7 @@ import { useData } from '../context';
 import { SUBJECTS, getTodayString } from '../data';
 import type { FipiTask, FipiReward, FipiStudentProgress, FipiTaskAttempt, FipiNotification } from '../data';
 import {
-  Brain, Plus, Trash2, Edit2, Save, X, Award, Users, CheckCircle, XCircle, AlertCircle, Settings, Upload, UserPlus, RotateCcw
+  Brain, Plus, Trash2, Edit2, Save, X, Award, Users, CheckCircle, XCircle, AlertCircle, Settings, Upload, UserPlus, RotateCcw, Eye
 } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substring(2, 15);
@@ -467,21 +467,32 @@ export const FipiTrainer: React.FC = () => {
                         <td className="px-4 py-3 text-sm">{student?.lastName} {student?.firstName}</td>
                         <td className="px-4 py-3 text-sm">{attempt.subject}</td>
                         <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => handleOpenQuestionModal(task, attempt)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                              attempt.correct 
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                                : 'bg-red-100 text-red-700 hover:bg-red-200'
-                            }`}
-                            title="Нажмите для изменения / просмотра"
-                          >
-                            {attempt.correct ? (
-                              <><CheckCircle className="w-4 h-4" /> Верно</>
-                            ) : (
-                              <><XCircle className="w-4 h-4" /> Неверно</>
-                            )}
-                          </button>
+                          <div className="flex items-center justify-center gap-2">
+                            {/* Кнопка переключения результата */}
+                            <button
+                              onClick={() => handleToggleResult(attempt.id)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                attempt.correct 
+                                  ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                                  : 'bg-red-100 text-red-700 hover:bg-red-200'
+                              }`}
+                              title="Нажмите для изменения результата"
+                            >
+                              {attempt.correct ? (
+                                <><CheckCircle className="w-4 h-4" /> Верно</>
+                              ) : (
+                                <><XCircle className="w-4 h-4" /> Неверно</>
+                              )}
+                            </button>
+                            {/* Кнопка просмотра вопроса */}
+                            <button
+                              onClick={() => handleOpenQuestionModal(task, attempt)}
+                              className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="Посмотреть вопрос"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
