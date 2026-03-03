@@ -54,6 +54,19 @@ export interface Student {
   lastName: string;
   username: string;
   password: string;
+  enrollmentDate?: string; // YYYY-MM-DD - дата зачисления в школу
+}
+
+// Новый интерфейс для отложенного домашнего задания
+export interface PendingHomework {
+  id: string;
+  subject: string;
+  homework: string;
+  attachment?: DiaryEntryAttachment;
+  createdAt: string; // Когда ДЗ было создано
+  targetDate?: string; // Дата, на которую планировалось ДЗ (YYYY-MM-DD)
+  targetLessonNumber?: number; // Номер урока
+  assignedLessonId?: string; // ID урока, к которому привязано ДЗ (когда он появится)
 }
 
 export interface TestQuestion {
@@ -214,19 +227,6 @@ export interface FipiNotification {
   pointsRequired: number;
   createdAt: string;
   acknowledged: boolean;
-}
-
-// Ожидающее домашнее задание (назначено на будущий урок)
-export interface PendingHomework {
-  id: string;
-  subject: string;
-  homework: string;
-  topic?: string;
-  createdAt: string; // Когда было создано ДЗ
-  sourceDate: string; // Дата урока, с которого было назначено ДЗ
-  sourceLessonNumber: number; // Номер урока, с которого было назначено ДЗ
-  attachedToDate?: string; // Дата, к которой привязано (когда урок создан в расписании)
-  attachedToLessonNumber?: number; // Номер урока, к которому привязано
 }
 
 // Настройки поощрений по умолчанию

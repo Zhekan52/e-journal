@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+  import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
@@ -275,7 +275,7 @@ export const StudentView: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 sticky top-0 z-30">
+      <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
@@ -328,6 +328,7 @@ export const StudentView: React.FC = () => {
             journalColumns={journalColumns}
             testAssignments={testAssignments}
             attendance={attendance}
+            students={students}
           />
         )}
         {activeTab === 'statistics' && <Statistics studentId={studentId} grades={grades} lessons={lessons} students={students} />}
@@ -356,21 +357,21 @@ const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons
       <FipiWidget />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
           <div className="text-sm font-medium text-gray-500 mb-2">Средний балл</div>
           <div className="text-4xl font-bold text-blue-600">{avgGrade}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
           <div className="text-sm font-medium text-gray-500 mb-2">Всего оценок</div>
           <div className="text-4xl font-bold text-gray-900">{myGrades.length}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
           <div className="text-sm font-medium text-gray-500 mb-2">Уроков сегодня</div>
           <div className="text-4xl font-bold text-gray-900">{todayLessons.length}</div>
         </div>
       </div>
       {todayLessons.length > 0 && (
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 p-6 shadow-lg">
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
           <h3 className="font-semibold text-gray-900 mb-4">Расписание на сегодня</h3>
           <div className="space-y-3">
             {todayLessons.map((l: any) => (
@@ -555,14 +556,31 @@ interface DiaryProps {
   testRetakes: any[]; setTestRetakes: any; grades: any[]; setGrades: any; journalColumns: any[];
   testAssignments: any[];
   attendance: any[];
+  students: any[];
 }
 
 const Diary: React.FC<DiaryProps> = ({
   studentId, lessons, diaryEntries, myGrades, tests,
-  testAttempts, setTestAttempts, testRetakes, setTestRetakes, grades: _grades, setGrades, journalColumns, testAssignments, attendance
+  testAttempts, setTestAttempts, testRetakes, setTestRetakes, grades: _grades, setGrades, journalColumns, testAssignments, attendance,
+  students
 }) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const weekDates = getWeekDates(currentDate);
+    const { students } = useData();
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const weekDates = getWeekDates(currentDate);
+    
+    // Get enrollment date for filtering
+    const student = students.find(s => s.id === studentId);
+    const enrollmentDate = student?.enrollmentDate;
+
+  // Получаем дату зачисления ученика
+  const student = students.find((s: any) => s.id === studentId);
+  const enrollmentDate = student?.enrollmentDate;
+
+  // Фильтруем уроки, показывая только те, что были после даты зачисления
+  const filteredLessons = lessons.filter((l: any) => {
+    if (!enrollmentDate) return true;
+    return l.date >= enrollmentDate;
+  });
 
   const [takingTest, setTakingTest] = useState<{ test: any; entry: any; variantId?: string } | null>(null);
   const [showConfirm, setShowConfirm] = useState<{ test: any; entry: any; variantId?: string } | null>(null);

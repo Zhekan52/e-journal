@@ -152,7 +152,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
           <button onClick={goToday} className="px-5 py-2.5 text-sm font-medium bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/20">
             Сегодня
           </button>
-          <div className="flex items-center bg-white/80 backdrop-blur-[8px] rounded-xl overflow-hidden border border-white/50">
+          <div className="flex items-center bg-white/80 backdrop-blur rounded-xl overflow-hidden border border-white/50">
             <button onClick={() => viewMode === 'week' ? navigateWeek(-1) : viewMode === 'month' ? navigateMonth(-1) : navigateDay(-1)}
               className="p-2.5 hover:bg-gray-100 transition-colors">
               <ChevronLeft className="w-5 h-5 text-gray-600" />
@@ -198,7 +198,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
 
       {/* Week View */}
       {viewMode === 'week' && (
-        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 overflow-hidden shadow-lg">
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 overflow-hidden shadow-lg">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px]">
               <thead>
@@ -312,7 +312,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
             const dayIdx = dow === 0 ? 6 : dow - 1;
             const dayName = DAY_NAMES[dayIdx];
             return (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[4px]" onClick={() => setPopupDay(null)}>
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm" onClick={() => setPopupDay(null)}>
                 <div className="glass-dark shadow-soft-xl w-full max-w-md mx-4 overflow-hidden animate-scaleIn" onClick={e => e.stopPropagation()}>
                   <div className="px-6 py-5 bg-gradient-to-r from-primary-500 to-primary-600 text-white">
                     <div className="flex items-center justify-between">
@@ -427,8 +427,8 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
 
       {/* Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-[4px] flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white/95 backdrop-blur-[12px] rounded-2xl border border-white/50 shadow-2xl w-full max-w-md p-7 space-y-6" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
+          <div className="bg-white/95 backdrop-blur-xl rounded-2xl border border-white/50 shadow-2xl w-full max-w-md p-7 space-y-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold text-gray-900">
                 {editingLesson ? 'Редактировать урок' : 'Добавить урок'}

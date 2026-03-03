@@ -33,9 +33,9 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/20 backdrop-blur-sm transition-all">
       <div 
         ref={modalRef}
-        className="bg-white rounded-2xl border border-gray-200 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+        className="bg-white/95 backdrop-blur-xl rounded-2xl border border-white/50 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
       >
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50 shrink-0">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           <button 
             onClick={onClose}
@@ -44,7 +44,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="p-6 overflow-y-auto min-h-0">
+        <div className="p-6 overflow-y-auto">
           {children}
         </div>
       </div>

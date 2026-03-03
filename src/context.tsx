@@ -276,62 +276,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [fipiAttempts, setFipiAttempts, l16] = useFirestoreCollection<FipiTaskAttempt>('fipiAttempts');
   const [fipiNotifications, setFipiNotifications, l17] = useFirestoreCollection<FipiNotification>('fipiNotifications');
 
-  // Pending homework (homework assigned for future lessons)
+  // Pending homework for future lessons
   const [pendingHomework, setPendingHomework, l18] = useFirestoreCollection<PendingHomework>('pendingHomework');
 
   const loading = !(l1 && l2 && l3 && l4 && l5 && l6 && l7 && l8 && l9 && l10 && l11 && l12 && l13 && l14 && l15 && l16 && l17 && l18);
-
-  // Auto-bind pending homework when new lessons are created
-  useEffect(() => {
-    if (!lessons || !pendingHomework || !diaryEntries || !setDiaryEntries) return;
-
-    // Find pending homework that hasn't been attached yet
-    const unattached = pendingHomework.filter(ph => !ph.attachedToDate);
-    if (unattached.length === 0) return;
-
-    // For each pending homework, find the earliest future lesson for the same subject
-    for (const ph of unattached) {
-      const futureLessons = lessons
-        .filter(l => l.subject === ph.subject && l.date > ph.sourceDate)
-        .sort((a, b) => a.date.localeCompare(b.date) || a.lessonNumber - b.lessonNumber);
-
-      if (futureLessons.length > 0) {
-        const nextLesson = futureLessons[0];
-        
-        // Check if diary entry already exists for this lesson
-        const existingEntry = diaryEntries.find(
-          e => e.date === nextLesson.date && e.subject === nextLesson.subject && e.lessonNumber === nextLesson.lessonNumber
-        );
-
-        if (existingEntry) {
-          // Update existing entry with homework from pending
-          setDiaryEntries(prev => prev.map(de => 
-            de.id === existingEntry.id 
-              ? { ...de, homework: ph.homework, topic: ph.topic || de.topic }
-              : de
-          ));
-        } else {
-          // Create new diary entry with homework from pending
-          const newEntry: DiaryEntry = {
-            id: `de${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
-            date: nextLesson.date,
-            lessonNumber: nextLesson.lessonNumber,
-            subject: nextLesson.subject,
-            topic: ph.topic || '',
-            homework: ph.homework
-          };
-          setDiaryEntries(prev => [...(prev || []), newEntry]);
-        }
-
-        // Mark pending homework as attached
-        setPendingHomework(prev => prev.map(p => 
-          p.id === ph.id 
-            ? { ...p, attachedToDate: nextLesson.date, attachedToLessonNumber: nextLesson.lessonNumber }
-            : p
-        ));
-      }
-    }
-  }, [lessons, pendingHomework, diaryEntries, setDiaryEntries, setPendingHomework]);
 
   return (
     <DataContext.Provider value={{
@@ -342,8 +290,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       testRetakes, setTestRetakes, testAssignments, setTestAssignments,
       fipiTasks, setFipiTasks, fipiRewards, setFipiRewards,
       fipiProgress, setFipiProgress, fipiAttempts, setFipiAttempts,
-      fipiNotifications, setFipiNotifications, 
-      pendingHomework, setPendingHomework, loading,
+      fipiNotifications, setFipiNotifications, pendingHomework, setPendingHomework, loading,
     }}>
       {children}
     </DataContext.Provider>
