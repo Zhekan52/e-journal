@@ -493,7 +493,7 @@ export const FipiWidget: React.FC = () => {
           </div>
 
           <div className="mb-4">
-            <p className="text-lg font-medium text-gray-900">{currentTask.question}</p>
+            <p className="text-lg font-medium text-gray-900 whitespace-pre-wrap">{currentTask.question}</p>
             {currentTask.image && (
               <button
                 onClick={() => setShowImageModal(currentTask.image!)}
@@ -604,7 +604,7 @@ export const FipiWidget: React.FC = () => {
                     <p className="text-sm text-gray-600">
                       Правильный ответ: {
                         currentTask.type === 'text' 
-                          ? currentTask.correctAnswer
+                          ? <span className="whitespace-pre-wrap">{currentTask.correctAnswer as string}</span>
                           : currentTask.type === 'single'
                             ? currentTask.options?.find(o => o.id === currentTask.correctOptionId)?.text
                             : currentTask.options?.filter(o => (currentTask.correctAnswer as string[]).includes(o.id)).map(o => o.text).join(', ')
