@@ -216,6 +216,19 @@ export interface FipiNotification {
   acknowledged: boolean;
 }
 
+// Ожидающее домашнее задание (назначено на будущий урок)
+export interface PendingHomework {
+  id: string;
+  subject: string;
+  homework: string;
+  topic?: string;
+  createdAt: string; // Когда было создано ДЗ
+  sourceDate: string; // Дата урока, с которого было назначено ДЗ
+  sourceLessonNumber: number; // Номер урока, с которого было назначено ДЗ
+  attachedToDate?: string; // Дата, к которой привязано (когда урок создан в расписании)
+  attachedToLessonNumber?: number; // Номер урока, к которому привязано
+}
+
 // Настройки поощрений по умолчанию
 export const defaultFipiRewards: FipiReward[] = [
   { id: 'r1', subject: 'Математика', pointsRequired: 10, grade: 5 },
