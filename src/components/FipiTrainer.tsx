@@ -3,7 +3,7 @@ import { useData } from '../context';
 import { SUBJECTS, getTodayString } from '../data';
 import type { FipiTask, FipiReward, FipiStudentProgress, FipiTaskAttempt, FipiNotification } from '../data';
 import {
-  Brain, Plus, Trash2, Edit2, Save, X, Award, Users, CheckCircle, XCircle, AlertCircle, Settings, Upload, UserPlus
+  Brain, Plus, Trash2, Edit2, Save, X, Award, Users, CheckCircle, XCircle, AlertCircle, Settings, Upload, UserPlus, Eye, RotateCcw
 } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substring(2, 15);
@@ -17,6 +17,13 @@ export const FipiTrainer: React.FC = () => {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [editingTask, setEditingTask] = useState<FipiTask | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
+
+  // Фильтры для архива ответов
+  const [logsFilterDate, setLogsFilterDate] = useState<string>('');
+  const [logsFilterStudent, setLogsFilterStudent] = useState<string>('');
+  const [logsFilterResult, setLogsFilterResult] = useState<string>('');
+  const [showQuestionModal, setShowQuestionModal] = useState(false);
+  const [selectedQuestion, setSelectedQuestion] = useState<FipiTask | null>(null);
 
   // Модальное окно для выставления оценки
   const [showGradeModal, setShowGradeModal] = useState(false);
@@ -61,6 +68,33 @@ export const FipiTrainer: React.FC = () => {
     const attempt = fipiAttempts.find(a => a.id === attemptId);
     if (!attempt) return;
     setFipiAttempts(fipiAttempts.map(a => a.id === attemptId ? { ...a, manuallyApproved: true, correct: true, pointsEarned: 1 } : a));
+  };
+
+  // Переключение результата (Верно/Неверно) - ручная корректировка
+  const handleToggleResult = (attemptId: string) => {
+    const attempt = fipiAttempts.find(a => a.id === attemptId);
+    if (!attempt) return;
+    const newCorrect = !attempt.correct;
+    setFipiAttempts(fipiAttempts.map(a => a.id === attemptId ? { 
+      ...a, 
+      correct: newCorrect, 
+      manuallyApproved: newCorrect ? true : false,
+      pointsEarned: newCorrect ? 1 : 0 
+    } : a));
+  };
+
+  // Форматирование времени выполнения в ЧЧ:ММ
+  const formatTimeSpent = (seconds?: number): string => {
+    if (!seconds) return '—';
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  };
+
+  // Открыть модальное окно просмотра вопроса
+  const handleOpenQuestionModal = (task: FipiTask) => {
+    setSelectedQuestion(task);
+    setShowQuestionModal(true);
   };
 
   // Открыть модальное окно для выставления оценки
@@ -343,34 +377,134 @@ export const FipiTrainer: React.FC = () => {
       )}
 
       {activeTab === 'logs' && (
-        <div className="bg-white/80 rounded-2xl border shadow-lg overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50"><tr>
-              <th className="px-4 py-3 text-left">Дата</th><th className="px-4 py-3 text-left">Ученик</th><th className="px-4 py-3 text-left">Предмет</th>
-              <th className="px-4 py-3 text-left">Вопрос</th><th className="px-4 py-3 text-center">Результат</th><th className="px-4 py-3 text-center">Действия</th>
-            </tr></thead>
-            <tbody className="divide-y">
-              {fipiAttempts.length === 0 ? <tr><td colSpan={6} className="p-8 text-center text-gray-500">Нет записей</td></tr> :
-                fipiAttempts.map(attempt => {
-                  const task = fipiTasks.find(t => t.id === attempt.taskId);
-                  const student = students.find(s => s.id === attempt.studentId);
-                  return (
-                    <tr key={attempt.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm">{attempt.date}</td>
-                      <td className="px-4 py-3 text-sm">{student?.lastName} {student?.firstName}</td>
-                      <td className="px-4 py-3 text-sm">{attempt.subject}</td>
-                      <td className="px-4 py-3 text-sm max-w-xs truncate">{task?.question}</td>
-                      <td className="px-4 py-3 text-center">
-                        {attempt.correct ? <span className="text-green-600"><CheckCircle className="w-4 h-4 inline" /> Верно</span> : <span className="text-red-600"><XCircle className="w-4 h-4 inline" /> Неверно</span>}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {!attempt.correct && !attempt.manuallyApproved && <button onClick={() => handleManualApprove(attempt.id)} className="px-3 py-1 bg-green-100 text-green-700 rounded text-xs">Засчитать</button>}
-                      </td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
+        <div className="space-y-4">
+          {/* Фильтры */}
+          <div className="bg-white/80 rounded-2xl border p-4 shadow-lg">
+            <div className="flex flex-wrap gap-4 items-end">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Дата</label>
+                <input
+                  type="date"
+                  value={logsFilterDate}
+                  onChange={(e) => setLogsFilterDate(e.target.value)}
+                  className="px-3 py-2 border border-gray-200 rounded-xl text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ученик</label>
+                <select
+                  value={logsFilterStudent}
+                  onChange={(e) => setLogsFilterStudent(e.target.value)}
+                  className="px-3 py-2 border border-gray-200 rounded-xl text-sm min-w-[180px]"
+                >
+                  <option value="">Все ученики</option>
+                  {students.map(s => (
+                    <option key={s.id} value={s.id}>{s.lastName} {s.firstName}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Результат</label>
+                <select
+                  value={logsFilterResult}
+                  onChange={(e) => setLogsFilterResult(e.target.value)}
+                  className="px-3 py-2 border border-gray-200 rounded-xl text-sm"
+                >
+                  <option value="">Все</option>
+                  <option value="correct">Верно</option>
+                  <option value="incorrect">Неверно</option>
+                </select>
+              </div>
+              {(logsFilterDate || logsFilterStudent || logsFilterResult) && (
+                <button
+                  onClick={() => { setLogsFilterDate(''); setLogsFilterStudent(''); setLogsFilterResult(''); }}
+                  className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                >
+                  <RotateCcw className="w-4 h-4" /> Сбросить
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Таблица */}
+          <div className="bg-white/80 rounded-2xl border shadow-lg overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50"><tr>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Дата</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Ученик</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Предмет</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Вопрос</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-600">Время</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-600">Результат</th>
+              </tr></thead>
+              <tbody className="divide-y">
+                {(() => {
+                  // Фильтрация
+                  let filtered = fipiAttempts.filter(attempt => {
+                    if (logsFilterDate && attempt.date !== logsFilterDate) return false;
+                    if (logsFilterStudent && attempt.studentId !== logsFilterStudent) return false;
+                    if (logsFilterResult === 'correct' && !attempt.correct) return false;
+                    if (logsFilterResult === 'incorrect' && attempt.correct) return false;
+                    return true;
+                  });
+                  
+                  // Сортировка по дате убыванию (свежие в начале)
+                  filtered = filtered.sort((a, b) => b.date.localeCompare(a.date));
+                  
+                  if (filtered.length === 0) {
+                    return <tr><td colSpan={6} className="p-8 text-center text-gray-500">Нет записей</td></tr>;
+                  }
+                  
+                  return filtered.map(attempt => {
+                    const task = fipiTasks.find(t => t.id === attempt.taskId);
+                    const student = students.find(s => s.id === attempt.studentId);
+                    // Первая строка вопроса (для отображения в таблице - удаляем)
+                    const questionPreview = task?.question.split('\n')[0] || '';
+                    
+                    return (
+                      <tr key={attempt.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm">{attempt.date}</td>
+                        <td className="px-4 py-3 text-sm">{student?.lastName} {student?.firstName}</td>
+                        <td className="px-4 py-3 text-sm">{attempt.subject}</td>
+                        <td className="px-4 py-3 text-sm max-w-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="truncate flex-1">{questionPreview}</span>
+                            {task && (
+                              <button
+                                onClick={() => handleOpenQuestionModal(task)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg flex-shrink-0"
+                                title="Просмотреть вопрос"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-center">{formatTimeSpent(attempt.timeSpent)}</td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => handleToggleResult(attempt.id)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              attempt.correct 
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                                : 'bg-red-100 text-red-700 hover:bg-red-200'
+                            }`}
+                            title="Нажмите для изменения"
+                          >
+                            {attempt.correct ? (
+                              <><CheckCircle className="w-4 h-4" /> Верно</>
+                            ) : (
+                              <><XCircle className="w-4 h-4" /> Неверно</>
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -435,6 +569,99 @@ export const FipiTrainer: React.FC = () => {
                 className="flex-1 px-4 py-2 bg-green-600 text-white rounded-xl font-medium"
               >
                 Выставить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно просмотра вопроса */}
+      {showQuestionModal && selectedQuestion && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-bold text-gray-900">Полное содержание вопроса</h3>
+                <span className={`px-2 py-1 rounded text-xs ${
+                  selectedQuestion.subject === 'Математика' ? 'bg-blue-100' : 
+                  selectedQuestion.subject === 'Русский язык' ? 'bg-green-100' : 'bg-purple-100'
+                }`}>{selectedQuestion.subject}</span>
+                <span className="px-2 py-1 rounded text-xs bg-gray-100">
+                  {selectedQuestion.type === 'text' ? 'Краткий ответ' : 
+                   selectedQuestion.type === 'single' ? 'Одиночный выбор' : 'Множественный выбор'}
+                </span>
+              </div>
+              <button onClick={() => { setShowQuestionModal(false); setSelectedQuestion(null); }} className="p-2 hover:bg-gray-100 rounded-xl">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="p-5 space-y-4">
+              {/* Текст вопроса (полный, без ограничений) */}
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="text-gray-900 whitespace-pre-wrap">{selectedQuestion.question}</p>
+              </div>
+              
+              {/* Изображение, если есть */}
+              {selectedQuestion.image && (
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <img src={selectedQuestion.image} alt="Изображение к вопросу" className="max-w-full h-auto rounded-lg border" />
+                </div>
+              )}
+              
+              {/* Правильный ответ */}
+              <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+                <p className="font-medium text-green-800 mb-2">Правильный ответ:</p>
+                {selectedQuestion.type === 'text' && (
+                  <p className="text-green-700 font-bold">{selectedQuestion.correctAnswer as string}</p>
+                )}
+                {selectedQuestion.type === 'single' && selectedQuestion.options && (
+                  <p className="text-green-700 font-bold">
+                    {selectedQuestion.options.find(o => o.id === selectedQuestion.correctOptionId)?.text}
+                  </p>
+                )}
+                {selectedQuestion.type === 'multiple' && selectedQuestion.options && Array.isArray(selectedQuestion.correctAnswer) && (
+                  <p className="text-green-700 font-bold">
+                    {selectedQuestion.options.filter(o => selectedQuestion.correctAnswer.includes(o.id)).map(o => o.text).join(', ')}
+                  </p>
+                )}
+              </div>
+              
+              {/* Варианты ответов (если есть) */}
+              {selectedQuestion.options && selectedQuestion.options.length > 0 && (
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="font-medium text-gray-700 mb-2">Варианты ответа:</p>
+                  <div className="space-y-2">
+                    {selectedQuestion.options.map((option, idx) => {
+                      const isCorrect = selectedQuestion.type === 'single' 
+                        ? option.id === selectedQuestion.correctOptionId
+                        : Array.isArray(selectedQuestion.correctAnswer) && selectedQuestion.correctAnswer.includes(option.id);
+                      return (
+                        <div 
+                          key={option.id} 
+                          className={`px-3 py-2 rounded-lg text-sm ${
+                            isCorrect 
+                              ? 'bg-green-100 text-green-700 font-medium border border-green-200' 
+                              : 'bg-white text-gray-600 border border-gray-200'
+                          }`}
+                        >
+                          <span className="font-medium mr-1">{String.fromCharCode(65 + idx)}.</span>
+                          {option.text}
+                          {isCorrect && <CheckCircle className="inline w-3.5 h-3.5 ml-1" />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-5 border-t border-gray-100 bg-gray-50">
+              <button
+                onClick={() => { setShowQuestionModal(false); setSelectedQuestion(null); }}
+                className="w-full px-5 py-2.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors font-medium"
+              >
+                Закрыть
               </button>
             </div>
           </div>

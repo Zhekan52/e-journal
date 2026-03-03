@@ -200,6 +200,7 @@ export interface FipiTaskAttempt {
   correct: boolean;
   pointsEarned: number; // 1 если верно, 0 если нет
   manuallyApproved?: boolean; // Если админ вручную засчитал
+  timeSpent?: number; // Время выполнения в секундах
 }
 
 export interface FipiNotification {
