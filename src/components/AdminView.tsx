@@ -2168,4 +2168,14 @@ const Journal: React.FC = () => {
                     if (testCol && setGrades) {
                       setGrades(prev => prev.filter(g => !(g.date === lessonPageDate && g.subject === selectedSubject && g.columnId === testCol.id)));
                     }
-                    setJournalColumns(
+                    setJournalColumns(prev => prev.filter(c => !(c.date === lessonPageDate && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === lessonPageLessonNum || (!c.lessonNumber && lessonPageLessonNum === 0)))));
+                  }
+                }}
+              />
+            </div>
+          )}
+        </div>
+      );
+    };
+  };
+  
