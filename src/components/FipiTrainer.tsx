@@ -3,11 +3,11 @@ import { useData } from '../context';
 import { SUBJECTS, getTodayString } from '../data';
 import type { FipiTask, FipiReward, FipiStudentProgress, FipiTaskAttempt, FipiNotification } from '../data';
 import {
-  Brain, Plus, Trash2, Edit2, Save, X, Award, Users, CheckCircle, XCircle, AlertCircle, Settings, Upload, UserPlus, RotateCcw, Eye, ChevronLeft, ChevronRight
+  Brain, Plus, Trash2, Edit2, Save, X, Award, Users, CheckCircle, XCircle, Settings, Upload, RotateCcw, Eye, ChevronLeft, ChevronRight, Bell
 } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substring(2, 15);
-type FipiTab = 'tasks' | 'rewards' | 'students' | 'logs' | 'notifications' | 'assign';
+type FipiTab = 'tasks' | 'rewards' | 'students' | 'logs';
 
 export const FipiTrainer: React.FC = () => {
   const { fipiTasks, setFipiTasks, fipiRewards, setFipiRewards, fipiProgress, setFipiProgress,
@@ -33,6 +33,9 @@ export const FipiTrainer: React.FC = () => {
   const [showGradeModal, setShowGradeModal] = useState(false);
   const [pendingGradeNotification, setPendingGradeNotification] = useState<FipiNotification | null>(null);
   const [gradeDate, setGradeDate] = useState<string>('');
+
+  // Панель уведомлений
+  const [showNotificationsPanel, setShowNotificationsPanel] = useState(false);
 
   const filteredTasks = useMemo(() => selectedSubject === 'all' ? fipiTasks : fipiTasks.filter(t => t.subject === selectedSubject), [fipiTasks, selectedSubject]);
 
@@ -166,16 +169,30 @@ export const FipiTrainer: React.FC = () => {
     { id: 'tasks', label: 'Банк заданий', icon: <Brain className="w-5 h-5" /> },
     { id: 'rewards', label: 'Поощрения', icon: <Award className="w-5 h-5" /> },
     { id: 'students', label: 'Ученики', icon: <Users className="w-5 h-5" /> },
-    { id: 'assign', label: 'Назначить', icon: <UserPlus className="w-5 h-5" /> },
     { id: 'logs', label: 'Архив ответов', icon: <Award className="w-5 h-5" /> },
-    { id: 'notifications', label: 'Уведомления', icon: <AlertCircle className="w-5 h-5" /> },
   ];
+
+  const unacknowledgedCount = fipiNotifications.filter(n => !n.acknowledged).length;
 
   return (
     <div className="animate-fadeIn space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">Ежедневный тренажёр ФИПИ</h2>
-        <span className="text-sm text-gray-500">Всего заданий: {fipiTasks.length}</span>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-500">Всего заданий: {fipiTasks.length}</span>
+          {/* Иконка уведомлений */}
+          <button 
+            onClick={() => setShowNotificationsPanel(!showNotificationsPanel)}
+            className="relative p-2 hover:bg-gray-100 rounded-xl transition-colors"
+          >
+            <Bell className="w-6 h-6 text-gray-600" />
+            {unacknowledgedCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-medium">
+                {unacknowledgedCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-2 border-b border-gray-200 pb-1">
@@ -465,15 +482,6 @@ export const FipiTrainer: React.FC = () => {
         </div>
       )}
 
-      {activeTab === 'assign' && (
-        <AssignTasksToStudent 
-          students={students} 
-          fipiTasks={fipiTasks}
-          fipiProgress={fipiProgress}
-          setFipiProgress={setFipiProgress}
-        />
-      )}
-
       {activeTab === 'logs' && (
         <div className="space-y-4">
           {/* Фильтры */}
@@ -600,26 +608,52 @@ export const FipiTrainer: React.FC = () => {
         </div>
       )}
 
-      {activeTab === 'notifications' && (
-        <div className="space-y-4">
-          {fipiNotifications.filter(n => !n.acknowledged).length === 0 ? (
-            <div className="text-center py-12 text-gray-500">Нет уведомлений</div>
-          ) : fipiNotifications.filter(n => !n.acknowledged).map(notif => (
-            <div key={notif.id} className="bg-white/80 rounded-2xl border border-amber-200 p-6 shadow-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Award className="w-8 h-8 text-amber-500" />
-                  <div>
-                    <p className="font-medium">Ученик <b>{notif.studentName}</b> набрал {notif.pointsRequired} баллов по <b>{notif.subject}</b> для оценки <b className="text-green-600">{notif.grade}</b></p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleOpenGradeModal(notif)} className="px-4 py-2 bg-green-600 text-white rounded">Выставить</button>
-                  <button onClick={() => handleAcknowledgeNotification(notif.id)} className="px-4 py-2 bg-gray-100 rounded">Закрыть</button>
-                </div>
-              </div>
+      {/* Панель уведомлений */}
+      {showNotificationsPanel && (
+        <div className="fixed inset-0 z-40" onClick={() => setShowNotificationsPanel(false)}>
+          <div className="absolute top-20 right-6 w-96 bg-white rounded-2xl shadow-2xl border overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+              <h3 className="font-bold text-gray-900">Уведомления</h3>
+              <button onClick={() => setShowNotificationsPanel(false)} className="p-1 hover:bg-gray-200 rounded">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
             </div>
-          ))}
+            <div className="max-h-96 overflow-y-auto">
+              {unacknowledgedCount === 0 ? (
+                <div className="p-8 text-center text-gray-500">Нет уведомлений</div>
+              ) : (
+                <div className="divide-y">
+                  {fipiNotifications.filter(n => !n.acknowledged).map(notif => (
+                    <div key={notif.id} className="p-4 hover:bg-gray-50">
+                      <div className="flex items-start gap-3">
+                        <Award className="w-6 h-6 text-amber-500 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900">
+                            Ученик <b>{notif.studentName}</b> набрал {notif.pointsRequired} баллов по <b>{notif.subject}</b>
+                          </p>
+                          <p className="text-lg font-bold text-green-600 mt-1">Оценка: {notif.grade}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <button 
+                          onClick={() => handleOpenGradeModal(notif)} 
+                          className="flex-1 px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
+                        >
+                          Выставить
+                        </button>
+                        <button 
+                          onClick={() => handleAcknowledgeNotification(notif.id)} 
+                          className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200"
+                        >
+                          Закрыть
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
