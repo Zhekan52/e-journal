@@ -8,7 +8,7 @@ import 'katex/dist/katex.min.css';
 import {
   BookOpen, Calendar, ClipboardList, BarChart3, LogOut, ChevronLeft, ChevronRight,
   FileText, Clock, CheckCircle, AlertCircle, Play, ArrowLeft, ArrowRight, Download,
-  UserCheck
+  UserCheck, Bell, X, Award
 } from 'lucide-react';
 import { SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, DAY_NAMES, getWeekDates, formatDate, ATTENDANCE_TYPES, getTodayString, getTodayDate } from '../data';
 
@@ -257,8 +257,9 @@ const TopicCell: React.FC<TopicCellProps> = ({ topic, maxLines = 2 }) => {
 
 export const StudentView: React.FC = () => {
   const { user, logout } = useAuth();
-  const { lessons, grades, diaryEntries, tests, testAttempts, setTestAttempts, testRetakes, setTestRetakes, setGrades, journalColumns, students, testAssignments, attendance } = useData();
+  const { lessons, grades, diaryEntries, tests, testAttempts, setTestAttempts, testRetakes, setTestRetakes, setGrades, journalColumns, students, testAssignments, attendance, fipiNotifications, setFipiNotifications } = useData();
   const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const studentId = user?.id || '';
   // Используем все оценки ученика (без фильтрации по урокам), чтобы совпадало с расчётами админа
@@ -294,6 +295,18 @@ export const StudentView: React.FC = () => {
               ))}
             </nav>
             <div className="flex items-center gap-3">
+              {/* Кнопка уведомлений */}
+              <button 
+                onClick={() => setShowNotifications(true)} 
+                className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Bell className="w-5 h-5 text-gray-600" />
+                {fipiNotifications.filter(n => n.studentId === user?.id && !n.acknowledged).length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {fipiNotifications.filter(n => n.studentId === user?.id && !n.acknowledged).length}
+                  </span>
+                )}
+              </button>
               <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-gray-100/50 rounded-xl">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
                   {user?.name?.charAt(0)}
@@ -333,6 +346,48 @@ export const StudentView: React.FC = () => {
         {activeTab === 'statistics' && <Statistics studentId={studentId} grades={grades} lessons={lessons} students={students} />}
         {activeTab === 'attendance' && <Attendance studentId={studentId} attendance={attendance} />}
       </main>
+
+      {/* Notifications Modal */}
+      {showNotifications && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={() => setShowNotifications(false)}>
+          <div className="bg-white/95 backdrop-blur-xl rounded-2xl border border-white/50 shadow-2xl w-full max-w-md p-7 space-y-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-gray-900">Уведомления</h3>
+              <button onClick={() => setShowNotifications(false)} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              {fipiNotifications.filter(n => n.studentId === user?.id).length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <Bell className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>Нет уведомлений</p>
+                </div>
+              ) : (
+                fipiNotifications.filter(n => n.studentId === user?.id).map(notif => (
+                  <div key={notif.id} className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                    <Award className="w-8 h-8 text-amber-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">
+                        Оценка {notif.grade} по {notif.subject}
+                      </p>
+                      <p className="text-sm text-gray-500">Набрано {notif.pointsRequired} баллов</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            <button 
+              onClick={() => setShowNotifications(false)}
+              className="w-full px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+            >
+              Закрыть
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -4,10 +4,89 @@ import { SUBJECTS, getTodayString, getTodayDate } from '../data';
 import type { FipiTask, FipiStudentProgress, FipiTaskAttempt, FipiReward, FipiNotification } from '../data';
 import {
   Brain, CheckCircle, XCircle, ChevronRight, Award, Clock, RefreshCw,
-  Image as ImageIcon, Eye, X, Star, Trophy, Target, Lock
+  Image as ImageIcon, Eye, X, Star, Trophy, Target, Lock, Bell
 } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substring(2, 15);
+
+// Функция для воспроизведения звукового сигнала
+const playSuccessSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Настройка тона и длительности для "победного" звука
+    oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+    oscillator.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+    
+    // Второй тон (E5)
+    setTimeout(() => {
+      const osc2 = audioContext.createOscillator();
+      const gain2 = audioContext.createGain();
+      osc2.connect(gain2);
+      gain2.connect(audioContext.destination);
+      osc2.frequency.setValueAtTime(659.25, audioContext.currentTime);
+      osc2.type = 'sine';
+      gain2.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      osc2.start(audioContext.currentTime);
+      osc2.stop(audioContext.currentTime + 0.5);
+    }, 150);
+    
+    // Третий тон (G5)
+    setTimeout(() => {
+      const osc3 = audioContext.createOscillator();
+      const gain3 = audioContext.createGain();
+      osc3.connect(gain3);
+      gain3.connect(audioContext.destination);
+      osc3.frequency.setValueAtTime(783.99, audioContext.currentTime);
+      osc3.type = 'sine';
+      gain3.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gain3.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.7);
+      osc3.start(audioContext.currentTime);
+      osc3.stop(audioContext.currentTime + 0.7);
+    }, 300);
+  } catch (e) {
+    console.log('Audio not supported');
+  }
+};
+
+// Функция для показа push-уведомления
+const showPushNotification = (title: string, body: string) => {
+  if ('Notification' in window) {
+    if (Notification.permission === 'granted') {
+      new Notification(title, {
+        body,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: 'fipi-reward',
+        renotify: true,
+      });
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          new Notification(title, {
+            body,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: 'fipi-reward',
+            renotify: true,
+          });
+        }
+      });
+    }
+  }
+};
 
 // Валидация ответа (регистронезависимая, без лишних пробелов)
 function normalizeAnswer(answer: string): string {
@@ -220,6 +299,15 @@ export const FipiWidget: React.FC = () => {
     }
   }, [user, fipiTasks, fipiProgress]);
 
+  // Запрос разрешения на push-уведомления при входе
+  useEffect(() => {
+    if (user && user.role === 'student' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+  }, [user]);
+
   // Загрузка сегодняшних заданий
   useEffect(() => {
     if (!user || user.role !== 'student') return;
@@ -326,6 +414,12 @@ export const FipiWidget: React.FC = () => {
             acknowledged: false,
           };
           setFipiNotifications(prev => [...prev, notification]);
+          
+          // Звуковая индикация при достижении лимита заданий на оценку "5"
+          playSuccessSound();
+          
+          // Push-уведомление при достижении лимита заданий на оценку "5"
+          showPushNotification('Поздравляем!', `Вы получили оценку ${reward?.grade || 5} по ${currentTask.subject}!`);
         }
       }
     }
