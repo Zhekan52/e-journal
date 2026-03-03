@@ -187,6 +187,7 @@ export interface FipiStudentProgress {
   completedTasks: string[]; // ID выполненных заданий
   lastTaskDate: string; // Дата последнего задания (YYYY-MM-DD)
   todayTasks: string[]; // ID заданий на сегодня
+  currentTaskIndex?: number; // Текущий индекс задания (для восстановления после перезагрузки)
   pendingGrade?: { subject: string; grade: number; pointsRequired: number }; // Ожидаемая оценка
 }
 

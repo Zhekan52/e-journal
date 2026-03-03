@@ -35,7 +35,7 @@ export const FipiWidget: React.FC = () => {
   } = useData();
 
   const [todayTasks, setTodayTasks] = useState<FipiTask[]>([]);
-  const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
+  const [currentTaskIndex, setCurrentTaskIndex] = useState<number>(0);
   const [answer, setAnswer] = useState<string | string[]>('');
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -241,11 +241,13 @@ export const FipiWidget: React.FC = () => {
     }
   }, [user, fipiTasks, fipiProgress]);
 
-  // Загрузка сегодняшних заданий
+  // Загрузка сегодняшних заданий и восстановление индекса
   useEffect(() => {
     if (!user || user.role !== 'student') return;
 
     const allTodayTasks: FipiTask[] = [];
+    let savedIndex = 0;
+    
     SUBJECTS.forEach(subject => {
       const progress = getSubjectProgress(subject);
       if (progress && progress.lastTaskDate === today) {
@@ -254,10 +256,38 @@ export const FipiWidget: React.FC = () => {
           const task = fipiTasks.find(t => t.id === taskId);
           if (task) allTodayTasks.push(task);
         });
+        // Восстанавливаем сохранённый индекс задания для этого предмета
+        if (progress.currentTaskIndex !== undefined) {
+          savedIndex = progress.currentTaskIndex;
+        }
       }
     });
     setTodayTasks(allTodayTasks);
-  }, [fipiProgress, fipiTasks, user, today]);
+    
+    // Находим первое неотвеченное задание, начиная с сохранённого индекса
+    const answeredIds = new Set(
+      fipiAttempts
+        .filter(a => a.studentId === user.id && a.date === today)
+        .map(a => a.taskId)
+    );
+    
+    // Ищем неотвеченное задание, начиная с сохранённого индекса
+    let startIndex = savedIndex;
+    let foundUnanswered = false;
+    for (let i = 0; i < allTodayTasks.length; i++) {
+      const checkIndex = (startIndex + i) % allTodayTasks.length;
+      if (!answeredIds.has(allTodayTasks[checkIndex]?.id)) {
+        setCurrentTaskIndex(checkIndex);
+        foundUnanswered = true;
+        break;
+      }
+    }
+    
+    // Если все задания отвечены, остаёмся на сохранённом индексе
+    if (!foundUnanswered) {
+      setCurrentTaskIndex(savedIndex);
+    }
+  }, [fipiProgress, fipiTasks, user, today, fipiAttempts]);
 
   const currentTask = todayTasks[currentTaskIndex];
   const progress = currentTask ? getSubjectProgress(currentTask.subject) : undefined;
@@ -361,6 +391,8 @@ export const FipiWidget: React.FC = () => {
     setShowResult(false);
     setAnswer('');
     
+    let nextIndex = currentTaskIndex;
+    
     // Проверяем, есть ли ещё неотвеченные задания в сегодняшних
     if (pendingTasks.length > 0) {
       // Находим индекс текущего задания
@@ -369,21 +401,33 @@ export const FipiWidget: React.FC = () => {
       // Ищем следующее неотвеченное
       for (let i = currentIndex + 1; i < todayTasks.length; i++) {
         if (!answeredTaskIds.has(todayTasks[i].id)) {
-          setCurrentTaskIndex(i);
-          return;
+          nextIndex = i;
+          break;
         }
       }
       
       // Если не нашли вперёд, ищем с начала
-      for (let i = 0; i < currentIndex; i++) {
-        if (!answeredTaskIds.has(todayTasks[i].id)) {
-          setCurrentTaskIndex(i);
-          return;
+      if (nextIndex === currentIndex) {
+        for (let i = 0; i < currentIndex; i++) {
+          if (!answeredTaskIds.has(todayTasks[i].id)) {
+            nextIndex = i;
+            break;
+          }
         }
       }
     }
     
-    // Если все задания отвечены, показываем экран завершения
+    setCurrentTaskIndex(nextIndex);
+    
+    // Сохраняем текущий индекс в прогресс
+    if (currentTask && user) {
+      setFipiProgress(prev => prev.map(p => {
+        if (p.studentId === user.id && p.subject === currentTask.subject) {
+          return { ...p, currentTaskIndex: nextIndex };
+        }
+        return p;
+      }));
+    }
   };
 
   // Нет заданий
