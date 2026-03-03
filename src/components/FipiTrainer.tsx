@@ -302,7 +302,10 @@ export const FipiTrainer: React.FC = () => {
                 onClick={() => {
                   const d = new Date(monitoringDate);
                   d.setDate(d.getDate() - 1);
-                  setMonitoringDate(d.toISOString().split('T')[0]);
+                  const year = d.getFullYear();
+                  const month = String(d.getMonth() + 1).padStart(2, '0');
+                  const day = String(d.getDate()).padStart(2, '0');
+                  setMonitoringDate(`${year}-${month}-${day}`);
                 }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
@@ -318,7 +321,10 @@ export const FipiTrainer: React.FC = () => {
                 onClick={() => {
                   const d = new Date(monitoringDate);
                   d.setDate(d.getDate() + 1);
-                  setMonitoringDate(d.toISOString().split('T')[0]);
+                  const year = d.getFullYear();
+                  const month = String(d.getMonth() + 1).padStart(2, '0');
+                  const day = String(d.getDate()).padStart(2, '0');
+                  setMonitoringDate(`${year}-${month}-${day}`);
                 }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
@@ -342,18 +348,36 @@ export const FipiTrainer: React.FC = () => {
             {students.map(student => {
               const progress = fipiProgress.filter(p => p.studentId === student.id);
               
-              // Получаем задания ученика за выбранную дату
+              // Получаем задания ученика за выбранную дату из истории попыток
+              const studentAttempts = fipiAttempts.filter(a => a.studentId === student.id && a.date === monitoringDate);
+              
               const dateTasks: { subject: string; taskId: string; completed: boolean; answered: boolean; attempt?: FipiTaskAttempt }[] = [];
+              
+              // Добавляем задания из истории попыток
+              studentAttempts.forEach(attempt => {
+                dateTasks.push({
+                  subject: attempt.subject,
+                  taskId: attempt.taskId,
+                  completed: attempt.correct,
+                  answered: true,
+                  attempt
+                });
+              });
+              
+              // Также проверяем todayTasks из прогресса (на случай, если задание назначено, но ещё не отвечено)
               SUBJECTS.forEach(subject => {
                 const p = progress.find(x => x.subject === subject);
                 if (p && p.lastTaskDate === monitoringDate && p.todayTasks && p.todayTasks.length > 0) {
                   p.todayTasks.forEach(taskId => {
-                    const attempt = fipiAttempts.find(a => a.taskId === taskId && a.date === monitoringDate);
-                    const correctAttempt = attempt && attempt.correct;
+                    // Если это задание уже есть в dateTasks (из попыток) - пропускаем
+                    if (dateTasks.some(t => t.taskId === taskId)) return;
+                    
+                    // Добавляем как неотвеченное
+                    const attempt = studentAttempts.find(a => a.taskId === taskId);
                     dateTasks.push({ 
                       subject, 
                       taskId, 
-                      completed: !!correctAttempt,
+                      completed: false,
                       answered: !!attempt,
                       attempt
                     });

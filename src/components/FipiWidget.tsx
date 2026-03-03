@@ -127,15 +127,27 @@ export const FipiWidget: React.FC = () => {
     // Текущий прогресс ученика
     const currentProgress = fipiProgress.filter(p => p.studentId === user.id);
     
-    // Находим предметы, у которых уже есть задания на сегодня
+    // Получаем задания, которые ученик уже сделал сегодня (из истории попыток)
+    const todayAttempts = fipiAttempts.filter(a => a.studentId === user.id && a.date === today);
+    const completedTaskIdsToday = new Set(todayAttempts.map(a => a.taskId));
+    
+    // Находим предметы, по которым ученик уже ответил на задания сегодня
+    const subjectsWithCompletedTasks = new Set(
+      todayAttempts.map(a => a.subject)
+    );
+    
+    // Находим предметы, у которых уже есть назначенные задания на сегодня (todayTasks)
     const subjectsWithTodayTasks = new Set(
       currentProgress
         .filter(p => p.lastTaskDate === today && p.todayTasks && p.todayTasks.length > 0)
         .map(p => p.subject)
     );
     
-    // Если уже есть 2 задания - не генерируем
-    if (subjectsWithTodayTasks.size >= 2) {
+    // Объединяем: предмет считается "обработанным" если на него есть попытка ИЛИ есть назначенное задание
+    const allProcessedSubjects = new Set([...subjectsWithCompletedTasks, ...subjectsWithTodayTasks]);
+    
+    // Если уже есть задания по 2 предметам - не генерируем новые
+    if (allProcessedSubjects.size >= 2) {
       setTasksGenerated(true);
       return;
     }
@@ -151,10 +163,10 @@ export const FipiWidget: React.FC = () => {
     }
     
     // Фильтруем: исключаем предметы, по которым уже есть задания на сегодня
-    const availableSubjects = shuffled.filter(s => !subjectsWithTodayTasks.has(s));
+    const availableSubjects = shuffled.filter(s => !allProcessedSubjects.has(s));
     
     // Выбираем нужное количество предметов (чтобы всего было 2)
-    const neededCount = 2 - subjectsWithTodayTasks.size;
+    const neededCount = 2 - allProcessedSubjects.size;
     const selectedSubjects = availableSubjects.slice(0, neededCount);
     
     // Собираем задания для выбранных предметов
@@ -165,7 +177,7 @@ export const FipiWidget: React.FC = () => {
       const subjectTasks = fipiTasks.filter(t => t.subject === subject);
       const completedIds = subjProgress?.completedTasks || [];
       
-      // Доступные задания (не выполненные)
+      // Доступные задания (не выполненные когда-либо)
       const availableTasks = subjectTasks.filter(t => !completedIds.includes(t.id));
       
       if (availableTasks.length > 0) {
