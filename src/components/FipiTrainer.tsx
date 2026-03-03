@@ -368,10 +368,19 @@ export const FipiTrainer: React.FC = () => {
               // Получаем задания ученика за выбранную дату из истории попыток
               const studentAttempts = fipiAttempts.filter(a => a.studentId === student.id && a.date === monitoringDate);
               
+              // Группируем попытки по taskId - оставляем только последнюю попытку для каждого задания
+              const latestAttemptsByTask = new Map<string, FipiTaskAttempt>();
+              studentAttempts.forEach(attempt => {
+                // Для каждого taskId оставляем только последнюю попытку (по времени или по порядку)
+                if (!latestAttemptsByTask.has(attempt.taskId)) {
+                  latestAttemptsByTask.set(attempt.taskId, attempt);
+                }
+              });
+              
               const dateTasks: { subject: string; taskId: string; completed: boolean; answered: boolean; attempt?: FipiTaskAttempt }[] = [];
               
-              // Добавляем задания из истории попыток
-              studentAttempts.forEach(attempt => {
+              // Добавляем задания из истории попыток (только уникальные по taskId)
+              latestAttemptsByTask.forEach((attempt) => {
                 dateTasks.push({
                   subject: attempt.subject,
                   taskId: attempt.taskId,

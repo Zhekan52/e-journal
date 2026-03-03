@@ -127,6 +127,15 @@ export const FipiWidget: React.FC = () => {
     // Текущий прогресс ученика
     const currentProgress = fipiProgress.filter(p => p.studentId === user.id);
     
+    // Проверяем, есть ли уже назначенные задания на сегодня в прогрессе
+    const existingTodayTasks = currentProgress.filter(p => p.lastTaskDate === today && p.todayTasks && p.todayTasks.length > 0);
+    
+    // Если уже есть задания на сегодня в прогрессе - не генерируем новые
+    if (existingTodayTasks.length > 0) {
+      setTasksGenerated(true);
+      return;
+    }
+
     // Получаем задания, которые ученик уже сделал сегодня (из истории попыток)
     const todayAttempts = fipiAttempts.filter(a => a.studentId === user.id && a.date === today);
     const completedTaskIdsToday = new Set(todayAttempts.map(a => a.taskId));
