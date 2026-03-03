@@ -1997,84 +1997,6 @@ const Journal: React.FC = () => {
                   <span className="truncate">{entry.attachment.name}</span>
                 </div>
               )}
-
-            {/* Модальное окно для назначения ДЗ на следующий урок */}
-            {nextLessonHomeworkModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="absolute inset-0 bg-black/50" onClick={() => setNextLessonHomeworkModal(false)} />
-                <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fadeIn">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-purple-600" />
-                      ДЗ на следующий урок
-                    </h3>
-                    <button onClick={() => setNextLessonHomeworkModal(false)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Домашнее задание будет сохранено и автоматически привяжется к следующему уроку по предмету <strong>{selectedSubject}</strong>, когда он появится в расписании.
-                  </p>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Тема</label>
-                      <input
-                        type="text"
-                        value={nextLessonHomework.topic}
-                        onChange={e => setNextLessonHomework(prev => ({ ...prev, topic: e.target.value }))}
-                        className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                        placeholder="Тема следующего урока..."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Домашнее задание</label>
-                      <textarea 
-                        value={nextLessonHomework.homework}
-                        onChange={e => setNextLessonHomework(prev => ({ ...prev, homework: e.target.value }))}
-                        className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all resize-none"
-                        rows={3}
-                        placeholder="Домашнее задание..."
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-3 mt-6">
-                    <button 
-                      onClick={() => setNextLessonHomeworkModal(false)}
-                      className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors"
-                    >
-                      Отмена
-                    </button>
-                    <button 
-                      onClick={() => {
-                        if (!nextLessonHomework.homework.trim()) {
-                          alert('Введите домашнее задание');
-                          return;
-                        }
-                        if (setPendingHomework) {
-                          setPendingHomework(prev => [...(prev || []), {
-                            id: `ph${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
-                            subject: selectedSubject,
-                            homework: nextLessonHomework.homework,
-                            topic: nextLessonHomework.topic,
-                            createdAt: new Date().toISOString(),
-                            sourceDate: lessonPageDate,
-                            sourceLessonNumber: lessonPageLessonNum,
-                            attachedToDate: null,
-                            attachedToLessonNumber: null,
-                          }]);
-                        }
-                        setNextLessonHomeworkModal(false);
-                        setNextLessonHomework({ topic: '', homework: '' });
-                        alert('ДЗ назначено на следующий урок');
-                      }}
-                      className="flex-1 px-4 py-2.5 text-white bg-purple-600 hover:bg-purple-700 rounded-xl font-medium transition-colors"
-                    >
-                      Назначить
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
             </div>
           </div>
           
@@ -2157,6 +2079,85 @@ const Journal: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Модальное окно для назначения ДЗ на следующий урок */}
+        {nextLessonHomeworkModal && createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setNextLessonHomeworkModal(false)} />
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fadeIn">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-purple-600" />
+                  ДЗ на следующий урок
+                </h3>
+                <button onClick={() => setNextLessonHomeworkModal(false)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Домашнее задание будет сохранено и автоматически привяжется к следующему уроку по предмету <strong>{selectedSubject}</strong>, когда он появится в расписании.
+              </p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Тема</label>
+                  <input
+                    type="text"
+                    value={nextLessonHomework.topic}
+                    onChange={e => setNextLessonHomework(prev => ({ ...prev, topic: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                    placeholder="Тема следующего урока..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Домашнее задание</label>
+                  <textarea 
+                    value={nextLessonHomework.homework}
+                    onChange={e => setNextLessonHomework(prev => ({ ...prev, homework: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all resize-none"
+                    rows={3}
+                    placeholder="Домашнее задание..."
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button 
+                  onClick={() => setNextLessonHomeworkModal(false)}
+                  className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors"
+                >
+                  Отмена
+                </button>
+                <button 
+                  onClick={() => {
+                    if (!nextLessonHomework.homework.trim()) {
+                      alert('Введите домашнее задание');
+                      return;
+                    }
+                    if (setPendingHomework) {
+                      setPendingHomework(prev => [...(prev || []), {
+                        id: `ph${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
+                        subject: selectedSubject,
+                        homework: nextLessonHomework.homework,
+                        topic: nextLessonHomework.topic,
+                        createdAt: new Date().toISOString(),
+                        sourceDate: lessonPageDate,
+                        sourceLessonNumber: lessonPageLessonNum,
+                        attachedToDate: null,
+                        attachedToLessonNumber: null,
+                      }]);
+                    }
+                    setNextLessonHomeworkModal(false);
+                    setNextLessonHomework({ topic: '', homework: '' });
+                    alert('ДЗ назначено на следующий урок');
+                  }}
+                  className="flex-1 px-4 py-2.5 text-white bg-purple-600 hover:bg-purple-700 rounded-xl font-medium transition-colors"
+                >
+                  Назначить
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
         {assignedTest && entry && (
           <TestResultsSection test={assignedTest} date={lessonPageDate} subject={selectedSubject} students={sortedStudents} testAttempts={testAttempts} testRetakes={testRetakes} setTestRetakes={setTestRetakes} setTestAttempts={setTestAttempts} grades={grades} setGrades={setGrades} journalColumns={journalColumns} lessonNumber={lessonPageLessonNum} testAssignments={testAssignments} setTestAssignments={setTestAssignments} />
