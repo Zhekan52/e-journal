@@ -274,12 +274,16 @@ export const FipiWidget: React.FC = () => {
     setShowResult(true);
 
     // Записываем попытку
+    const now = new Date();
+    const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
     const attempt: FipiTaskAttempt = {
       id: generateId(),
       studentId: user.id,
       taskId: currentTask.id,
       subject: currentTask.subject,
       date: today,
+      time,
       answer,
       correct,
       pointsEarned: correct ? 1 : 0,

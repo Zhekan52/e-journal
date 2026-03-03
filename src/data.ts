@@ -196,6 +196,7 @@ export interface FipiTaskAttempt {
   taskId: string;
   subject: string;
   date: string;
+  time?: string; // Время сдачи задания (ЧЧ:ММ)
   answer: string | string[];
   correct: boolean;
   pointsEarned: number; // 1 если верно, 0 если нет

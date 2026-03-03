@@ -3,7 +3,7 @@ import { useData } from '../context';
 import { SUBJECTS, getTodayString } from '../data';
 import type { FipiTask, FipiReward, FipiStudentProgress, FipiTaskAttempt, FipiNotification } from '../data';
 import {
-  Brain, Plus, Trash2, Edit2, Save, X, Award, Users, CheckCircle, XCircle, AlertCircle, Settings, Upload, UserPlus, Eye, RotateCcw
+  Brain, Plus, Trash2, Edit2, Save, X, Award, Users, CheckCircle, XCircle, AlertCircle, Settings, Upload, UserPlus, RotateCcw
 } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substring(2, 15);
@@ -24,6 +24,7 @@ export const FipiTrainer: React.FC = () => {
   const [logsFilterResult, setLogsFilterResult] = useState<string>('');
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState<FipiTask | null>(null);
+  const [selectedAttempt, setSelectedAttempt] = useState<FipiTaskAttempt | null>(null);
 
   // Модальное окно для выставления оценки
   const [showGradeModal, setShowGradeModal] = useState(false);
@@ -83,17 +84,18 @@ export const FipiTrainer: React.FC = () => {
     } : a));
   };
 
-  // Форматирование времени выполнения в ЧЧ:ММ
-  const formatTimeSpent = (seconds?: number): string => {
-    if (!seconds) return '—';
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  // Форматирование даты в дд.мм.гг
+  const formatDateShort = (dateStr: string): string => {
+    if (!dateStr) return '';
+    const [year, month, day] = dateStr.split('-');
+    return `${day}.${month}.${year.slice(2)}`;
   };
 
   // Открыть модальное окно просмотра вопроса
-  const handleOpenQuestionModal = (task: FipiTask) => {
+  const handleOpenQuestionModal = (task: FipiTask | undefined, attempt?: FipiTaskAttempt) => {
+    if (!task) return;
     setSelectedQuestion(task);
+    setSelectedAttempt(attempt || null);
     setShowQuestionModal(true);
   };
 
@@ -431,10 +433,9 @@ export const FipiTrainer: React.FC = () => {
             <table className="w-full">
               <thead className="bg-gray-50"><tr>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Дата</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Время</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Ученик</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Предмет</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Вопрос</th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-600">Время</th>
                 <th className="px-4 py-3 text-center text-sm font-medium text-gray-600">Результат</th>
               </tr></thead>
               <tbody className="divide-y">
@@ -452,44 +453,28 @@ export const FipiTrainer: React.FC = () => {
                   filtered = filtered.sort((a, b) => b.date.localeCompare(a.date));
                   
                   if (filtered.length === 0) {
-                    return <tr><td colSpan={6} className="p-8 text-center text-gray-500">Нет записей</td></tr>;
+                    return <tr><td colSpan={5} className="p-8 text-center text-gray-500">Нет записей</td></tr>;
                   }
                   
                   return filtered.map(attempt => {
                     const task = fipiTasks.find(t => t.id === attempt.taskId);
                     const student = students.find(s => s.id === attempt.studentId);
-                    // Первая строка вопроса (для отображения в таблице - удаляем)
-                    const questionPreview = task?.question.split('\n')[0] || '';
                     
                     return (
                       <tr key={attempt.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm">{attempt.date}</td>
+                        <td className="px-4 py-3 text-sm">{formatDateShort(attempt.date)}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{attempt.time || '—'}</td>
                         <td className="px-4 py-3 text-sm">{student?.lastName} {student?.firstName}</td>
                         <td className="px-4 py-3 text-sm">{attempt.subject}</td>
-                        <td className="px-4 py-3 text-sm max-w-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="truncate flex-1">{questionPreview}</span>
-                            {task && (
-                              <button
-                                onClick={() => handleOpenQuestionModal(task)}
-                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg flex-shrink-0"
-                                title="Просмотреть вопрос"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-center">{formatTimeSpent(attempt.timeSpent)}</td>
                         <td className="px-4 py-3 text-center">
                           <button
-                            onClick={() => handleToggleResult(attempt.id)}
+                            onClick={() => handleOpenQuestionModal(task, attempt)}
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                               attempt.correct 
                                 ? 'bg-green-100 text-green-700 hover:bg-green-200' 
                                 : 'bg-red-100 text-red-700 hover:bg-red-200'
                             }`}
-                            title="Нажмите для изменения"
+                            title="Нажмите для изменения / просмотра"
                           >
                             {attempt.correct ? (
                               <><CheckCircle className="w-4 h-4" /> Верно</>
@@ -591,7 +576,7 @@ export const FipiTrainer: React.FC = () => {
                    selectedQuestion.type === 'single' ? 'Одиночный выбор' : 'Множественный выбор'}
                 </span>
               </div>
-              <button onClick={() => { setShowQuestionModal(false); setSelectedQuestion(null); }} className="p-2 hover:bg-gray-100 rounded-xl">
+              <button onClick={() => { setShowQuestionModal(false); setSelectedQuestion(null); setSelectedAttempt(null); }} className="p-2 hover:bg-gray-100 rounded-xl">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
@@ -606,6 +591,32 @@ export const FipiTrainer: React.FC = () => {
               {selectedQuestion.image && (
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <img src={selectedQuestion.image} alt="Изображение к вопросу" className="max-w-full h-auto rounded-lg border" />
+                </div>
+              )}
+              
+              {/* Ответ ученика */}
+              {selectedAttempt && (
+                <div className={`p-4 rounded-xl border ${
+                  selectedAttempt.correct ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                }`}>
+                  <p className={`font-medium mb-2 ${selectedAttempt.correct ? 'text-green-800' : 'text-red-800'}`}>
+                    Ответ ученика:
+                  </p>
+                  {selectedQuestion.type === 'text' && (
+                    <p className={`font-bold ${selectedAttempt.correct ? 'text-green-700' : 'text-red-700'}`}>
+                      {selectedAttempt.answer as string}
+                    </p>
+                  )}
+                  {selectedQuestion.type === 'single' && selectedQuestion.options && (
+                    <p className={`font-bold ${selectedAttempt.correct ? 'text-green-700' : 'text-red-700'}`}>
+                      {selectedQuestion.options.find(o => o.id === selectedAttempt.answer)?.text || selectedAttempt.answer as string}
+                    </p>
+                  )}
+                  {selectedQuestion.type === 'multiple' && selectedQuestion.options && Array.isArray(selectedAttempt.answer) && (
+                    <p className={`font-bold ${selectedAttempt.correct ? 'text-green-700' : 'text-red-700'}`}>
+                      {selectedQuestion.options.filter(o => selectedAttempt.answer.includes(o.id)).map(o => o.text).join(', ')}
+                    </p>
+                  )}
                 </div>
               )}
               
@@ -658,7 +669,7 @@ export const FipiTrainer: React.FC = () => {
             
             <div className="p-5 border-t border-gray-100 bg-gray-50">
               <button
-                onClick={() => { setShowQuestionModal(false); setSelectedQuestion(null); }}
+                onClick={() => { setShowQuestionModal(false); setSelectedQuestion(null); setSelectedAttempt(null); }}
                 className="w-full px-5 py-2.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors font-medium"
               >
                 Закрыть
