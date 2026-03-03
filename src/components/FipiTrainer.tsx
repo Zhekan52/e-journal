@@ -3,7 +3,7 @@ import { useData } from '../context';
 import { SUBJECTS, getTodayString } from '../data';
 import type { FipiTask, FipiReward, FipiStudentProgress, FipiTaskAttempt, FipiNotification } from '../data';
 import {
-  Brain, Plus, Trash2, Edit2, Save, X, Award, Users, CheckCircle, XCircle, AlertCircle, Settings, Upload, UserPlus, RotateCcw, Eye
+  Brain, Plus, Trash2, Edit2, Save, X, Award, Users, CheckCircle, XCircle, AlertCircle, Settings, Upload, UserPlus, RotateCcw, Eye, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substring(2, 15);
@@ -25,6 +25,9 @@ export const FipiTrainer: React.FC = () => {
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState<FipiTask | null>(null);
   const [selectedAttempt, setSelectedAttempt] = useState<FipiTaskAttempt | null>(null);
+
+  // Дата для мониторинга учеников
+  const [monitoringDate, setMonitoringDate] = useState<string>(getTodayString());
 
   // Модальное окно для выставления оценки
   const [showGradeModal, setShowGradeModal] = useState(false);
@@ -89,6 +92,13 @@ export const FipiTrainer: React.FC = () => {
     if (!dateStr) return '';
     const [year, month, day] = dateStr.split('-');
     return `${day}.${month}.${year.slice(2)}`;
+  };
+
+  // Форматирование даты в дд.мм.гггг
+  const formatDateFull = (dateStr: string): string => {
+    if (!dateStr) return '';
+    const [year, month, day] = dateStr.split('-');
+    return `${day}.${month}.${year}`;
   };
 
   // Открыть модальное окно просмотра вопроса
@@ -284,61 +294,123 @@ export const FipiTrainer: React.FC = () => {
 
       {activeTab === 'students' && (
         <div className="space-y-4">
+          {/* Переключатель дат */}
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-gray-900">Прогресс учеников</h3>
-            <span className="text-sm text-gray-500">Сегодня: {getTodayString()}</span>
+            <h3 className="text-lg font-bold text-gray-900">Мониторинг учеников</h3>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const d = new Date(monitoringDate);
+                  d.setDate(d.getDate() - 1);
+                  setMonitoringDate(d.toISOString().split('T')[0]);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <input
+                type="date"
+                value={monitoringDate}
+                onChange={(e) => setMonitoringDate(e.target.value)}
+                className="px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium"
+              />
+              <button
+                onClick={() => {
+                  const d = new Date(monitoringDate);
+                  d.setDate(d.getDate() + 1);
+                  setMonitoringDate(d.toISOString().split('T')[0]);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setMonitoringDate(getTodayString())}
+                className="px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                Сегодня
+              </button>
+            </div>
           </div>
+          
+          {/* Форматирование даты ДД.ММ.ГГГГ */}
+          <div className="text-sm text-gray-500">
+            Просмотр активности за: <span className="font-medium text-gray-900">{formatDateFull(monitoringDate)}</span>
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {students.map(student => {
               const progress = fipiProgress.filter(p => p.studentId === student.id);
-              const today = getTodayString();
               
-              // Получаем сегодняшние задания ученика
-              const todayTasks: { subject: string; taskId: string; completed: boolean; answered: boolean }[] = [];
+              // Получаем задания ученика за выбранную дату
+              const dateTasks: { subject: string; taskId: string; completed: boolean; answered: boolean; attempt?: FipiTaskAttempt }[] = [];
               SUBJECTS.forEach(subject => {
                 const p = progress.find(x => x.subject === subject);
-                if (p && p.lastTaskDate === today && p.todayTasks && p.todayTasks.length > 0) {
+                if (p && p.lastTaskDate === monitoringDate && p.todayTasks && p.todayTasks.length > 0) {
                   p.todayTasks.forEach(taskId => {
-                    const attempt = fipiAttempts.find(a => a.taskId === taskId && a.date === today);
+                    const attempt = fipiAttempts.find(a => a.taskId === taskId && a.date === monitoringDate);
                     const correctAttempt = attempt && attempt.correct;
-                    todayTasks.push({ 
+                    dateTasks.push({ 
                       subject, 
                       taskId, 
                       completed: !!correctAttempt,
-                      answered: !!attempt
+                      answered: !!attempt,
+                      attempt
                     });
                   });
                 }
               });
               
-              const hasTodayTasks = todayTasks.length > 0;
+              const hasDateTasks = dateTasks.length > 0;
               
               return (
-                <div key={student.id} className={`bg-white/80 rounded-2xl border p-6 shadow-lg ${!hasTodayTasks ? 'border-red-200 bg-red-50/50' : ''}`}>
+                <div key={student.id} className={`bg-white/80 rounded-2xl border p-6 shadow-lg ${!hasDateTasks ? 'border-red-200 bg-red-50/50' : ''}`}>
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold">
                       {student.lastName?.charAt(0)}{student.firstName?.charAt(0)}
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold">{student.lastName} {student.firstName}</h3>
-                      {!hasTodayTasks && (
-                        <span className="text-xs text-red-500 font-medium">Нет заданий на сегодня</span>
+                      {!hasDateTasks && (
+                        <span className="text-xs text-red-500 font-medium">Нет заданий за эту дату</span>
                       )}
                     </div>
                   </div>
                   
-                  {/* Сегодняшние задания */}
-                  {hasTodayTasks && (
-                    <div className="mb-4 p-3 bg-green-50 rounded-xl">
-                      <p className="text-xs font-medium text-gray-500 mb-2">Задания на сегодня:</p>
+                  {/* Задания за выбранную дату */}
+                  {hasDateTasks && (
+                    <div className="mb-4 p-3 bg-blue-50 rounded-xl">
+                      <p className="text-xs font-medium text-gray-500 mb-2">Задания за {formatDateFull(monitoringDate)}:</p>
                       <div className="space-y-1">
-                        {todayTasks.map((t, idx) => (
+                        {dateTasks.map((t, idx) => (
                           <div key={idx} className="flex items-center justify-between text-sm">
-                            <span className="truncate flex-1">{t.subject}</span>
-                            {t.completed ? (
-                              <span className="text-green-600 text-xs">✓</span>
-                            ) : t.answered ? (
-                              <span className="text-red-500 text-xs">✗</span>
+                            <button
+                              onClick={() => {
+                                const task = fipiTasks.find(tk => tk.id === t.taskId);
+                                if (task && t.attempt) {
+                                  handleOpenQuestionModal(task, t.attempt);
+                                }
+                              }}
+                              className="truncate flex-1 text-left hover:text-blue-600 transition-colors"
+                              disabled={!t.attempt}
+                            >
+                              {t.subject}
+                            </button>
+                            {t.attempt ? (
+                              <button
+                                onClick={() => {
+                                  const task = fipiTasks.find(tk => tk.id === t.taskId);
+                                  if (task) handleOpenQuestionModal(task, t.attempt);
+                                }}
+                                className="p-1 hover:bg-blue-100 rounded transition-colors"
+                                title="Посмотреть вопрос"
+                              >
+                                {t.completed ? (
+                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                ) : (
+                                  <XCircle className="w-4 h-4 text-red-500" />
+                                )}
+                              </button>
                             ) : (
                               <span className="text-orange-500 text-xs">⏳</span>
                             )}
