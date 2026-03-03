@@ -275,7 +275,7 @@ export const StudentView: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <header className="bg-white/80 backdrop-blur-[8px] border-b border-gray-200/50 sticky top-0 z-30">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
@@ -356,21 +356,21 @@ const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons
       <FipiWidget />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
           <div className="text-sm font-medium text-gray-500 mb-2">Средний балл</div>
           <div className="text-4xl font-bold text-blue-600">{avgGrade}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
           <div className="text-sm font-medium text-gray-500 mb-2">Всего оценок</div>
           <div className="text-4xl font-bold text-gray-900">{myGrades.length}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
           <div className="text-sm font-medium text-gray-500 mb-2">Уроков сегодня</div>
           <div className="text-4xl font-bold text-gray-900">{todayLessons.length}</div>
         </div>
       </div>
       {todayLessons.length > 0 && (
-        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 p-6 shadow-lg">
           <h3 className="font-semibold text-gray-900 mb-4">Расписание на сегодня</h3>
           <div className="space-y-3">
             {todayLessons.map((l: any) => (
@@ -893,7 +893,7 @@ const Diary: React.FC<DiaryProps> = ({
     const assignedVariant = assignedVariantId ? test.variants?.find((v: any) => v.id === assignedVariantId) : null;
 
     return (
-      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[4px] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scaleIn">
           <div className="text-center">
             <div className="w-16 h-16 rounded-full bg-violet-100 flex items-center justify-center mx-auto mb-4">
