@@ -163,25 +163,81 @@ export const FipiTrainer: React.FC = () => {
           <div className="grid gap-4">
             {filteredTasks.length === 0 ? (
               <div className="text-center py-12 text-gray-500"><Brain className="w-12 h-12 mx-auto mb-4 opacity-50" /><p>Нет заданий</p></div>
-            ) : filteredTasks.map(task => (
-              <div key={task.id} className="bg-white/80 rounded-2xl border p-6 shadow-lg">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`px-2 py-1 rounded text-xs ${task.subject === 'Математика' ? 'bg-blue-100' : task.subject === 'Русский язык' ? 'bg-green-100' : 'bg-purple-100'}`}>{task.subject}</span>
-                      <span className="px-2 py-1 rounded text-xs bg-gray-100">{task.type === 'text' ? 'Краткий' : task.type === 'single' ? 'Выбор' : 'Множеств.'}</span>
+            ) : filteredTasks.map(task => {
+              // Определяем правильные ответы для отображения
+              const getCorrectAnswersDisplay = () => {
+                if (task.type === 'text') {
+                  // Краткий текстовый ответ - показываем явно
+                  return <p className="text-sm text-green-600 mt-1">Ответ: {task.correctAnswer as string}</p>;
+                } else if (task.type === 'single') {
+                  // Одиночный выбор - показываем правильный вариант
+                  const correctOption = task.options?.find(o => o.id === task.correctOptionId);
+                  return correctOption ? (
+                    <p className="text-sm text-green-600 mt-1">Правильный ответ: {correctOption.text}</p>
+                  ) : null;
+                } else if (task.type === 'multiple') {
+                  // Множественный выбор - показываем все правильные варианты
+                  const correctOptions = task.options?.filter(o => 
+                    Array.isArray(task.correctAnswer) && task.correctAnswer.includes(o.id)
+                  ) || [];
+                  if (correctOptions.length > 0) {
+                    return (
+                      <div className="text-sm text-green-600 mt-1">
+                        Правильные ответы: {correctOptions.map(o => o.text).join(', ')}
+                      </div>
+                    );
+                  }
+                }
+                return null;
+              };
+
+              return (
+                <div key={task.id} className="bg-white/80 rounded-2xl border p-6 shadow-lg">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`px-2 py-1 rounded text-xs ${task.subject === 'Математика' ? 'bg-blue-100' : task.subject === 'Русский язык' ? 'bg-green-100' : 'bg-purple-100'}`}>{task.subject}</span>
+                        <span className="px-2 py-1 rounded text-xs bg-gray-100">{task.type === 'text' ? 'Краткий' : task.type === 'single' ? 'Выбор' : 'Множеств.'}</span>
+                      </div>
+                      <p className="font-medium">{task.question}</p>
+                      {task.image && <img src={task.image} alt="" className="mt-2 max-w-xs rounded border" />}
+                      
+                      {/* Блок отображения правильного ответа для всех типов задач */}
+                      {getCorrectAnswersDisplay()}
+                      
+                      {/* Для выборочных типов также показываем варианты с подсветкой правильных */}
+                      {task.type !== 'text' && task.options && task.options.length > 0 && (
+                        <div className="mt-3 space-y-1">
+                          {task.options.map((option, idx) => {
+                            const isCorrect = task.type === 'single' 
+                              ? option.id === task.correctOptionId
+                              : Array.isArray(task.correctAnswer) && task.correctAnswer.includes(option.id);
+                            return (
+                              <div 
+                                key={option.id} 
+                                className={`text-sm px-3 py-1.5 rounded-lg ${
+                                  isCorrect 
+                                    ? 'bg-green-100 text-green-700 font-medium border border-green-200' 
+                                    : 'bg-gray-50 text-gray-600'
+                                }`}
+                              >
+                                <span className="font-medium mr-1">{String.fromCharCode(65 + idx)}.</span>
+                                {option.text}
+                                {isCorrect && <CheckCircle className="inline w-3.5 h-3.5 ml-1" />}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                    <p className="font-medium">{task.question}</p>
-                    {task.image && <img src={task.image} alt="" className="mt-2 max-w-xs rounded border" />}
-                    {task.type === 'text' && <p className="text-sm text-green-600 mt-1">Ответ: {task.correctAnswer as string}</p>}
-                  </div>
-                  <div className="flex gap-2 ml-4">
-                    <button onClick={() => { setEditingTask(task); setShowTaskModal(true); }} className="p-2 hover:bg-gray-100 rounded"><Edit2 className="w-5 h-5" /></button>
-                    <button onClick={() => handleDeleteTask(task.id)} className="p-2 hover:bg-red-50 text-red-500 rounded"><Trash2 className="w-5 h-5" /></button>
+                    <div className="flex gap-2 ml-4">
+                      <button onClick={() => { setEditingTask(task); setShowTaskModal(true); }} className="p-2 hover:bg-gray-100 rounded"><Edit2 className="w-5 h-5" /></button>
+                      <button onClick={() => handleDeleteTask(task.id)} className="p-2 hover:bg-red-50 text-red-500 rounded"><Trash2 className="w-5 h-5" /></button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
