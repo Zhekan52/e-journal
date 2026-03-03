@@ -2082,47 +2082,108 @@ const Journal: React.FC = () => {
 
         {/* Модальное окно для назначения ДЗ на следующий урок */}
         {nextLessonHomeworkModal && createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50" onClick={() => setNextLessonHomeworkModal(false)} />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fadeIn">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-purple-600" />
+          <div 
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 50,
+              padding: '16px'
+            }}
+            onClick={() => setNextLessonHomeworkModal(false)}
+          >
+            <div 
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '16px',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                padding: '24px',
+                width: '100%',
+                maxWidth: '480px',
+                minWidth: '320px',
+                maxHeight: '90vh',
+                overflowY: 'auto'
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Clock size={20} color="#9333ea" />
                   ДЗ на следующий урок
                 </h3>
-                <button onClick={() => setNextLessonHomeworkModal(false)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                  <X className="w-5 h-5" />
+                <button 
+                  onClick={() => setNextLessonHomeworkModal(false)} 
+                  style={{ padding: '6px', color: '#9ca3af', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '8px' }}
+                >
+                  <X size={20} />
                 </button>
               </div>
-              <p className="text-sm text-gray-600 mb-4">
+              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
                 Домашнее задание будет сохранено и автоматически привяжется к следующему уроку по предмету <strong>{selectedSubject}</strong>, когда он появится в расписании.
               </p>
-              <div className="space-y-4">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Тема</label>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>Тема</label>
                   <input
                     type="text"
                     value={nextLessonHomework.topic}
                     onChange={e => setNextLessonHomework(prev => ({ ...prev, topic: e.target.value }))}
-                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
                     placeholder="Тема следующего урока..."
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      backgroundColor: '#f9fafb',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      color: '#111827',
+                      boxSizing: 'border-box',
+                      outline: 'none'
+                    }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Домашнее задание</label>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>Домашнее задание</label>
                   <textarea 
                     value={nextLessonHomework.homework}
                     onChange={e => setNextLessonHomework(prev => ({ ...prev, homework: e.target.value }))}
-                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all resize-none"
-                    rows={3}
                     placeholder="Домашнее задание..."
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      backgroundColor: '#f9fafb',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      color: '#111827',
+                      boxSizing: 'border-box',
+                      outline: 'none',
+                      resize: 'none'
+                    }}
                   />
                 </div>
               </div>
-              <div className="flex gap-3 mt-6">
+              <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
                 <button 
                   onClick={() => setNextLessonHomeworkModal(false)}
-                  className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors"
+                  style={{
+                    flex: 1,
+                    padding: '10px 16px',
+                    backgroundColor: '#f3f4f6',
+                    color: '#374151',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}
                 >
                   Отмена
                 </button>
@@ -2149,7 +2210,17 @@ const Journal: React.FC = () => {
                     setNextLessonHomework({ topic: '', homework: '' });
                     alert('ДЗ назначено на следующий урок');
                   }}
-                  className="flex-1 px-4 py-2.5 text-white bg-purple-600 hover:bg-purple-700 rounded-xl font-medium transition-colors"
+                  style={{
+                    flex: 1,
+                    padding: '10px 16px',
+                    backgroundColor: '#9333ea',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}
                 >
                   Назначить
                 </button>
