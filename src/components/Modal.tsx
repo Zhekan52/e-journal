@@ -30,10 +30,10 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/20 backdrop-blur-sm transition-all">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/20 backdrop-blur-[4px] transition-all">
       <div 
         ref={modalRef}
-        className="bg-white/95 backdrop-blur-xl rounded-2xl border border-white/50 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-white/95 backdrop-blur-[12px] rounded-2xl border border-white/50 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
       >
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>

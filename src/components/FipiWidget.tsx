@@ -433,7 +433,7 @@ export const FipiWidget: React.FC = () => {
   // Нет заданий
   if (todayTasks.length === 0) {
     return (
-      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
+      <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
             <Brain className="w-5 h-5 text-white" />
@@ -455,7 +455,7 @@ export const FipiWidget: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* Заголовок */}
-      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
+      <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
@@ -526,7 +526,7 @@ export const FipiWidget: React.FC = () => {
 
       {/* Текущее задание - показываем только если есть неотвеченные задания и данные загружены */}
       {currentTask && !allCompleted && pendingTasks.length > 0 && todayTasks.length > 0 && (
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
+        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg">
           <div className="flex items-center gap-2 mb-4">
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
               currentTask.subject === 'Математика' ? 'bg-blue-100 text-blue-700' :

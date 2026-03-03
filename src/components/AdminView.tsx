@@ -210,7 +210,7 @@ export const AdminView: React.FC = () => {
 
       {/* Main content */}
       <main className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-56'}`}>
-        <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-30">
+        <header className="bg-white/80 backdrop-blur-[8px] border-b border-gray-200/50 sticky top-0 z-30">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center gap-3">
@@ -268,8 +268,8 @@ const AdminSettingsModal: React.FC<{
   };
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={onClose}>
-      <div className="bg-white/95 backdrop-blur-xl rounded-2xl border border-white/50 shadow-2xl w-full max-w-md p-7 space-y-6" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-[4px] flex items-center justify-center z-[200] p-4" onClick={onClose}>
+      <div className="bg-white/95 backdrop-blur-[12px] rounded-2xl border border-white/50 shadow-2xl w-full max-w-md p-7 space-y-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-semibold text-gray-900">Настройки администратора</h3>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
@@ -397,7 +397,7 @@ const LessonTypesManager: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
+      <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg">
         {customLessonTypes.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
@@ -431,8 +431,8 @@ const LessonTypesManager: React.FC = () => {
       </div>
 
       {showModal && createPortal(
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white/95 backdrop-blur-xl rounded-2xl border border-white/50 shadow-2xl w-full max-w-md p-7 space-y-6" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-[4px] flex items-center justify-center z-[200] p-4" onClick={() => setShowModal(false)}>
+          <div className="bg-white/95 backdrop-blur-[12px] rounded-2xl border border-white/50 shadow-2xl w-full max-w-md p-7 space-y-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold text-gray-900">
                 {editingType ? 'Редактировать тип урока' : 'Добавить тип урока'}
@@ -541,7 +541,7 @@ const AdminDashboard: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
               <Users className="w-5 h-5 text-blue-600" />
@@ -550,7 +550,7 @@ const AdminDashboard: React.FC = () => {
           </div>
           <div className="text-3xl font-bold text-gray-900">{students.length}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
               <Award className="w-5 h-5 text-green-600" />
@@ -559,7 +559,7 @@ const AdminDashboard: React.FC = () => {
           </div>
           <div className="text-3xl font-bold text-blue-600">{avgGrade}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
               <ClipboardList className="w-5 h-5 text-purple-600" />
@@ -568,7 +568,7 @@ const AdminDashboard: React.FC = () => {
           </div>
           <div className="text-3xl font-bold text-gray-900">{filteredGrades.length}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-red-600" />
@@ -580,7 +580,7 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
+        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg">
           <h3 className="font-semibold text-gray-900 mb-4">Лучшие ученики</h3>
           <div className="space-y-3">
             {topStudents.map((s, i) => (
@@ -600,7 +600,7 @@ const AdminDashboard: React.FC = () => {
             {topStudents.length === 0 && <p className="text-gray-400 text-center py-8">Нет данных</p>}
           </div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
+        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg">
           <h3 className="font-semibold text-gray-900 mb-4">Требуют внимания</h3>
           <div className="space-y-3">
             {weakStudents.map((s, i) => (
@@ -618,7 +618,7 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
+        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg">
           <h3 className="font-semibold text-gray-900 mb-5">Средний балл по предметам</h3>
           <div className="space-y-4">
             {avgBySubject.map(item => (
@@ -635,7 +635,7 @@ const AdminDashboard: React.FC = () => {
             ))}
           </div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
+        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg">
           <h3 className="font-semibold text-gray-900 mb-12">Распределение оценок</h3>
           <div className="flex items-end justify-center gap-8 h-52 mt-6">
             {[5, 4, 3, 2].map(v => {
@@ -661,7 +661,7 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {todayLessons.length > 0 && (
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
+        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg">
           <h3 className="font-semibold text-gray-900 mb-4">Расписание на сегодня</h3>
           <div className="space-y-3">
             {todayLessons.map(l => (
@@ -682,19 +682,19 @@ const AdminDashboard: React.FC = () => {
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white/80 backdrop-blur rounded-xl border border-white/50 p-5 text-center shadow-lg">
+        <div className="bg-white/80 backdrop-blur-[8px] rounded-xl border border-white/50 p-5 text-center shadow-lg">
           <div className="text-3xl font-bold text-gray-900">{tests.length}</div>
           <div className="text-xs text-gray-500 mt-2 font-medium">Тестов</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-xl border border-white/50 p-5 text-center shadow-lg">
+        <div className="bg-white/80 backdrop-blur-[8px] rounded-xl border border-white/50 p-5 text-center shadow-lg">
           <div className="text-3xl font-bold text-gray-900">{SUBJECTS.length}</div>
           <div className="text-xs text-gray-500 mt-2 font-medium">Предметов</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-xl border border-white/50 p-5 text-center shadow-lg">
+        <div className="bg-white/80 backdrop-blur-[8px] rounded-xl border border-white/50 p-5 text-center shadow-lg">
           <div className="text-3xl font-bold text-gray-900">{lessons.length}</div>
           <div className="text-xs text-gray-500 mt-2 font-medium">Уроков в расписании</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-xl border border-white/50 p-5 text-center shadow-lg">
+        <div className="bg-white/80 backdrop-blur-[8px] rounded-xl border border-white/50 p-5 text-center shadow-lg">
           <div className="text-3xl font-bold text-gray-900">{attendance.length}</div>
           <div className="text-xs text-gray-500 mt-2 font-medium">Отметок посещаемости</div>
         </div>
@@ -898,7 +898,7 @@ const AttendanceCalendar: React.FC = () => {
       </div>
 
       {/* Календарь */}
-      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
+      <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 shadow-lg overflow-hidden">
         {/* Дни недели */}
         <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
           {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((day, i) => (
@@ -1077,7 +1077,7 @@ const AttendanceModal: React.FC<{
   const sortedStudents = [...students].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`));
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-[4px] flex items-center justify-center z-[200] p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
         {/* Заголовок */}
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
@@ -2281,7 +2281,7 @@ const Journal: React.FC = () => {
 
                   return (
                     <tr key={s.id} className="border-b-2 border-gray-400 hover:bg-gray-50/60 transition-colors">
-                      <td className="sticky left-0 z-10 bg-white/0 hover:bg-white/40 px-4 py-2 font-medium text-gray-900 text-xs border-r border-gray-300 whitespace-nowrap backdrop-blur-sm">
+                      <td className="sticky left-0 z-10 bg-white/0 hover:bg-white/40 px-4 py-2 font-medium text-gray-900 text-xs border-r border-gray-300 whitespace-nowrap backdrop-blur-[4px]">
                         <div className="flex items-center gap-2">
                           <span className="text-gray-400 text-xs w-4">{idx + 1}.</span>
                           <span>{s.lastName} {s.firstName}</span>
@@ -3862,7 +3862,7 @@ const TestPreviewModal: React.FC<{
   const hasVariants = test.useVariants && test.variants && test.variants.length > 0;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-[4px] flex items-center justify-center z-[200] p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
         {/* Заголовок */}
         <div className="p-5 border-b border-gray-200 flex items-center justify-between">
@@ -4586,7 +4586,7 @@ const StudentsManager: React.FC = () => {
       </div>
 
       {showModal && createPortal(
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-[4px] flex items-center justify-center z-[200] p-4" onClick={() => setShowModal(false)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4 animate-scaleIn" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-gray-900">{editingStudent ? 'Редактировать' : 'Добавить ученика'}</h3>
             <div className="space-y-3">

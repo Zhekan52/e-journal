@@ -140,7 +140,7 @@ export const Reports: React.FC = () => {
       </div>
 
       {/* Выбор периода */}
-      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-4 shadow-lg">
+      <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-4 shadow-lg">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-gray-500" />
@@ -362,7 +362,7 @@ const StudentReport: React.FC<StudentReportProps> = ({
   return (
     <div className="space-y-6">
       {/* Выбор ученика через Select */}
-      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
+      <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 p-6 shadow-lg">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Выберите ученика</h3>
         
         <select
@@ -381,7 +381,7 @@ const StudentReport: React.FC<StudentReportProps> = ({
 
       {/* Табель успеваемости - как в личном кабинете ученика */}
       {selectedStudent && selectedStudentData && (
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
+        <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 shadow-lg overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <h3 className="text-xl font-bold text-gray-900">
               Табель успеваемости
@@ -612,7 +612,7 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
+    <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 shadow-lg overflow-hidden">
       <div className="p-6 border-b border-gray-100">
         <h3 className="text-xl font-bold text-gray-900">
           Сводная ведомость класса
@@ -898,7 +898,7 @@ const StatisticsReport: React.FC<StatisticsReportProps> = ({
   return (
     <div className="space-y-6">
       {/* Таблица статистики всех учеников */}
-      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
+      <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 shadow-lg overflow-hidden">
         <div className="p-6 border-b border-gray-100">
           <h3 className="text-xl font-bold text-gray-900">
             Статистика класса
@@ -1081,7 +1081,7 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
   );
 
   return (
-    <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
+    <div className="bg-white/80 backdrop-blur-[8px] rounded-2xl border border-white/50 shadow-lg overflow-hidden">
       <div className="p-6 border-b border-gray-100">
         <h3 className="text-xl font-bold text-gray-900">
           Информация о пропусках
