@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
@@ -14,12 +14,12 @@ import {
   AlertTriangle, TrendingUp, TrendingDown, FileText,
   BarChart3, Award, ArrowLeft, RefreshCw, ChevronRight, Tag, Info,
   Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft,
-  CalendarDays, FileBarChart, Brain, Clock
+  CalendarDays, FileBarChart, Brain, Clock, ArrowRight
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
   type Student, type Test, type TestQuestion, type CustomLessonType, type AttendanceRecord,
-  formatDate, getTodayString, getTodayDate
+  type PendingHomework, formatDate, getTodayString, getTodayDate
 } from '../data';
 
 type Tab = 'dashboard' | 'schedule' | 'journal' | 'attendance' | 'tests' | 'students' | 'lessonTypes' | 'reports' | 'fipi';
@@ -466,15 +466,11 @@ const LessonTypesManager: React.FC = () => {
                   ))}
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Дата прибытия в школу</label>
-                <input type="date" value={formData.enrollmentDate} onChange={e => setFormData(p => ({ ...p, enrollmentDate: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500" />
-              </div>
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={save} className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors font-medium">
-                {editingStudent ? 'Сохранить' : 'Добавить'}
+              <button onClick={() => setShowModal(false)}
+                className="flex-1 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium">
+                Отмена
               </button>
               <button onClick={save}
                 className="flex-1 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/20 font-medium">
@@ -1518,6 +1514,7 @@ const Journal: React.FC = () => {
     customLessonTypes, attendance, setAttendance, tests,
     testAttempts, testRetakes, setTestRetakes, setTestAttempts,
     testAssignments, setTestAssignments,
+    pendingHomework, setPendingHomework,
   } = useData();
 
   const [selectedSubject, setSelectedSubject] = useState(SUBJECTS[0]);
@@ -1578,6 +1575,7 @@ const Journal: React.FC = () => {
   const [popoverRect, setPopoverRect] = useState<DOMRect | null>(null);
   const [lessonPageDate, setLessonPageDate] = useState<string | null>(null);
   const [lessonPageLessonNum, setLessonPageLessonNum] = useState<number>(1);
+  const [showNextLessonHomeworkModal, setShowNextLessonHomeworkModal] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const today = getTodayString();
 
@@ -1978,6 +1976,14 @@ const Journal: React.FC = () => {
                       }} />
                     </label>
                   )}
+                  {/* Кнопка для назначения ДЗ на следующий урок */}
+                  <button
+                    onClick={() => setShowNextLessonHomeworkModal(true)}
+                    className="p-1.5 text-purple-500 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors bg-white"
+                    title="ДЗ на следующий урок"
+                  >
+                    <Clock className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
               {entry?.attachment && (
@@ -1988,6 +1994,143 @@ const Journal: React.FC = () => {
               )}
             </div>
           </div>
+          
+          {/* Модальное окно для ДЗ на следующий урок */}
+          {showNextLessonHomeworkModal && (() => {
+            // Находим следующий урок по тому же предмету
+            const nextLesson = allSlots.find(sl => 
+              sl.date > lessonPageDate || (sl.date === lessonPageDate && sl.lessonNumber > lessonPageLessonNum)
+            );
+            
+            // Функция для сохранения ДЗ
+            const handleSaveNextLessonHomework = async (homeworkText: string, topicText: string, file?: File) => {
+              if (!homeworkText.trim()) {
+                alert('Введите домашнее задание');
+                return;
+              }
+              
+              let attachment;
+              if (file) {
+                try {
+                  const uploaded = await uploadHomeworkFile(file);
+                  attachment = { name: uploaded.name, url: uploaded.url };
+                } catch (err) {
+                  console.error('Upload error:', err);
+                  alert('Ошибка загрузки файла');
+                  return;
+                }
+              }
+              
+              if (nextLesson) {
+                // Если следующий урок существует - сразу привязываем ДЗ
+                const targetEntry = getOrCreateDiaryEntry(nextLesson.date, nextLesson.lessonNumber);
+                if (targetEntry) {
+                  setDiaryEntries(prev => prev.map(de => 
+                    de.id === targetEntry.id 
+                      ? { ...de, homework: homeworkText, topic: topicText || de.topic, attachment: attachment || de.attachment }
+                      : de
+                  ));
+                }
+              } else {
+                // Если следующего урока нет - сохраняем в pendingHomework
+                const newPending: PendingHomework = {
+                  id: `ph${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
+                  subject: selectedSubject,
+                  homework: homeworkText,
+                  topic: topicText || undefined,
+                  attachment,
+                  createdAt: new Date().toISOString(),
+                  sourceLessonDate: lessonPageDate,
+                  sourceLessonNumber: lessonPageLessonNum,
+                };
+                setPendingHomework(prev => [...(prev || []), newPending]);
+              }
+              
+              setShowNextLessonHomeworkModal(false);
+            };
+            
+            // Локальное состояние для модального окна
+            const [modalHomework, setModalHomework] = useState('');
+            const [modalTopic, setModalTopic] = useState('');
+            const [modalFile, setModalFile] = useState<File | null>(null);
+            
+            return createPortal(
+              <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={() => setShowNextLessonHomeworkModal(false)}>
+                <div className="bg-white/95 backdrop-blur-xl rounded-2xl border border-white/50 shadow-2xl w-full max-w-md p-7 space-y-6" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      {nextLesson ? `ДЗ на урок ${nextLesson.lessonNumber}` : 'ДЗ на следующий урок'}
+                    </h3>
+                    <button onClick={() => setShowNextLessonHomeworkModal(false)} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+                      <X className="w-5 h-5 text-gray-500" />
+                    </button>
+                  </div>
+                  
+                  {nextLesson && (
+                    <div className="text-sm text-gray-500 bg-blue-50 px-4 py-3 rounded-xl">
+                      Дата: {new Date(nextLesson.date + 'T00:00').getDate()} {MONTH_NAMES_GEN[new Date(nextLesson.date + 'T00:00').getMonth()]}
+                    </div>
+                  )}
+                  
+                  {!nextLesson && (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                      <p className="text-amber-800 text-sm">
+                        Следующий урок по предмету «{selectedSubject}» ещё не добавлен в расписание. 
+                        ДЗ будет сохранено и автоматически привяжется к ближайшему будущему уроку.
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Домашнее задание</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        placeholder="Введите домашнее задание"
+                        value={modalHomework}
+                        onChange={e => setModalHomework(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Тема (опционально)</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        placeholder="Тема следующего урока"
+                        value={modalTopic}
+                        onChange={e => setModalTopic(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Прикрепить файл (опционально)</label>
+                      <input
+                        type="file"
+                        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 transition-all"
+                        onChange={e => setModalFile(e.target.files?.[0] || null)}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-3 pt-2">
+                    <button 
+                      onClick={() => setShowNextLessonHomeworkModal(false)}
+                      className="flex-1 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                    >
+                      Отмена
+                    </button>
+                    <button 
+                      onClick={() => handleSaveNextLessonHomework(modalHomework, modalTopic, modalFile || undefined)}
+                      className="flex-1 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg shadow-purple-500/20 font-medium"
+                    >
+                      Сохранить
+                    </button>
+                  </div>
+                </div>
+              </div>,
+              document.body
+            );
+          })()}
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
@@ -2001,4 +2144,28 @@ const Journal: React.FC = () => {
                 });
               }} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all appearance-none cursor-pointer">
                 <option value="">Не указан</option>
-                {customLessonTypes && Array.isArray(customLessonTypes) && customLessonTypes.map(lt => <option key={lt.id
+                {customLessonTypes && Array.isArray(customLessonTypes) && customLessonTypes.map(lt => <option key={lt.id} value={lt.value}>{lt.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Тест</label>
+              <select value={entry?.testId || ''} onChange={e => {
+                const ent = getOrCreateDiaryEntry(lessonPageDate, lessonPageLessonNum);
+                if (ent) {
+                  const prevTestId = ent.testId;
+                  setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, testId: e.target.value || undefined, testType: e.target.value ? 'real' as const : undefined } : de));
+                  
+                  // При назначении теста создаем колонку, при удалении - удаляем
+                  if (e.target.value && !prevTestId) {
+                    const hasCol = journalColumns.some(c => c.date === lessonPageDate && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === lessonPageLessonNum || (!c.lessonNumber && lessonPageLessonNum === 0)));
+                    if (!hasCol) {
+                      const newCol = { id: `jc${Date.now()}`, date: lessonPageDate, subject: selectedSubject, lessonNumber: lessonPageLessonNum, type: 'test' };
+                      setJournalColumns(prev => [...prev, newCol]);
+                    }
+                  } else if (!e.target.value && prevTestId) {
+                    // Удаляем колонку теста и связанные оценки
+                    const testCol = journalColumns.find(c => c.date === lessonPageDate && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === lessonPageLessonNum || (!c.lessonNumber && lessonPageLessonNum === 0)));
+                    if (testCol && setGrades) {
+                      setGrades(prev => prev.filter(g => !(g.date === lessonPageDate && g.subject === selectedSubject && g.columnId === testCol.id)));
+                    }
+                    setJournalColumns(

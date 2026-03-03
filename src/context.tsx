@@ -276,7 +276,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [fipiAttempts, setFipiAttempts, l16] = useFirestoreCollection<FipiTaskAttempt>('fipiAttempts');
   const [fipiNotifications, setFipiNotifications, l17] = useFirestoreCollection<FipiNotification>('fipiNotifications');
 
-  // Pending homework for future lessons
+  // Pending homework for next lesson feature
   const [pendingHomework, setPendingHomework, l18] = useFirestoreCollection<PendingHomework>('pendingHomework');
 
   const loading = !(l1 && l2 && l3 && l4 && l5 && l6 && l7 && l8 && l9 && l10 && l11 && l12 && l13 && l14 && l15 && l16 && l17 && l18);
@@ -290,7 +290,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       testRetakes, setTestRetakes, testAssignments, setTestAssignments,
       fipiTasks, setFipiTasks, fipiRewards, setFipiRewards,
       fipiProgress, setFipiProgress, fipiAttempts, setFipiAttempts,
-      fipiNotifications, setFipiNotifications, pendingHomework, setPendingHomework, loading,
+      fipiNotifications, setFipiNotifications,
+      pendingHomework, setPendingHomework, loading,
     }}>
       {children}
     </DataContext.Provider>

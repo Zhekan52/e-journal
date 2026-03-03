@@ -54,19 +54,6 @@ export interface Student {
   lastName: string;
   username: string;
   password: string;
-  enrollmentDate?: string; // YYYY-MM-DD - дата зачисления в школу
-}
-
-// Новый интерфейс для отложенного домашнего задания
-export interface PendingHomework {
-  id: string;
-  subject: string;
-  homework: string;
-  attachment?: DiaryEntryAttachment;
-  createdAt: string; // Когда ДЗ было создано
-  targetDate?: string; // Дата, на которую планировалось ДЗ (YYYY-MM-DD)
-  targetLessonNumber?: number; // Номер урока
-  assignedLessonId?: string; // ID урока, к которому привязано ДЗ (когда он появится)
 }
 
 export interface TestQuestion {
@@ -141,6 +128,18 @@ export interface TestAssignment {
   assigned: boolean; // true = тест назначен, false = не назначен (например, болеет)
   variantId?: string; // Назначенный вариант (если используются варианты)
   deadlineDate?: string; // Дата, до которой нужно пройти тест (если установлен - тест с дедлайном)
+}
+
+// Домашнее задание, ожидающее привязки к уроку
+export interface PendingHomework {
+  id: string;
+  subject: string;
+  homework: string;
+  topic?: string; // Тема урока (опционально)
+  attachment?: DiaryEntryAttachment;
+  createdAt: string; // Когда было создано ДЗ
+  sourceLessonDate: string; // Дата урока, с которого было назначено ДЗ
+  sourceLessonNumber: number; // Номер урока, с которого было назначено ДЗ
 }
 
 // Notifications removed
