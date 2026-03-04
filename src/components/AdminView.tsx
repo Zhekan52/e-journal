@@ -136,69 +136,72 @@ export const AdminView: React.FC = () => {
 
   return (
     <div className="min-h-screen flex">
-      {/* Sidebar */}
-      <aside className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 z-40 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-56'}`}>
+      {/* Sidebar - Modern Design */}
+      <aside className={`fixed left-0 top-0 h-full bg-white/95 backdrop-blur-xl border-r-0 z-40 flex flex-col transition-all duration-300 shadow-2xl ${sidebarCollapsed ? 'w-20' : 'w-64'}`}>
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
+        <div className="h-20 flex items-center justify-between px-5 border-b border-gray-100/50">
           {!sidebarCollapsed && (
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                <BookOpen className="w-4 h-4 text-white" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <BookOpen className="w-5 h-5 text-white" />
               </div>
-              <span className="font-semibold text-gray-900 text-sm">Электронный журнал</span>
+              <div>
+                <span className="font-bold text-gray-900 text-sm block leading-tight">Электронный</span>
+                <span className="font-bold text-gray-900 text-sm block leading-tight">журнал</span>
+              </div>
             </div>
           )}
           {sidebarCollapsed && (
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto">
-              <BookOpen className="w-4 h-4 text-white" />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center mx-auto shadow-lg shadow-blue-500/25">
+              <BookOpen className="w-5 h-5 text-white" />
             </div>
           )}
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-4 px-2 space-y-1">
+        <nav className="flex-1 py-6 px-3 space-y-1.5 overflow-y-auto">
           {tabs.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 ${
                 activeTab === tab.id 
-                  ? 'bg-blue-50 text-blue-600' 
-                  : 'text-gray-600 hover:bg-gray-50'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25' 
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
               }`}>
-              <span className={activeTab === tab.id ? 'text-blue-600' : 'text-gray-400'}>{tab.icon}</span>
+              <span className={activeTab === tab.id ? 'text-white' : 'text-gray-400'}>{tab.icon}</span>
               {!sidebarCollapsed && <span>{tab.label}</span>}
             </button>
           ))}
         </nav>
 
         {/* User section */}
-        <div className="p-2 border-t border-gray-100">
+        <div className="p-3 border-t border-gray-100/50">
           {!sidebarCollapsed ? (
-            <button onClick={() => setShowSettingsModal(true)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
+            <button onClick={() => setShowSettingsModal(true)} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-gray-100 transition-colors group">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
                 {user?.name?.charAt(0)}
               </div>
               <div className="flex-1 text-left">
-                <div className="text-sm font-medium text-gray-900">{user?.name}</div>
-                <div className="text-xs text-gray-500">Администратор</div>
+                <div className="text-sm font-bold text-gray-900">{user?.name}</div>
+                <div className="text-xs text-gray-500 font-medium">Администратор</div>
               </div>
             </button>
           ) : (
-            <button onClick={() => setShowSettingsModal(true)} className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
+            <button onClick={() => setShowSettingsModal(true)} className="w-full flex items-center justify-center p-2 rounded-2xl hover:bg-gray-100 transition-colors">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
                 {user?.name?.charAt(0)}
               </div>
             </button>
           )}
-          <button onClick={logout} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors ${sidebarCollapsed ? 'justify-center' : ''}`}>
+          <button onClick={logout} className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors mt-1 ${sidebarCollapsed ? 'justify-center' : ''}`}>
             <LogOut className="w-5 h-5" />
-            {!sidebarCollapsed && <span className="text-sm">Выход</span>}
+            {!sidebarCollapsed && <span className="text-sm font-semibold">Выход</span>}
           </button>
         </div>
 
         {/* Collapse button */}
         <button 
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="absolute -right-3 top-20 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors"
+          className="absolute -right-3 top-24 w-7 h-7 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50 hover:scale-110 transition-all"
         >
           {sidebarCollapsed ? (
             <ChevronRight className="w-4 h-4 text-gray-500" />
@@ -209,16 +212,17 @@ export const AdminView: React.FC = () => {
       </aside>
 
       {/* Main content */}
-      <main className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-56'}`}>
-        <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-30">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center gap-3">
-                <span className="font-semibold text-gray-900 text-lg">{tabs.find(t => t.id === activeTab)?.label}</span>
+      <main className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-20' : 'ml-64'}`}>
+        <header className="bg-white/80 backdrop-blur-2xl border-b border-gray-200/30 sticky top-0 z-30 shadow-sm">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex items-center justify-between h-20">
+              <div className="flex items-center gap-4">
+                <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
+                <span className="font-bold text-gray-900 text-xl tracking-tight">{tabs.find(t => t.id === activeTab)?.label}</span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <button onClick={() => setShowSettingsModal(true)} className="sm:hidden flex items-center gap-2 px-3 py-2 bg-gray-100/50 rounded-xl hover:bg-gray-200 transition-colors cursor-pointer">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
                     {user?.name?.charAt(0)}
                   </div>
                 </button>
@@ -531,51 +535,55 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="animate-fadeIn space-y-8">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-8 text-white shadow-xl shadow-blue-500/20">
-        <h1 className="text-2xl font-semibold mb-2">Добро пожаловать!</h1>
-        <p className="text-blue-100">
-          {getTodayDate().getDate()} {MONTH_NAMES_GEN[getTodayDate().getMonth()]} · {students.length} учеников · {todayLessons.length} уроков сегодня
-        </p>
+      {/* Welcome Banner - Modern Style */}
+      <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-3xl p-8 text-white shadow-2xl shadow-blue-500/20 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+        <div className="relative">
+          <h1 className="text-3xl font-bold mb-3">Добро пожаловать!</h1>
+          <p className="text-blue-100 text-lg font-medium">
+            {getTodayDate().getDate()} {MONTH_NAMES_GEN[getTodayDate().getMonth()]} · {students.length} учеников · {todayLessons.length} уроков сегодня
+          </p>
+        </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Modern Style */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="glass rounded-3xl p-6 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:-translate-y-1 card-hover">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-              <Users className="w-5 h-5 text-blue-600" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Users className="w-6 h-6 text-white" />
             </div>
-            <span className="text-sm font-medium text-gray-500">Учеников</span>
+            <span className="text-sm font-semibold text-gray-500">Учеников</span>
           </div>
-          <div className="text-3xl font-bold text-gray-900">{students.length}</div>
+          <div className="text-4xl font-bold text-gray-900">{students.length}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="glass rounded-3xl p-6 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:-translate-y-1 card-hover">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-              <Award className="w-5 h-5 text-green-600" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg shadow-green-500/20">
+              <Award className="w-6 h-6 text-white" />
             </div>
-            <span className="text-sm font-medium text-gray-500">Средний балл</span>
+            <span className="text-sm font-semibold text-gray-500">Средний балл</span>
           </div>
-          <div className="text-3xl font-bold text-blue-600">{avgGrade}</div>
+          <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{avgGrade}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="glass rounded-3xl p-6 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:-translate-y-1 card-hover">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-              <ClipboardList className="w-5 h-5 text-purple-600" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
+              <ClipboardList className="w-6 h-6 text-white" />
             </div>
-            <span className="text-sm font-medium text-gray-500">Оценок</span>
+            <span className="text-sm font-semibold text-gray-500">Оценок</span>
           </div>
-          <div className="text-3xl font-bold text-gray-900">{filteredGrades.length}</div>
+          <div className="text-4xl font-bold text-gray-900">{filteredGrades.length}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="glass rounded-3xl p-6 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:-translate-y-1 card-hover">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/20">
+              <AlertTriangle className="w-6 h-6 text-white" />
             </div>
-            <span className="text-sm font-medium text-gray-500">Пропуски (Н)</span>
+            <span className="text-sm font-semibold text-gray-500">Пропуски (Н)</span>
           </div>
-          <div className="text-3xl font-bold text-gray-900">{absentCount}</div>
+          <div className="text-4xl font-bold text-gray-900">{absentCount}</div>
         </div>
       </div>
 
@@ -2457,19 +2465,19 @@ const Journal: React.FC = () => {
 
       {/* GRADES TAB */}
       {journalTab === 'grades' && (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+        <div className="glass rounded-3xl shadow-soft-xl overflow-hidden border border-white/50">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 {/* Month row */}
                 {monthGroups.length > 0 && (
-                  <tr className="bg-amber-100">
-                    <th className="sticky left-0 z-20 bg-amber-100 w-[48px] min-w-[48px] border-b border-r border-amber-300" />
-                    <th className="sticky left-[48px] z-20 bg-amber-100 min-w-[140px] border-b border-r border-amber-300" />
+                  <tr className="bg-gradient-to-r from-amber-100 to-orange-100">
+                    <th className="sticky left-0 z-20 bg-gradient-to-r from-amber-100 to-orange-100 w-[48px] min-w-[48px] border-b border-r border-amber-300" />
+                    <th className="sticky left-[48px] z-20 bg-gradient-to-r from-amber-100 to-orange-100 min-w-[140px] border-b border-r border-amber-300" />
                     {monthGroups.map((mg, i) => {
                       const totalCols = mg.slots.reduce((sum: number, sl) => sum + 1 + getColumnsForSlot(sl.date, sl.lessonNumber).length, 0);
                       return (
-                        <th key={i} colSpan={totalCols} className="px-2 py-2 text-center font-semibold text-amber-900 border-b border-r border-amber-300 text-xs uppercase">
+                        <th key={i} colSpan={totalCols} className="px-2 py-3 text-center font-bold text-amber-900 border-b border-r border-amber-300 text-xs uppercase tracking-wide">
                           {mg.month}
                         </th>
                       );
@@ -2480,9 +2488,9 @@ const Journal: React.FC = () => {
                   </tr>
                 )}
                 {/* Date + lesson number row */}
-                <tr className="bg-gray-100">
-                  <th className="sticky left-0 z-20 bg-gray-100 px-2 py-2 text-xs font-medium text-gray-600 border-b border-r border-gray-300 w-[48px] min-w-[48px]">№</th>
-                  <th className="sticky left-[48px] z-20 bg-gray-100 px-3 py-2 text-left text-xs font-medium text-gray-600 border-b border-r border-gray-300 min-w-[140px]">ФИ</th>
+                <tr className="bg-gradient-to-r from-gray-100 to-gray-200">
+                  <th className="sticky left-0 z-20 bg-gradient-to-r from-gray-100 to-gray-200 px-2 py-3 text-xs font-bold text-gray-700 border-b border-r border-gray-300 w-[48px] min-w-[48px]">№</th>
+                  <th className="sticky left-[48px] z-20 bg-gradient-to-r from-gray-100 to-gray-200 px-3 py-3 text-left text-xs font-bold text-gray-700 border-b border-r border-gray-300 min-w-[140px]">ФИ</th>
                   {allSlots.map(sl => {
                     const cols = getColumnsForSlot(sl.date, sl.lessonNumber);
                     const totalCols = 1 + cols.length;
@@ -2543,9 +2551,9 @@ const Journal: React.FC = () => {
                   const hasNoGradesAtAll = avg === 0;
 
                   return (
-                    <tr key={student.id} className="border-b border-gray-300 hover:bg-gray-50/60">
-                      <td className="sticky left-0 z-10 bg-white px-2 py-1.5 text-center text-xs text-gray-500 border-r border-gray-300 w-[48px]">{idx + 1}</td>
-                      <td className="sticky left-[48px] z-10 bg-white px-3 py-1.5 font-medium text-gray-900 text-xs border-r border-gray-300 whitespace-nowrap">{student.lastName} {student.firstName}</td>
+                    <tr key={student.id} className="border-b border-gray-200 hover:bg-blue-50/50 transition-colors">
+                      <td className="sticky left-0 z-10 bg-white/95 backdrop-blur px-3 py-2.5 text-center text-xs font-semibold text-gray-500 border-r border-gray-200 w-[48px]">{idx + 1}</td>
+                      <td className="sticky left-[48px] z-10 bg-white/95 backdrop-blur px-4 py-2.5 font-bold text-gray-900 text-xs border-r border-gray-200 whitespace-nowrap">{student.lastName} {student.firstName}</td>
                       {allSlots.map(sl => {
                         const cols = getColumnsForSlot(sl.date, sl.lessonNumber);
                         const mainGrade = getGrade(student.id, sl.date, undefined, sl.lessonNumber);
@@ -2573,12 +2581,12 @@ const Journal: React.FC = () => {
                                     }
                                   }}
                                   disabled={isBlocked}
-                                  className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                  className={`w-9 h-9 rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow-md ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
                                     isEnrollmentBlocked ? 'bg-gray-200 text-gray-400 border-2 border-dashed border-gray-300' :
                                     inputMode === 'keyboard' && keyboardTarget?.studentId === student.id && keyboardTarget?.date === sl.date && keyboardTarget?.lessonNumber === sl.lessonNumber && !keyboardTarget?.columnId
-                                      ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
+                                      ? 'ring-2 ring-primary-500 ring-offset-2 bg-primary-100 text-primary-700'
                                       : showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
-                                        (mainGrade.excludeFromAverage ? 'bg-gray-200 text-gray-500' : mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                                        (mainGrade.excludeFromAverage ? 'bg-gray-200 text-gray-500' : mainGrade.value === 5 ? 'bg-gradient-to-br from-green-100 to-green-200 text-green-700' : mainGrade.value === 4 ? 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700' : mainGrade.value === 3 ? 'bg-gradient-to-br from-yellow-100 to-yellow-200 text-yellow-700' : 'bg-gradient-to-br from-red-100 to-red-200 text-red-700')
                                         : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'
                                   }`}
                                   title={isEnrollmentBlocked ? `Оценки можно выставлять с ${student.enrollmentDate}` : isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
@@ -2705,10 +2713,10 @@ const Journal: React.FC = () => {
 
       {/* TOPICS TAB */}
       {journalTab === 'topics' && (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+        <div className="glass rounded-3xl shadow-soft-xl overflow-hidden border border-white/50">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-100 border-b border-gray-300 text-xs text-gray-700">
+              <tr className="bg-gradient-to-r from-gray-100 to-gray-200 border-b border-gray-300 text-xs text-gray-700">
                 <th className="px-3 py-2 text-left w-10">№</th>
                 <th className="px-3 py-2 text-left w-28">Дата</th>
                 <th className="px-3 py-2 text-left min-w-[180px]">Тип урока</th>

@@ -275,32 +275,36 @@ export const StudentView: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <BookOpen className="w-5 h-5 text-white" />
+      {/* Header - Modern Style */}
+      <header className="bg-white/90 backdrop-blur-2xl border-b border-gray-200/30 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-center justify-between h-20">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-xl shadow-blue-500/20">
+                <BookOpen className="w-6 h-6 text-white" />
               </div>
-              <span className="font-semibold text-gray-900 text-lg">Дневник</span>
+              <div>
+                <span className="font-bold text-gray-900 text-xl tracking-tight block leading-tight">Электронный</span>
+                <span className="font-bold text-gray-900 text-xl tracking-tight block leading-tight">дневник</span>
+              </div>
             </div>
-            <nav className="flex items-center gap-1 bg-gray-100/50 rounded-xl p-1">
+            <nav className="flex items-center gap-1 bg-gray-100/80 backdrop-blur rounded-2xl p-1.5">
               {tabs.map(tab => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'}`}>
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${activeTab === tab.id ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'}`}>
                   {tab.icon}
                   <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               ))}
             </nav>
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-gray-100/50 rounded-xl">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:flex items-center gap-3 px-4 py-2.5 bg-gray-100/80 backdrop-blur rounded-2xl">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
                   {user?.name?.charAt(0)}
                 </div>
-                <span className="text-sm text-gray-700 font-medium">{user?.name}</span>
+                <span className="text-sm font-bold text-gray-800">{user?.name}</span>
               </div>
-              <button onClick={logout} className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-red-500">
+              <button onClick={logout} className="p-3 rounded-2xl hover:bg-red-50 transition-colors text-gray-500 hover:text-red-600">
                 <LogOut className="w-5 h-5" />
               </button>
             </div>
@@ -348,31 +352,52 @@ const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons
 
   return (
     <div className="animate-fadeIn space-y-8">
-      <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-8 text-white shadow-xl shadow-blue-500/20">
-        <h1 className="text-2xl font-semibold mb-2">Добро пожаловать!</h1>
-        <p className="text-blue-100">Сегодня {getTodayDate().getDate()} {MONTH_NAMES_GEN[getTodayDate().getMonth()]}</p>
+      {/* Welcome Banner - Modern Style */}
+      <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-3xl p-8 text-white shadow-2xl shadow-blue-500/20 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+        <div className="relative">
+          <h1 className="text-3xl font-bold mb-3">Добро пожаловать!</h1>
+          <p className="text-blue-100 text-lg font-medium">Сегодня {getTodayDate().getDate()} {MONTH_NAMES_GEN[getTodayDate().getMonth()]}</p>
+        </div>
       </div>
 
       {/* FIPI Widget */}
       <FipiWidget />
 
+      {/* Stats Cards - Modern Style */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <div className="text-sm font-medium text-gray-500 mb-2">Средний балл</div>
-          <div className="text-4xl font-bold text-blue-600">{avgGrade}</div>
+        <div className="glass rounded-3xl p-6 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:-translate-y-1 card-hover">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg shadow-green-500/20">
+              <BarChart3 className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-sm font-semibold text-gray-500">Средний балл</span>
+          </div>
+          <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{avgGrade}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <div className="text-sm font-medium text-gray-500 mb-2">Всего оценок</div>
+        <div className="glass rounded-3xl p-6 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:-translate-y-1 card-hover">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
+              <ClipboardList className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-sm font-semibold text-gray-500">Всего оценок</span>
+          </div>
           <div className="text-4xl font-bold text-gray-900">{myGrades.length}</div>
         </div>
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <div className="text-sm font-medium text-gray-500 mb-2">Уроков сегодня</div>
+        <div className="glass rounded-3xl p-6 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:-translate-y-1 card-hover">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <Calendar className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-sm font-semibold text-gray-500">Уроков сегодня</span>
+          </div>
           <div className="text-4xl font-bold text-gray-900">{todayLessons.length}</div>
         </div>
       </div>
       {todayLessons.length > 0 && (
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
-          <h3 className="font-semibold text-gray-900 mb-4">Расписание на сегодня</h3>
+        <div className="glass rounded-3xl p-6 shadow-soft-lg">
+          <h3 className="font-bold text-gray-900 mb-5 text-lg">Расписание на сегодня</h3>
           <div className="space-y-3">
             {todayLessons.map((l: any) => (
               <div key={l.id} className="flex items-center gap-4 p-3 rounded-xl bg-gray-50/50 hover:bg-gray-100 transition-colors">
@@ -482,16 +507,16 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string; 
           <table className="w-full text-sm">
             <thead>
               {monthGroups.length > 0 && (
-                <tr className="bg-primary-50/50">
-                  <th className="sticky left-0 z-10 bg-primary-50/50 px-5 py-3 text-left font-semibold text-primary-700 border-b border-r border-primary-300 min-w-[180px]"></th>
+                <tr className="bg-gradient-to-r from-primary-50/80 to-blue-50/80">
+                  <th className="sticky left-0 z-10 bg-gradient-to-r from-primary-50/80 to-blue-50/80 px-5 py-3 text-left font-bold text-primary-700 border-b border-r border-primary-300 min-w-[180px]"></th>
                   {monthGroups.map((mg, i) => (
-                    <th key={i} colSpan={mg.dates.length} className="px-3 py-3 text-center font-bold text-primary-800 border-b border-r border-primary-300 text-xs uppercase">{mg.month}</th>
+                    <th key={i} colSpan={mg.dates.length} className="px-3 py-3 text-center font-bold text-primary-800 border-b border-r border-primary-300 text-xs uppercase tracking-wide">{mg.month}</th>
                   ))}
-                  <th className="px-4 py-3 text-center font-semibold text-primary-700 border-b border-primary-300">Ср.</th>
+                  <th className="px-4 py-3 text-center font-bold text-primary-700 border-b border-primary-300">Ср.</th>
                 </tr>
               )}
-              <tr className="bg-gray-50/50">
-                <th className="sticky left-0 z-10 bg-gray-50/50 px-5 py-3 text-left font-semibold text-gray-600 border-b border-r border-gray-300 min-w-[180px]">Предмет</th>
+              <tr className="bg-gradient-to-r from-gray-100 to-gray-200">
+                <th className="sticky left-0 z-10 bg-gradient-to-r from-gray-100 to-gray-200 px-5 py-3 text-left font-bold text-gray-700 border-b border-r border-gray-300 min-w-[180px]">Предмет</th>
                 {allDates.map(d => (
                   <th key={d} className="px-3 py-3 text-center font-semibold text-gray-500 border-b border-r border-gray-200 min-w-[50px]">
                     {parseInt(d.split('-')[2])}
