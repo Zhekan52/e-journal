@@ -136,33 +136,38 @@ export const Reports: React.FC = () => {
     <div className="animate-fadeIn space-y-6">
       {/* Заголовок */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Отчёты</h2>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
+            <FileText className="w-5 h-5 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Журнал</h2>
+        </div>
       </div>
 
-      {/* Выбор периода */}
-      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-4 shadow-lg">
+      {/* Выбор периода - новый дизайн */}
+      <div className="bg-gradient-to-br from-white to-slate-50 rounded-2xl border border-slate-200/60 p-5 shadow-xl shadow-slate-200/50">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-gray-500" />
-            <span className="font-medium text-gray-700">Период:</span>
+          <div className="flex items-center gap-2.5 px-3 py-1.5 bg-violet-50 rounded-lg">
+            <Calendar className="w-4 h-4 text-violet-600" />
+            <span className="font-semibold text-violet-700 text-sm">Период</span>
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <button
               onClick={setWeekPeriod}
-              className="px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+              className="px-4 py-2 text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-all hover:scale-105 active:scale-95"
             >
               За неделю
             </button>
             <button
               onClick={setMonthPeriod}
-              className="px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+              className="px-4 py-2 text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-all hover:scale-105 active:scale-95"
             >
               За месяц
             </button>
             <button
               onClick={setFullPeriod}
-              className="px-4 py-2 text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-xl transition-colors"
+              className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 rounded-lg transition-all hover:scale-105 active:scale-95 shadow-lg shadow-purple-500/30"
             >
               За весь период
             </button>
@@ -170,39 +175,39 @@ export const Reports: React.FC = () => {
           
           <button
             onClick={() => setShowDatePicker(!showDatePicker)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-slate-800 text-white hover:bg-slate-700 rounded-lg transition-all hover:scale-105 active:scale-95 shadow-lg"
           >
             <Filter className="w-4 h-4" />
-            {formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}
+            <span className="truncate max-w-[200px]">{formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}</span>
             {showDatePicker ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
 
         {/* Раскрывающаяся панель фильтра дат */}
         {showDatePicker && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+          <div className="mt-5 p-5 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 animate-fadeIn">
             <div className="flex flex-wrap items-end gap-4">
               <div className="flex-1 min-w-[200px]">
-                <label className="block text-sm font-medium text-gray-600 mb-1">Дата начала</label>
+                <label className="block text-sm font-semibold text-slate-600 mb-2">Дата начала</label>
                 <input
                   type="date"
                   value={dateRange.start}
                   onChange={(e) => setDateRange(p => ({ ...p, start: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 transition-all"
                 />
               </div>
               <div className="flex-1 min-w-[200px]">
-                <label className="block text-sm font-medium text-gray-600 mb-1">Дата окончания</label>
+                <label className="block text-sm font-semibold text-slate-600 mb-2">Дата окончания</label>
                 <input
                   type="date"
                   value={dateRange.end}
                   onChange={(e) => setDateRange(p => ({ ...p, end: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 transition-all"
                 />
               </div>
               <button
                 onClick={() => setShowDatePicker(false)}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="px-6 py-3 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl hover:from-violet-600 hover:to-purple-700 transition-all font-semibold shadow-lg shadow-purple-500/30 hover:scale-105 active:scale-95"
               >
                 Применить
               </button>
@@ -211,20 +216,20 @@ export const Reports: React.FC = () => {
         )}
       </div>
 
-      {/* Вкладки отчётов */}
-      <div className="flex gap-2 border-b border-gray-200 pb-1">
+      {/* Вкладки отчётов - новый дизайн */}
+      <div className="flex gap-1 bg-slate-100 p-1.5 rounded-2xl">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 ${
               activeTab === tab.id
-                ? 'text-blue-600 border-blue-600'
-                : 'text-gray-500 border-transparent hover:text-gray-700'
+                ? 'bg-white text-violet-700 shadow-lg shadow-slate-200/50'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
             }`}
           >
             {tab.icon}
-            {tab.label}
+            <span className="hidden sm:inline">{tab.label}</span>
           </button>
         ))}
       </div>
@@ -353,22 +358,25 @@ const StudentReport: React.FC<StudentReportProps> = ({
     return count > 0 ? (totalSum / count).toFixed(2) : null;
   }, [gradesBySubject]);
 
-  // Функция цвета оценки
+  // Функция цвета оценки - новые цвета
   const gradeColor = (v: number, excludeFromAverage?: boolean) => {
-    if (excludeFromAverage) return 'bg-gray-200 text-gray-500';
-    return v === 5 ? 'bg-green-100 text-green-700' : v === 4 ? 'bg-blue-100 text-blue-700' : v === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700';
+    if (excludeFromAverage) return 'bg-slate-200 text-slate-500';
+    return v === 5 ? 'bg-emerald-100 text-emerald-700' : v === 4 ? 'bg-sky-100 text-sky-700' : v === 3 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700';
   };
 
   return (
     <div className="space-y-6">
-      {/* Выбор ученика через Select */}
-      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Выберите ученика</h3>
+      {/* Выбор ученика через Select - новый дизайн */}
+      <div className="bg-gradient-to-br from-white to-violet-50/30 rounded-2xl border border-violet-200/50 p-6 shadow-xl shadow-violet-200/30">
+        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <User className="w-5 h-5 text-violet-600" />
+          Выберите ученика
+        </h3>
         
         <select
           value={selectedStudent}
           onChange={(e) => setSelectedStudent(e.target.value)}
-          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+          className="w-full px-4 py-3.5 bg-white border-2 border-slate-200 rounded-xl focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-slate-800 font-medium transition-all"
         >
           <option value="">-- Выберите ученика --</option>
           {sortedStudents.map(s => (
@@ -379,15 +387,15 @@ const StudentReport: React.FC<StudentReportProps> = ({
         </select>
       </div>
 
-      {/* Табель успеваемости - как в личном кабинете ученика */}
+      {/* Табель успеваемости - как в личном кабинете ученика - новый дизайн */}
       {selectedStudent && selectedStudentData && (
-        <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900">
+        <div className="bg-gradient-to-br from-white to-slate-50 rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/50 overflow-hidden">
+          <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-violet-50/50 to-purple-50/50">
+            <h3 className="text-xl font-bold bg-gradient-to-r from-violet-700 to-purple-700 bg-clip-text text-transparent">
               Табель успеваемости
             </h3>
-            <p className="text-gray-500 mt-1">
-              {selectedStudentData.lastName} {selectedStudentData.firstName} · {formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}
+            <p className="text-slate-500 mt-1 font-medium">
+              <span className="text-violet-600">{selectedStudentData.lastName} {selectedStudentData.firstName}</span> · {formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}
             </p>
           </div>
 
@@ -396,25 +404,25 @@ const StudentReport: React.FC<StudentReportProps> = ({
               {/* Заголовок с месяцами */}
               <thead>
                 {monthGroups.length > 0 && (
-                  <tr className="bg-blue-50/50">
-                    <th className="sticky left-0 z-10 bg-blue-50/50 px-4 py-3 text-left font-semibold text-blue-700 border-b border-r border-blue-200 min-w-[180px]"></th>
+                  <tr className="bg-gradient-to-r from-violet-100 to-purple-100">
+                    <th className="sticky left-0 z-10 bg-gradient-to-r from-violet-100 to-purple-100 px-4 py-3 text-left font-bold text-violet-700 border-b border-r border-violet-200 min-w-[180px]"></th>
                     {monthGroups.map((mg, i) => (
-                      <th key={i} colSpan={mg.dates.length} className="px-2 py-3 text-center font-bold text-blue-800 border-b border-r border-blue-200 text-xs uppercase">
+                      <th key={i} colSpan={mg.dates.length} className="px-2 py-3 text-center font-bold text-violet-800 border-b border-r border-violet-200 text-xs uppercase">
                         {mg.month}
                       </th>
                     ))}
-                    <th className="px-3 py-3 text-center font-semibold text-blue-700 border-b border-blue-200">Ср.</th>
+                    <th className="px-3 py-3 text-center font-bold text-violet-700 border-b border-violet-200">Ср.</th>
                   </tr>
                 )}
                 {/* Заголовок с днями */}
-                <tr className="bg-gray-50/50">
-                  <th className="sticky left-0 z-10 bg-gray-50/50 px-4 py-3 text-left font-semibold text-gray-600 border-b border-r border-gray-300 min-w-[180px]">Предмет</th>
+                <tr className="bg-slate-50">
+                  <th className="sticky left-0 z-10 bg-slate-50 px-4 py-3 text-left font-bold text-slate-600 border-b border-r border-slate-200 min-w-[180px]">Предмет</th>
                   {allDates.map(d => (
-                    <th key={d} className="px-2 py-3 text-center font-semibold text-gray-500 border-b border-r border-gray-200 min-w-[44px]">
+                    <th key={d} className="px-2 py-3 text-center font-semibold text-slate-500 border-b border-r border-slate-200 min-w-[44px]">
                       {parseInt(d.split('-')[2])}
                     </th>
                   ))}
-                  <th className="px-3 py-3 text-center font-semibold text-gray-500 border-b border-gray-300 min-w-[64px]">Ср.</th>
+                  <th className="px-3 py-3 text-center font-semibold text-slate-500 border-b border-slate-200 min-w-[64px]">Ср.</th>
                 </tr>
               </thead>
               <tbody>
@@ -424,14 +432,14 @@ const StudentReport: React.FC<StudentReportProps> = ({
                   
                   const avg = calculateAverage(subject);
                   return (
-                    <tr key={subject} className="border-b border-gray-200 hover:bg-white/50 transition-colors">
-                      <td className="sticky left-0 z-10 bg-white px-4 py-2.5 font-bold text-gray-900 border-r border-gray-300">
+                    <tr key={subject} className="border-b border-slate-100 hover:bg-violet-50/50 transition-colors">
+                      <td className="sticky left-0 z-10 bg-white px-4 py-2.5 font-bold text-slate-800 border-r border-slate-200">
                         {subject}
                       </td>
                       {allDates.map(d => {
                         const vals = data.dates[d] || [];
                         return (
-                          <td key={d} className="px-1 py-2 text-center border-r border-gray-200">
+                          <td key={d} className="px-1 py-2 text-center border-r border-slate-100">
                             <div className="flex flex-wrap gap-0.5 justify-center">
                               {vals.map((gradeObj, i) => (
                                 <span
@@ -446,18 +454,18 @@ const StudentReport: React.FC<StudentReportProps> = ({
                           </td>
                         );
                       })}
-                      <td className="px-2 py-2 text-center border-gray-300">
+                      <td className="px-2 py-2 text-center border-slate-200">
                         {avg !== null ? (
                           <span className={`inline-flex items-center justify-center w-10 h-7 rounded-lg text-xs font-bold ${
-                            parseFloat(avg) >= 4.5 ? 'bg-green-100 text-green-700' :
-                            parseFloat(avg) >= 3.5 ? 'bg-blue-100 text-blue-700' :
-                            parseFloat(avg) >= 2.5 ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
+                            parseFloat(avg) >= 4.5 ? 'bg-emerald-100 text-emerald-700' :
+                            parseFloat(avg) >= 3.5 ? 'bg-sky-100 text-sky-700' :
+                            parseFloat(avg) >= 2.5 ? 'bg-amber-100 text-amber-700' :
+                            'bg-rose-100 text-rose-700'
                           }`}>
                             {avg}
                           </span>
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-slate-300">—</span>
                         )}
                       </td>
                     </tr>
@@ -465,24 +473,24 @@ const StudentReport: React.FC<StudentReportProps> = ({
                 })}
               </tbody>
               {/* Общий средний балл */}
-              <tfoot className="bg-blue-50">
+              <tfoot className="bg-gradient-to-r from-violet-100 to-purple-100">
                 <tr>
-                  <td className="sticky left-0 z-10 bg-blue-50 px-4 py-3 font-bold text-blue-900 border-r border-blue-200">
+                  <td className="sticky left-0 z-10 bg-gradient-to-r from-violet-100 to-purple-100 px-4 py-3 font-bold text-violet-800 border-r border-violet-200">
                     Общий средний балл
                   </td>
-                  {allDates.map(d => <td key={d} className="border-r border-blue-200"></td>)}
+                  {allDates.map(d => <td key={d} className="border-r border-violet-200"></td>)}
                   <td className="px-3 py-3 text-center">
                     {overallStudentAverage ? (
                       <span className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-bold ${
-                        parseFloat(overallStudentAverage) >= 4.5 ? 'bg-green-200 text-green-800' :
-                        parseFloat(overallStudentAverage) >= 3.5 ? 'bg-blue-200 text-blue-800' :
-                        parseFloat(overallStudentAverage) >= 2.5 ? 'bg-yellow-200 text-yellow-800' :
-                        'bg-red-200 text-red-800'
+                        parseFloat(overallStudentAverage) >= 4.5 ? 'bg-emerald-200 text-emerald-800' :
+                        parseFloat(overallStudentAverage) >= 3.5 ? 'bg-sky-200 text-sky-800' :
+                        parseFloat(overallStudentAverage) >= 2.5 ? 'bg-amber-200 text-amber-800' :
+                        'bg-rose-200 text-rose-800'
                       }`}>
                         {overallStudentAverage}
                       </span>
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-slate-400">—</span>
                     )}
                   </td>
                 </tr>
@@ -612,38 +620,38 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
-      <div className="p-6 border-b border-gray-100">
-        <h3 className="text-xl font-bold text-gray-900">
+    <div className="bg-gradient-to-br from-white to-slate-50 rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/50 overflow-hidden">
+      <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-violet-50/50 to-purple-50/50">
+        <h3 className="text-xl font-bold bg-gradient-to-r from-violet-700 to-purple-700 bg-clip-text text-transparent">
           Сводная ведомость класса
         </h3>
-        <p className="text-gray-500 mt-1">
+        <p className="text-slate-500 mt-1 font-medium">
           {formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}
         </p>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-slate-50">
             <tr>
-              <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 sticky left-0 bg-gray-50 z-10">
+              <th className="px-4 py-4 text-left text-sm font-bold text-slate-700 sticky left-0 bg-slate-50 z-10">
                 Ученик
               </th>
               {SUBJECTS.map(subject => (
-                <th key={subject} className="px-4 py-4 text-center text-sm font-semibold text-gray-700 min-w-[80px]">
+                <th key={subject} className="px-4 py-4 text-center text-sm font-bold text-slate-700 min-w-[80px]">
                   {subject}
                 </th>
               ))}
-              <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700 min-w-[100px] bg-blue-50">
+              <th className="px-4 py-4 text-center text-sm font-bold text-violet-700 min-w-[100px] bg-violet-50">
                 Общий средний балл
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-slate-100">
             {sortedStudents.map(student => (
-              <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={student.id} className="hover:bg-violet-50/50 transition-colors">
                 <td className="px-4 py-3 sticky left-0 bg-white z-10">
-                  <span className="font-medium text-gray-900">
+                  <span className="font-semibold text-slate-800">
                     {student.lastName} {student.firstName}
                   </span>
                 </td>
@@ -653,77 +661,77 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
                     <td key={subject} className="px-4 py-3 text-center">
                       {avg >= 0 ? (
                         <span className={`inline-flex px-2 py-1 rounded-lg text-sm font-semibold ${
-                          avg >= 4.5 ? 'bg-green-100 text-green-700' :
-                          avg >= 3.5 ? 'bg-blue-100 text-blue-700' :
-                          avg >= 2.5 ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-red-100 text-red-700'
+                          avg >= 4.5 ? 'bg-emerald-100 text-emerald-700' :
+                          avg >= 3.5 ? 'bg-sky-100 text-sky-700' :
+                          avg >= 2.5 ? 'bg-amber-100 text-amber-700' :
+                          'bg-rose-100 text-rose-700'
                         }`}>
                           {formatAvg(avg)}
                         </span>
                       ) : (
-                        <span className="text-gray-300">—</span>
+                        <span className="text-slate-300">—</span>
                       )}
                     </td>
                   );
                 })}
-                <td className="px-4 py-3 text-center bg-blue-50/50">
+                <td className="px-4 py-3 text-center bg-violet-50/50">
                   {(() => {
                     const overallAvg = studentOverallAverages[student.id] ?? -1;
                     if (overallAvg >= 0) {
                       return (
                         <span className={`inline-flex px-3 py-1.5 rounded-lg text-sm font-bold ${
-                          overallAvg >= 4.5 ? 'bg-green-200 text-green-800' :
-                          overallAvg >= 3.5 ? 'bg-blue-200 text-blue-800' :
-                          overallAvg >= 2.5 ? 'bg-yellow-200 text-yellow-800' :
-                          'bg-red-200 text-red-800'
+                          overallAvg >= 4.5 ? 'bg-emerald-200 text-emerald-800' :
+                          overallAvg >= 3.5 ? 'bg-sky-200 text-sky-800' :
+                          overallAvg >= 2.5 ? 'bg-amber-200 text-amber-800' :
+                          'bg-rose-200 text-rose-800'
                         }`}>
                           {formatAvg(overallAvg)}
                         </span>
                       );
                     }
-                    return <span className="text-gray-300">—</span>;
+                    return <span className="text-slate-300">—</span>;
                   })()}
                 </td>
               </tr>
             ))}
           </tbody>
           {/* Итоговая строка - средний балл по предметам */}
-          <tfoot className="bg-blue-50 border-t-2 border-blue-200">
+          <tfoot className="bg-gradient-to-r from-violet-100 to-purple-100 border-t-2 border-violet-200">
             <tr>
-              <td className="px-4 py-3 sticky left-0 bg-blue-50 z-10 font-bold text-blue-900 border-r border-blue-200">
+              <td className="px-4 py-3 sticky left-0 bg-gradient-to-r from-violet-100 to-purple-100 z-10 font-bold text-violet-800 border-r border-violet-200">
                 Средний балл по предмету
               </td>
               {SUBJECTS.map(subject => {
                 const avg = classSubjectAverages[subject] ?? -1;
                 return (
-                  <td key={subject} className="px-4 py-3 text-center border-r border-blue-100">
+                  <td key={subject} className="px-4 py-3 text-center border-r border-violet-100">
                     {avg >= 0 ? (
                       <span className={`inline-flex px-2 py-1 rounded-lg text-sm font-bold ${
-                        avg >= 4.5 ? 'bg-green-200 text-green-800' :
-                        avg >= 3.5 ? 'bg-blue-200 text-blue-800' :
-                        avg >= 2.5 ? 'bg-yellow-200 text-yellow-800' :
-                        'bg-red-200 text-red-800'
+                        avg >= 4.5 ? 'bg-emerald-200 text-emerald-800' :
+                        avg >= 3.5 ? 'bg-sky-200 text-sky-800' :
+                        avg >= 2.5 ? 'bg-amber-200 text-amber-800' :
+                        'bg-rose-200 text-rose-800'
                       }`}>
                         {formatAvg(avg)}
                       </span>
                     ) : (
-                      <span className="text-gray-300">—</span>
+                      <span className="text-slate-300">—</span>
                     )}
                   </td>
                 );
               })}
-              <td className="px-4 py-3 text-center bg-blue-100 border-l-2 border-blue-300">
+              <td className="px-4 py-3 text-center bg-violet-200 border-l-2 border-violet-300">
                 {overallClassAverage >= 0 ? (
                   <span className={`inline-flex px-3 py-1.5 rounded-lg text-sm font-bold ${
-                    overallClassAverage >= 4.5 ? 'bg-green-300 text-green-900' :
-                    overallClassAverage >= 3.5 ? 'bg-blue-300 text-blue-900' :
-                    overallClassAverage >= 2.5 ? 'bg-yellow-300 text-yellow-900' :
-                    'bg-red-300 text-red-900'
+                    overallClassAverage >= 4.5 ? 'bg-emerald-300 text-emerald-900' :
+                    overallClassAverage >= 3.5 ? 'bg-sky-300 text-sky-900' :
+                    overallClassAverage >= 2.5 ? 'bg-amber-300 text-amber-900' :
+                    'bg-rose-300 text-rose-900'
                   }`}>
                     {formatAvg(overallClassAverage)}
                   </span>
                 ) : (
-                  <span className="text-gray-300">—</span>
+                  <span className="text-slate-300">—</span>
                 )}
               </td>
             </tr>
@@ -731,48 +739,48 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
         </table>
       </div>
 
-      {/* Аналитика внизу */}
-      <div className="p-6 border-t border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+      {/* Аналитика внизу - новый дизайн */}
+      <div className="p-6 border-t border-slate-100 bg-gradient-to-r from-violet-50 to-purple-50">
         <div className="flex flex-wrap items-center gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
-              <TrendingUp className="w-6 h-6 text-green-600" />
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+              <TrendingUp className="w-6 h-6 text-white" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Процент успеваемости</div>
-              <div className="text-2xl font-bold text-gray-900">{successRate.toFixed(1)}%</div>
+              <div className="text-sm text-slate-500 font-medium">Процент успеваемости</div>
+              <div className="text-2xl font-bold text-slate-800">{successRate.toFixed(1)}%</div>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
-              <BarChart3 className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center shadow-lg shadow-sky-500/25">
+              <BarChart3 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Средний балл класса</div>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-sm text-slate-500 font-medium">Средний балл класса</div>
+              <div className="text-2xl font-bold text-slate-800">
                 {overallClassAverage >= 0 ? formatAvg(overallClassAverage) : '—'}
               </div>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
-              <Users className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+              <Users className="w-6 h-6 text-white" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Учеников</div>
-              <div className="text-2xl font-bold text-gray-900">{students.length}</div>
+              <div className="text-sm text-slate-500 font-medium">Учеников</div>
+              <div className="text-2xl font-bold text-slate-800">{students.length}</div>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
-              <FileText className="w-6 h-6 text-purple-600" />
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/25">
+              <FileText className="w-6 h-6 text-white" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Предметов</div>
-              <div className="text-2xl font-bold text-gray-900">{SUBJECTS.length}</div>
+              <div className="text-sm text-slate-500 font-medium">Предметов</div>
+              <div className="text-2xl font-bold text-slate-800">{SUBJECTS.length}</div>
             </div>
           </div>
         </div>
@@ -788,12 +796,12 @@ interface StatisticsReportProps {
   dateRange: DateRange;
 }
 
-// Определение статуса ученика
+// Определение статуса ученика - новые цвета
 function getStudentStatus(average: number): { label: string; className: string } {
-  if (average >= 4.5) return { label: 'Отличник', className: 'bg-green-100 text-green-700 border-green-200' };
-  if (average >= 3.5) return { label: 'Хорошист', className: 'bg-blue-100 text-blue-700 border-blue-200' };
-  if (average >= 2.5) return { label: 'Троечник', className: 'bg-yellow-100 text-yellow-700 border-yellow-200' };
-  return { label: 'Неуспевающий', className: 'bg-red-100 text-red-700 border-red-200' };
+  if (average >= 4.5) return { label: 'Отличник', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
+  if (average >= 3.5) return { label: 'Хорошист', className: 'bg-sky-100 text-sky-700 border-sky-200' };
+  if (average >= 2.5) return { label: 'Троечник', className: 'bg-amber-100 text-amber-700 border-amber-200' };
+  return { label: 'Неуспевающий', className: 'bg-rose-100 text-rose-700 border-rose-200' };
 }
 
 const StatisticsReport: React.FC<StatisticsReportProps> = ({
@@ -897,79 +905,79 @@ const StatisticsReport: React.FC<StatisticsReportProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Таблица статистики всех учеников */}
-      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
-        <div className="p-6 border-b border-gray-100">
-          <h3 className="text-xl font-bold text-gray-900">
+      {/* Таблица статистики всех учеников - новый дизайн */}
+      <div className="bg-gradient-to-br from-white to-slate-50 rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/50 overflow-hidden">
+        <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-violet-50/50 to-purple-50/50">
+          <h3 className="text-xl font-bold bg-gradient-to-r from-violet-700 to-purple-700 bg-clip-text text-transparent">
             Статистика класса
           </h3>
-          <p className="text-gray-500 mt-1">
+          <p className="text-slate-500 mt-1 font-medium">
             {formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}
           </p>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50">
+            <thead className="bg-slate-50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 sticky left-0 bg-gray-50 z-10">
+                <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 sticky left-0 bg-slate-50 z-10">
                   Ученик
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
+                <th className="px-4 py-3 text-center text-sm font-bold text-slate-700">
                   Средний балл
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
+                <th className="px-4 py-3 text-center text-sm font-bold text-slate-700">
                   Место
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
+                <th className="px-4 py-3 text-center text-sm font-bold text-slate-700">
                   Статус
                 </th>
                 {SUBJECTS.slice(0, 5).map(subject => (
-                  <th key={subject} className="px-3 py-3 text-center text-sm font-semibold text-gray-700 min-w-[70px]">
+                  <th key={subject} className="px-3 py-3 text-center text-sm font-bold text-slate-700 min-w-[70px]">
                     {subject.slice(0, 4)}
                   </th>
                 ))}
-                <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">...</th>
+                <th className="px-3 py-3 text-center text-sm font-bold text-slate-700">...</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               {sortedStudents.map(student => {
                 const overallAverage = studentOverallAverages[student.id] ?? -1;
                 const overallPosition = getOverallPosition(student.id);
                 const status = overallAverage >= 0 ? getStudentStatus(overallAverage) : null;
                 
                 return (
-                  <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={student.id} className="hover:bg-violet-50/50 transition-colors">
                     <td className="px-4 py-3 sticky left-0 bg-white z-10">
-                      <span className="font-medium text-gray-900">
+                      <span className="font-semibold text-slate-800">
                         {student.lastName} {student.firstName}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       {overallAverage >= 0 ? (
                         <span className={`inline-flex px-3 py-1.5 rounded-lg text-sm font-bold ${
-                          overallAverage >= 4.5 ? 'bg-green-100 text-green-700' :
-                          overallAverage >= 3.5 ? 'bg-blue-100 text-blue-700' :
-                          overallAverage >= 2.5 ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-red-100 text-red-700'
+                          overallAverage >= 4.5 ? 'bg-emerald-100 text-emerald-700' :
+                          overallAverage >= 3.5 ? 'bg-sky-100 text-sky-700' :
+                          overallAverage >= 2.5 ? 'bg-amber-100 text-amber-700' :
+                          'bg-rose-100 text-rose-700'
                         }`}>
                           {overallAverage.toFixed(2)}
                         </span>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-slate-400">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
                       {overallPosition > 0 ? (
                         <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
-                          overallPosition === 1 ? 'bg-yellow-100 text-yellow-700' :
-                          overallPosition <= 3 ? 'bg-blue-100 text-blue-700' :
-                          'bg-gray-100 text-gray-700'
+                          overallPosition === 1 ? 'bg-amber-200 text-amber-700' :
+                          overallPosition <= 3 ? 'bg-sky-200 text-sky-700' :
+                          'bg-slate-100 text-slate-700'
                         }`}>
                           {overallPosition}
                         </span>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-slate-400">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -978,7 +986,7 @@ const StatisticsReport: React.FC<StatisticsReportProps> = ({
                           {status.label}
                         </span>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-slate-400">—</span>
                       )}
                     </td>
                     {SUBJECTS.slice(0, 5).map(subject => {
@@ -989,25 +997,25 @@ const StatisticsReport: React.FC<StatisticsReportProps> = ({
                           {avg >= 0 ? (
                             <div className="flex flex-col items-center">
                               <span className={`inline-flex px-2 py-1 rounded text-xs font-semibold ${
-                                avg >= 4.5 ? 'bg-green-100 text-green-700' :
-                                avg >= 3.5 ? 'bg-blue-100 text-blue-700' :
-                                avg >= 2.5 ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-red-100 text-red-700'
+                                avg >= 4.5 ? 'bg-emerald-100 text-emerald-700' :
+                                avg >= 3.5 ? 'bg-sky-100 text-sky-700' :
+                                avg >= 2.5 ? 'bg-amber-100 text-amber-700' :
+                                'bg-rose-100 text-rose-700'
                               }`}>
                                 {avg.toFixed(1)}
                               </span>
                               {position > 0 && position <= 3 && (
-                                <span className="text-[10px] text-gray-500">#{position}</span>
+                                <span className="text-[10px] text-violet-500 font-medium">#{position}</span>
                               )}
                             </div>
                           ) : (
-                            <span className="text-gray-300">—</span>
+                            <span className="text-slate-300">—</span>
                           )}
                         </td>
                       );
                     })}
                     <td className="px-2 py-3 text-center">
-                      <span className="text-gray-400 text-xs">...</span>
+                      <span className="text-slate-400 text-xs">...</span>
                     </td>
                   </tr>
                 );
@@ -1016,14 +1024,14 @@ const StatisticsReport: React.FC<StatisticsReportProps> = ({
           </table>
         </div>
 
-        {/* Легенда статусов */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50">
+        {/* Легенда статусов - новый дизайн */}
+        <div className="p-4 border-t border-slate-100 bg-gradient-to-r from-violet-50 to-purple-50">
           <div className="flex flex-wrap items-center gap-4 text-sm">
-            <span className="text-gray-600 font-medium">Статусы:</span>
-            <span className="inline-flex px-3 py-1 rounded-lg text-xs font-bold bg-green-100 text-green-700 border border-green-200">Отличник</span>
-            <span className="inline-flex px-3 py-1 rounded-lg text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200">Хорошист</span>
-            <span className="inline-flex px-3 py-1 rounded-lg text-xs font-bold bg-yellow-100 text-yellow-700 border border-yellow-200">Троечник</span>
-            <span className="inline-flex px-3 py-1 rounded-lg text-xs font-bold bg-red-100 text-red-700 border border-red-200">Неуспевающий</span>
+            <span className="text-slate-600 font-semibold">Статусы:</span>
+            <span className="inline-flex px-3 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">Отличник</span>
+            <span className="inline-flex px-3 py-1 rounded-lg text-xs font-bold bg-sky-100 text-sky-700 border border-sky-200">Хорошист</span>
+            <span className="inline-flex px-3 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200">Троечник</span>
+            <span className="inline-flex px-3 py-1 rounded-lg text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200">Неуспевающий</span>
           </div>
         </div>
       </div>
@@ -1081,26 +1089,26 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
   );
 
   return (
-    <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 shadow-lg overflow-hidden">
-      <div className="p-6 border-b border-gray-100">
-        <h3 className="text-xl font-bold text-gray-900">
+    <div className="bg-gradient-to-br from-white to-slate-50 rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/50 overflow-hidden">
+      <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-violet-50/50 to-purple-50/50">
+        <h3 className="text-xl font-bold bg-gradient-to-r from-violet-700 to-purple-700 bg-clip-text text-transparent">
           Информация о пропусках
         </h3>
-        <p className="text-gray-500 mt-1">
+        <p className="text-slate-500 mt-1 font-medium">
           {formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}
         </p>
       </div>
 
-      {/* Легенда */}
-      <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+      {/* Легенда - новый дизайн */}
+      <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-violet-50 border-b border-slate-100">
         <div className="flex flex-wrap items-center gap-4 text-sm">
-          <span className="text-gray-600">Типы отметок:</span>
+          <span className="text-slate-600 font-semibold">Типы отметок:</span>
           {ATTENDANCE_TYPES.map(type => (
             <div key={type.value} className="flex items-center gap-1.5">
-              <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold ${type.bgColor} ${type.color}`}>
+              <span className={`inline-flex items-center justify-center w-6 h-6 rounded-lg text-xs font-bold ${type.bgColor} ${type.color}`}>
                 {type.short}
               </span>
-              <span className="text-gray-600">{type.label}</span>
+              <span className="text-slate-600">{type.label}</span>
             </div>
           ))}
         </div>
@@ -1108,50 +1116,50 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
 
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-slate-50">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Ученик</th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-red-100 text-red-700 text-xs font-bold">Н</span>
+              <th className="px-6 py-4 text-left text-sm font-bold text-slate-700">Ученик</th>
+              <th className="px-4 py-4 text-center text-sm font-bold text-slate-700">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-rose-100 text-rose-700 text-xs font-bold">Н</span>
               </th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-blue-100 text-blue-700 text-xs font-bold">УП</span>
+              <th className="px-4 py-4 text-center text-sm font-bold text-slate-700">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-sky-100 text-sky-700 text-xs font-bold">УП</span>
               </th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-amber-100 text-amber-700 text-xs font-bold">Б</span>
+              <th className="px-4 py-4 text-center text-sm font-bold text-slate-700">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold">Б</span>
               </th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-orange-100 text-orange-700 text-xs font-bold">ОП</span>
+              <th className="px-4 py-4 text-center text-sm font-bold text-slate-700">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-orange-100 text-orange-700 text-xs font-bold">ОП</span>
               </th>
-              <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">Итого</th>
+              <th className="px-6 py-4 text-center text-sm font-bold text-violet-700">Итого</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-slate-100">
             {sortedStudents.map(student => {
               const data = studentAttendance[student.id] || { Н: 0, УП: 0, Б: 0, ОП: 0, total: 0 };
               return (
-                <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={student.id} className="hover:bg-violet-50/50 transition-colors">
                   <td className="px-6 py-4">
-                    <span className="font-medium text-gray-900">
+                    <span className="font-semibold text-slate-800">
                       {student.lastName} {student.firstName}
                     </span>
                   </td>
                   <td className="px-4 py-4 text-center">
                     {data.Н > 0 ? (
-                      <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-red-100 text-red-700">
+                      <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-rose-100 text-rose-700">
                         {data.Н}
                       </span>
                     ) : (
-                      <span className="text-gray-300">0</span>
+                      <span className="text-slate-300">0</span>
                     )}
                   </td>
                   <td className="px-4 py-4 text-center">
                     {data.УП > 0 ? (
-                      <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-blue-100 text-blue-700">
+                      <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-sky-100 text-sky-700">
                         {data.УП}
                       </span>
                     ) : (
-                      <span className="text-gray-300">0</span>
+                      <span className="text-slate-300">0</span>
                     )}
                   </td>
                   <td className="px-4 py-4 text-center">
@@ -1160,7 +1168,7 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
                         {data.Б}
                       </span>
                     ) : (
-                      <span className="text-gray-300">0</span>
+                      <span className="text-slate-300">0</span>
                     )}
                   </td>
                   <td className="px-4 py-4 text-center">
@@ -1169,41 +1177,41 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
                         {data.ОП}
                       </span>
                     ) : (
-                      <span className="text-gray-300">0</span>
+                      <span className="text-slate-300">0</span>
                     )}
                   </td>
                   <td className="px-6 py-4 text-center">
                     {data.total > 0 ? (
-                      <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-bold bg-gray-100 text-gray-700">
+                      <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-bold bg-violet-100 text-violet-700">
                         {data.total}
                       </span>
                     ) : (
-                      <span className="text-gray-300">0</span>
+                      <span className="text-slate-300">0</span>
                     )}
                   </td>
                 </tr>
               );
             })}
           </tbody>
-          <tfoot className="bg-gray-100">
+          <tfoot className="bg-gradient-to-r from-violet-100 to-purple-100">
             <tr>
-              <td className="px-6 py-4 text-left text-sm font-bold text-gray-900">Итого по классу</td>
+              <td className="px-6 py-4 text-left text-sm font-bold text-violet-800">Итого по классу</td>
               <td className="px-4 py-4 text-center">
                 {totalAttendance.Н > 0 ? (
-                  <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-red-100 text-red-700">
+                  <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-rose-100 text-rose-700">
                     {totalAttendance.Н}
                   </span>
                 ) : (
-                  <span className="text-gray-400">0</span>
+                  <span className="text-slate-400">0</span>
                 )}
               </td>
               <td className="px-4 py-4 text-center">
                 {totalAttendance.УП > 0 ? (
-                  <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-blue-100 text-blue-700">
+                  <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-sky-100 text-sky-700">
                     {totalAttendance.УП}
                   </span>
                 ) : (
-                  <span className="text-gray-400">0</span>
+                  <span className="text-slate-400">0</span>
                 )}
               </td>
               <td className="px-4 py-4 text-center">
@@ -1212,25 +1220,25 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
                     {totalAttendance.Б}
                   </span>
                 ) : (
-                  <span className="text-gray-400">0</span>
+                  <span className="text-slate-400">0</span>
                 )}
               </td>
               <td className="px-4 py-4 text-center">
                 {totalAttendance.ОП > 0 ? (
-                  <span className="inline-flex items-center justify-center min-width-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-orange-100 text-orange-700">
+                  <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-orange-100 text-orange-700">
                     {totalAttendance.ОП}
                   </span>
                 ) : (
-                  <span className="text-gray-400">0</span>
+                  <span className="text-slate-400">0</span>
                 )}
               </td>
               <td className="px-6 py-4 text-center">
                 {totalAttendance.total > 0 ? (
-                  <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-bold bg-white text-gray-900 shadow-sm">
+                  <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-bold bg-white text-violet-800 shadow-sm">
                     {totalAttendance.total}
                   </span>
                 ) : (
-                  <span className="text-gray-400">0</span>
+                  <span className="text-slate-400">0</span>
                 )}
               </td>
             </tr>

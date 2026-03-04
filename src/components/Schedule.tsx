@@ -14,7 +14,7 @@ interface ScheduleProps {
 const LESSON_NUMBERS = [1, 2, 3, 4, 5, 6, 7];
 
 export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditModeChange, onOpenLessonPage }) => {
-  const { lessons, setLessons, setGrades, setAttendance, setDiaryEntries, setLessonTypes, setJournalColumns, setTestAttempts, setTestRetakes, pendingHomework, setPendingHomework, diaryEntries } = useData();
+  const { lessons, setLessons, setGrades, setAttendance, setDiaryEntries, setLessonTypes, setJournalColumns, setTestAttempts, setTestRetakes } = useData();
   const [viewMode, setViewMode] = useState<'week' | 'month' | 'day'>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -89,54 +89,6 @@ export const Schedule: React.FC<ScheduleProps> = ({ editable = false, onEditMode
     } else {
       const newLesson: Lesson = { id: `l${Date.now()}`, ...lessonData };
       setLessons(prev => [...prev, newLesson]);
-      
-      // Автопривязка pendingHomework при создании нового урока
-      const pendingForSubject = (pendingHomework || []).filter(ph => ph.subject === lessonData.subject);
-      if (pendingForSubject.length > 0) {
-        // Находим ближайший будущий урок по этому предмету (включая только что созданный)
-        const allLessons = [...lessons, newLesson];
-        const futureLessons = allLessons
-          .filter(l => l.subject === lessonData.subject && l.date >= lessonData.date)
-          .sort((a, b) => a.date.localeCompare(b.date) || a.lessonNumber - b.lessonNumber);
-        
-        if (futureLessons.length > 0) {
-          const targetLesson = futureLessons[0];
-          
-          // Привязываем каждое ожидающее ДЗ к ближайшему уроку
-          pendingForSubject.forEach(ph => {
-            // Проверяем, есть ли уже запись в дневнике для этого урока
-            const existingEntry = (diaryEntries || []).find(e => 
-              e.date === targetLesson.date && 
-              e.subject === targetLesson.subject && 
-              e.lessonNumber === targetLesson.lessonNumber
-            );
-            
-            if (existingEntry) {
-              // Обновляем существующую запись
-              setDiaryEntries(prev => prev.map(de => 
-                de.id === existingEntry.id 
-                  ? { ...de, homework: ph.homework, topic: ph.topic || de.topic, attachment: ph.attachment || de.attachment }
-                  : de
-              ));
-            } else {
-              // Создаём новую запись в дневнике
-              const newEntry = {
-                id: `de${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
-                date: targetLesson.date,
-                lessonNumber: targetLesson.lessonNumber,
-                subject: targetLesson.subject,
-                topic: ph.topic || '',
-                homework: ph.homework,
-                attachment: ph.attachment,
-              };
-              setDiaryEntries(prev => [...(prev || []), newEntry]);
-            }
-          });
-          
-          // Удаляем привязанные pendingHomework
-          setPendingHomework(prev => prev.filter(ph => !pendingForSubject.some(p => p.id === ph.id)));
-        }
-      }
     }
     setShowModal(false);
   };

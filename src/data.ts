@@ -130,18 +130,6 @@ export interface TestAssignment {
   deadlineDate?: string; // Дата, до которой нужно пройти тест (если установлен - тест с дедлайном)
 }
 
-// Домашнее задание, ожидающее привязки к уроку
-export interface PendingHomework {
-  id: string;
-  subject: string;
-  homework: string;
-  topic?: string; // Тема урока (опционально)
-  attachment?: DiaryEntryAttachment;
-  createdAt: string; // Когда было создано ДЗ
-  sourceLessonDate: string; // Дата урока, с которого было назначено ДЗ
-  sourceLessonNumber: number; // Номер урока, с которого было назначено ДЗ
-}
-
 // Notifications removed
 
 export interface AttendanceRecord {
