@@ -311,7 +311,7 @@ export const StudentView: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {activeTab === 'home' && <Home myGrades={myGrades} lessons={lessons} />}
         {activeTab === 'schedule' && <Schedule />}
-        {activeTab === 'grades' && <Grades myGrades={myGrades} attendance={attendance} studentId={studentId} />}
+        {activeTab === 'grades' && <Grades myGrades={myGrades} attendance={attendance} studentId={studentId} students={students} />}
         {activeTab === 'diary' && (
           <Diary
             studentId={studentId}
@@ -328,10 +328,11 @@ export const StudentView: React.FC = () => {
             journalColumns={journalColumns}
             testAssignments={testAssignments}
             attendance={attendance}
+            students={students}
           />
         )}
         {activeTab === 'statistics' && <Statistics studentId={studentId} grades={grades} lessons={lessons} students={students} />}
-        {activeTab === 'attendance' && <Attendance studentId={studentId} attendance={attendance} />}
+        {activeTab === 'attendance' && <Attendance studentId={studentId} attendance={attendance} students={students} />}
       </main>
     </div>
   );
@@ -394,7 +395,13 @@ const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons
 };
 
 // ==================== GRADES ====================
-const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }> = ({ myGrades, attendance, studentId }) => {
+const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string; students: any[] }> = ({ myGrades, attendance, studentId, students }) => {
+  // Получаем дату зачисления ученика
+  const enrollmentDate = useMemo(() => {
+    const student = students?.find((s: any) => s.id === studentId);
+    return student?.enrollmentDate || null;
+  }, [students, studentId]);
+
   const gradesBySubject = useMemo(() => {
     const map: Record<string, { dates: Record<string, { value: number; excludeFromAverage?: boolean; reason?: string }[]>; allGrades: number[]; hasAttendance: Set<string> }> = {};
     SUBJECTS.forEach(s => { map[s] = { dates: {}, allGrades: [], hasAttendance: new Set() }; });
@@ -418,21 +425,26 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
     }
     
     return map;
-  }, [myGrades, attendance, studentId]);
+  }, [myGrades, attendance, studentId, enrollmentDate]);
 
   const allDates = useMemo(() => {
     const dateSet = new Set<string>();
-    myGrades.forEach(g => dateSet.add(g.date));
-    // Добавляем даты из посещаемости
+    // Фильтруем оценки по дате зачисления
+    myGrades.forEach(g => {
+      if (!enrollmentDate || g.date >= enrollmentDate) {
+        dateSet.add(g.date);
+      }
+    });
+    // Добавляем даты из посещаемости (с фильтрацией по enrollmentDate)
     if (attendance && Array.isArray(attendance)) {
       attendance.forEach(a => {
-        if (a.studentId === studentId) {
+        if (a.studentId === studentId && (!enrollmentDate || a.date >= enrollmentDate)) {
           dateSet.add(a.date);
         }
       });
     }
     return Array.from(dateSet).sort();
-  }, [myGrades, attendance, studentId]);
+  }, [myGrades, attendance, studentId, enrollmentDate]);
 
   const monthGroups = useMemo(() => {
     const groups: { month: string; dates: string[] }[] = [];
@@ -452,6 +464,18 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string }
 
   return (
     <div className="animate-fadeIn">
+      {/* Информация о дате зачисления */}
+      {enrollmentDate && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-2xl">
+          <div className="flex items-center gap-2 text-blue-800">
+            <Calendar className="w-5 h-5" />
+            <span className="font-medium">
+              Оценки отображаются с даты зачисления: <span className="font-bold">{enrollmentDate}</span>
+            </span>
+          </div>
+        </div>
+      )}
+
       <h2 className="text-2xl font-bold text-gray-900 mb-6">Оценки</h2>
       <div className="glass rounded-3xl overflow-hidden shadow-soft">
         <div className="overflow-x-auto">
@@ -555,14 +579,21 @@ interface DiaryProps {
   testRetakes: any[]; setTestRetakes: any; grades: any[]; setGrades: any; journalColumns: any[];
   testAssignments: any[];
   attendance: any[];
+  students: any[];
 }
 
 const Diary: React.FC<DiaryProps> = ({
   studentId, lessons, diaryEntries, myGrades, tests,
-  testAttempts, setTestAttempts, testRetakes, setTestRetakes, grades: _grades, setGrades, journalColumns, testAssignments, attendance
+  testAttempts, setTestAttempts, testRetakes, setTestRetakes, grades: _grades, setGrades, journalColumns, testAssignments, attendance, students
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const weekDates = getWeekDates(currentDate);
+
+  // Получаем дату зачисления ученика
+  const enrollmentDate = useMemo(() => {
+    const student = students?.find((s: any) => s.id === studentId);
+    return student?.enrollmentDate || null;
+  }, [students, studentId]);
 
   const [takingTest, setTakingTest] = useState<{ test: any; entry: any; variantId?: string } | null>(null);
   const [showConfirm, setShowConfirm] = useState<{ test: any; entry: any; variantId?: string } | null>(null);
@@ -970,6 +1001,18 @@ const Diary: React.FC<DiaryProps> = ({
   // Normal diary view
   return (
     <div className="animate-fadeIn">
+      {/* Информация о дате зачисления */}
+      {enrollmentDate && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-2xl">
+          <div className="flex items-center gap-2 text-blue-800">
+            <Calendar className="w-5 h-5" />
+            <span className="font-medium">
+              Дневник отображается с даты зачисления: <span className="font-bold">{enrollmentDate}</span>
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Дневник</h2>
         <div className="flex items-center gap-2">
@@ -990,7 +1033,10 @@ const Diary: React.FC<DiaryProps> = ({
       <div className="space-y-5">
         {weekDates.map((date, dayIdx) => {
           const dateStr = formatDate(date);
-          const dayLessons = lessons.filter((l: any) => l.date === dateStr).sort((a: any, b: any) => a.lessonNumber - b.lessonNumber);
+          // Фильтруем уроки: показываем только с даты зачисления
+          const dayLessons = lessons
+            .filter((l: any) => l.date === dateStr && (!enrollmentDate || l.date >= enrollmentDate))
+            .sort((a: any, b: any) => a.lessonNumber - b.lessonNumber);
           if (dayLessons.length === 0) return null;
           const dow = date.getDay();
           const dayNameIdx = dow === 0 ? 6 : dow - 1;
@@ -1160,13 +1206,23 @@ const Diary: React.FC<DiaryProps> = ({
 interface AttendanceProps {
   studentId: string;
   attendance: any[];
+  students: any[];
 }
 
-const Attendance: React.FC<AttendanceProps> = ({ studentId, attendance }) => {
+const Attendance: React.FC<AttendanceProps> = ({ studentId, attendance, students }) => {
+  // Получаем дату зачисления ученика
+  const enrollmentDate = useMemo(() => {
+    const student = students?.find((s: any) => s.id === studentId);
+    return student?.enrollmentDate || null;
+  }, [students, studentId]);
+
   const myAttendance = useMemo(() => {
     if (!attendance || !Array.isArray(attendance)) return [];
-    return attendance.filter((a: any) => a.studentId === studentId);
-  }, [attendance, studentId]);
+    // Фильтруем по studentId и дате зачисления
+    return attendance.filter((a: any) => 
+      a.studentId === studentId && (!enrollmentDate || a.date >= enrollmentDate)
+    );
+  }, [attendance, studentId, enrollmentDate]);
 
   // Group by date
   const attendanceByDate = useMemo(() => {
@@ -1207,6 +1263,18 @@ const Attendance: React.FC<AttendanceProps> = ({ studentId, attendance }) => {
 
   return (
     <div className="animate-fadeIn space-y-6">
+      {/* Информация о дате зачисления */}
+      {enrollmentDate && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl">
+          <div className="flex items-center gap-2 text-blue-800">
+            <Calendar className="w-5 h-5" />
+            <span className="font-medium">
+              Посещаемость отображается с даты зачисления: <span className="font-bold">{enrollmentDate}</span>
+            </span>
+          </div>
+        </div>
+      )}
+
       <h2 className="text-2xl font-bold text-gray-900">Посещаемость</h2>
 
       {/* Stats cards */}

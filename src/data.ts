@@ -54,6 +54,7 @@ export interface Student {
   lastName: string;
   username: string;
   password: string;
+  enrollmentDate?: string; // Дата прибытия в школу (YYYY-MM-DD), обязательное поле
 }
 
 export interface TestQuestion {

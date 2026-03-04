@@ -1625,6 +1625,13 @@ const Journal: React.FC = () => {
     [students]
   );
 
+  // Функция проверки - заблокирована ли дата для ученика (до даты зачисления)
+  const isDateBeforeEnrollment = (studentId: string, date: string): boolean => {
+    const student = students.find(s => s.id === studentId);
+    if (!student || !student.enrollmentDate) return false; // Если нет даты зачисления - доступно всё
+    return date < student.enrollmentDate;
+  };
+
   // Each lesson = one slot in the journal (date + lessonNumber)
   const allSlots = useMemo(() => {
     const today = getTodayString();
@@ -2547,12 +2554,13 @@ const Journal: React.FC = () => {
                         // Если есть посещаемость (кроме опоздания) — показываем её на всю клетку, иначе оценку
                         const showAttendance = att && att.type !== 'ОП';
                         // Блокируем кнопку только при наличии посещаемости (кроме опоздания)
-                        const isBlocked = att && att.type !== 'ОП';
+                        const isEnrollmentBlocked = isDateBeforeEnrollment(student.id, sl.date);
+                        const isBlocked = isEnrollmentBlocked || (att && att.type !== 'ОП');
                         const isLateness = att && att.type === 'ОП';
                         const isToday = highlightToday && sl.date === today;
                         return (
                           <React.Fragment key={sl.key}>
-                            <td className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isToday ? 'bg-green-50' : ''}`}>
+                            <td className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isEnrollmentBlocked ? 'bg-gray-100' : isToday ? 'bg-green-50' : ''}`}>
                               <div className="relative">
                                 <button 
                                   onClick={e => {
@@ -2566,13 +2574,14 @@ const Journal: React.FC = () => {
                                   }}
                                   disabled={isBlocked}
                                   className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                    isEnrollmentBlocked ? 'bg-gray-200 text-gray-400 border-2 border-dashed border-gray-300' :
                                     inputMode === 'keyboard' && keyboardTarget?.studentId === student.id && keyboardTarget?.date === sl.date && keyboardTarget?.lessonNumber === sl.lessonNumber && !keyboardTarget?.columnId
                                       ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
                                       : showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
                                         (mainGrade.excludeFromAverage ? 'bg-gray-200 text-gray-500' : mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
                                         : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'
                                   }`}
-                                  title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                                  title={isEnrollmentBlocked ? `Оценки можно выставлять с ${student.enrollmentDate}` : isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                                 >
                                   {showAttendance ? att?.type : (mainGrade?.value || '')}
                                 </button>
@@ -2601,7 +2610,7 @@ const Journal: React.FC = () => {
                               }
                               
                               return (
-                                <td key={c.id} className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isToday ? 'bg-green-50' : ''}`}>
+                                <td key={c.id} className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isEnrollmentBlocked ? 'bg-gray-100' : isToday ? 'bg-green-50' : ''}`}>
                                   <div className="relative inline-block">
                                     {g ? (
                                       c.type === 'test' && testTitle ? (
@@ -2619,11 +2628,12 @@ const Journal: React.FC = () => {
                                           }}
                                           disabled={isBlocked}
                                           className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                            isEnrollmentBlocked ? 'bg-gray-200 text-gray-400' :
                                             inputMode === 'keyboard' && keyboardTarget?.studentId === student.id && keyboardTarget?.date === sl.date && keyboardTarget?.columnId === c.id && keyboardTarget?.lessonNumber === sl.lessonNumber
                                               ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
                                               : g.value === 5 ? 'bg-green-100 text-green-700' : g.value === 4 ? 'bg-blue-100 text-blue-700' : g.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
                                           }`}
-                                          title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                                          title={isEnrollmentBlocked ? `Оценки можно выставлять с ${student.enrollmentDate}` : isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                                         >
                                           {g.value}
                                         </button>
@@ -2641,11 +2651,12 @@ const Journal: React.FC = () => {
                                         }}
                                         disabled={isBlocked}
                                         className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${isBlocked ? 'cursor-not-allowed opacity-70' : ''} ${
+                                          isEnrollmentBlocked ? 'bg-gray-200 text-gray-400 border-2 border-dashed border-gray-300' :
                                           inputMode === 'keyboard' && keyboardTarget?.studentId === student.id && keyboardTarget?.date === sl.date && keyboardTarget?.columnId === c.id && keyboardTarget?.lessonNumber === sl.lessonNumber
                                             ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
                                             : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'
                                         }`}
-                                        title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                                        title={isEnrollmentBlocked ? `Оценки можно выставлять с ${student.enrollmentDate}` : isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
                                       />
                                     )}
                                     {/* Индикатор опоздания для доп. колонок */}
@@ -2955,10 +2966,15 @@ const Journal: React.FC = () => {
                         const mark = getAttendanceMark(student.id, sl.date);
                         const at = mark ? ATTENDANCE_TYPES.find(a => a.value === mark.type) : null;
                         const isToday = highlightToday && sl.date === today;
+                        const isEnrollmentBlocked = isDateBeforeEnrollment(student.id, sl.date);
                         return (
-                          <td key={sl.key} className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isToday ? 'bg-green-50' : ''}`}>
-                            <button onClick={e => setAttendancePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date })}
-                              className={`w-8 h-8 rounded-md text-[10px] font-bold transition-all ${at ? `${at.bgColor} ${at.color}` : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'}`}>
+                          <td key={sl.key} className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isEnrollmentBlocked ? 'bg-gray-100' : isToday ? 'bg-green-50' : ''}`}>
+                            <button
+                              onClick={e => !isEnrollmentBlocked && setAttendancePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date })}
+                              disabled={isEnrollmentBlocked}
+                              className={`w-8 h-8 rounded-md text-[10px] font-bold transition-all ${isEnrollmentBlocked ? 'cursor-not-allowed opacity-50 bg-gray-200 text-gray-400' : at ? `${at.bgColor} ${at.color}` : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'}`}
+                              title={isEnrollmentBlocked ? `Посещаемость можно отмечать с ${student.enrollmentDate}` : ''}
+                            >
                               {mark?.type || ''}
                             </button>
                           </td>
@@ -4300,6 +4316,22 @@ function generatePassword(length: number = 8): string {
   return pass;
 }
 
+// ==================== HELPER FUNCTIONS ====================
+function getTodayString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateDisplay(dateStr: string | undefined): string {
+  if (!dateStr) return '—';
+  const [year, month, day] = dateStr.split('-');
+  if (!year || !month || !day) return '—';
+  return `${day}.${month}.${year}`;
+}
+
 // ==================== STUDENTS MANAGER ====================
 const StudentsManager: React.FC = () => {
   const { students, setStudents, setGrades, setAttendance, setTestAttempts, setTestRetakes } = useData();
@@ -4307,7 +4339,13 @@ const StudentsManager: React.FC = () => {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ firstName: '', lastName: '', username: '', password: '' });
+  const [formData, setFormData] = useState({ 
+    firstName: '', 
+    lastName: '', 
+    username: '', 
+    password: '',
+    enrollmentDate: getTodayString() 
+  });
 
   const sorted = useMemo(() =>
     [...students]
@@ -4319,14 +4357,20 @@ const StudentsManager: React.FC = () => {
   const openAdd = () => {
     setEditingStudent(null);
     const newPass = generatePassword();
-    setFormData({ firstName: '', lastName: '', username: '', password: newPass });
+    setFormData({ firstName: '', lastName: '', username: '', password: newPass, enrollmentDate: getTodayString() });
     setShowModal(true);
     setShowPassword(true);
   };
 
   const openEdit = (s: Student) => {
     setEditingStudent(s);
-    setFormData({ firstName: s.firstName, lastName: s.lastName, username: s.username, password: s.password });
+    setFormData({ 
+      firstName: s.firstName, 
+      lastName: s.lastName, 
+      username: s.username, 
+      password: s.password,
+      enrollmentDate: s.enrollmentDate || getTodayString()
+    });
     setShowModal(true);
     setShowPassword(false);
   };
@@ -4397,6 +4441,7 @@ const StudentsManager: React.FC = () => {
               <th className="px-4 py-3 text-left">№</th>
               <th className="px-4 py-3 text-left">ФИО</th>
               <th className="px-4 py-3 text-left">Логин</th>
+              <th className="px-4 py-3 text-left">Дата прибытия</th>
               <th className="px-4 py-3 text-left">Пароль</th>
               <th className="px-4 py-3 text-center">Действия</th>
             </tr>
@@ -4407,6 +4452,7 @@ const StudentsManager: React.FC = () => {
                 <td className="px-4 py-3 text-gray-500">{i + 1}</td>
                 <td className="px-4 py-3 font-medium text-gray-900">{s.lastName} {s.firstName}</td>
                 <td className="px-4 py-3 text-gray-600">{s.username}</td>
+                <td className="px-4 py-3 text-gray-600">{formatDateDisplay(s.enrollmentDate)}</td>
                 <td className="px-4 py-3 text-gray-600">••••••</td>
                 <td className="px-4 py-3 text-center">
                   <div className="flex items-center justify-center gap-1">
@@ -4454,6 +4500,15 @@ const StudentsManager: React.FC = () => {
                     <RefreshCw className="w-4 h-4" />
                   </button>
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Дата прибытия в школу</label>
+                <input 
+                  type="date" 
+                  value={formData.enrollmentDate || getTodayString()} 
+                  onChange={e => setFormData(p => ({ ...p, enrollmentDate: e.target.value }))}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500" 
+                />
               </div>
             </div>
             <div className="flex gap-3 pt-2">
