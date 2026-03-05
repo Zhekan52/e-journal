@@ -23,7 +23,7 @@ import {
   formatDate, getTodayString, getTodayDate
 } from '../data';
 
-type Tab = 'dashboard' | 'schedule' | 'journal' | 'attendance' | 'tests' | 'lessonTypes' | 'reports' | 'fipi' | 'chat';
+type Tab = 'dashboard' | 'schedule' | 'journal' | 'attendance' | 'tests' | 'students' | 'lessonTypes' | 'reports' | 'fipi' | 'chat';
 
 // ==================== GRADE WITH TOOLTIP ====================
 interface GradeWithTooltipProps {
@@ -122,6 +122,7 @@ export const AdminView: React.FC = () => {
     { id: 'journal', label: 'Журнал', icon: <ClipboardList className="w-5 h-5" /> },
     { id: 'attendance', label: 'Посещаемость', icon: <CalendarDays className="w-5 h-5" /> },
     { id: 'tests', label: 'Тесты', icon: <FileText className="w-5 h-5" /> },
+    { id: 'students', label: 'Ученики', icon: <Users className="w-5 h-5" /> },
     { id: 'lessonTypes', label: 'Типы уроков', icon: <Tag className="w-5 h-5" /> },
     { id: 'reports', label: 'Отчёты', icon: <FileBarChart className="w-5 h-5" /> },
     { id: 'fipi', label: 'ФИПИ тренажёр', icon: <Brain className="w-5 h-5" /> },
@@ -2035,10 +2036,217 @@ const Journal: React.FC = () => {
               />
             </div>
           </div>
-        </div>
       </div>
-    );
+    </div>
+  );
+};
+
+// ==================== STUDENTS MANAGER ====================
+const StudentsManager: React.FC = () => {
+  const { students, setStudents, setGrades, setAttendance, setTestAttempts, setTestRetakes } = useData();
+  const [search, setSearch] = useState('');
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({ 
+    firstName: '', 
+    lastName: '', 
+    username: '', 
+    password: '',
+    enrollmentDate: getTodayString() 
+  });
+
+  const generatePassword = () => Math.random().toString(36).slice(2, 8);
+  
+  const generateUsername = (lastName: string, firstName: string) => {
+    return `${lastName.toLowerCase().replace(/[^а-яёa-z]/g, '')}.${firstName.toLowerCase().replace(/[^а-яёa-z]/g, '').charAt(0)}`;
   };
+
+  const formatDateDisplay = (dateStr: string) => {
+    if (!dateStr) return '—';
+    const [year, month, day] = dateStr.split('-');
+    return `${day}.${month}.${year}`;
+  };
+
+  const sorted = useMemo(() =>
+    [...students]
+      .sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`))
+      .filter(s => `${s.lastName} ${s.firstName}`.toLowerCase().includes(search.toLowerCase())),
+    [students, search]
+  );
+
+  const openAdd = () => {
+    setEditingStudent(null);
+    const newPass = generatePassword();
+    setFormData({ firstName: '', lastName: '', username: '', password: newPass, enrollmentDate: getTodayString() });
+    setShowModal(true);
+    setShowPassword(true);
+  };
+
+  const openEdit = (s: Student) => {
+    setEditingStudent(s);
+    setFormData({ 
+      firstName: s.firstName, 
+      lastName: s.lastName, 
+      username: s.username, 
+      password: s.password,
+      enrollmentDate: s.enrollmentDate || getTodayString()
+    });
+    setShowModal(true);
+    setShowPassword(false);
+  };
+
+  const handleNameChange = (field: 'firstName' | 'lastName', value: string) => {
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      // Auto-generate username only when adding new student (not editing)
+      if (!editingStudent) {
+        updated.username = generateUsername(
+          field === 'lastName' ? value : prev.lastName,
+          field === 'firstName' ? value : prev.firstName
+        );
+      }
+      return updated;
+    });
+  };
+
+  const regeneratePassword = () => {
+    setFormData(prev => ({ ...prev, password: generatePassword() }));
+    setShowPassword(true);
+  };
+
+  const save = () => {
+    if (!formData.firstName || !formData.lastName || !formData.username) {
+      alert('Заполните имя, фамилию и логин');
+      return;
+    }
+    if (!formData.password) {
+      setFormData(prev => ({ ...prev, password: generatePassword() }));
+    }
+    if (editingStudent) {
+      setStudents(prev => prev.map(s => s.id === editingStudent.id ? { ...s, ...formData } : s));
+    } else {
+      setStudents(prev => [...prev, { id: `s${Date.now()}`, ...formData }]);
+    }
+    setShowModal(false);
+  };
+
+  const deleteStudent = (id: string) => {
+    setStudents(prev => prev.filter(s => s.id !== id));
+    // Clean up all related data for deleted student
+    setGrades(prev => prev.filter(g => g.studentId !== id));
+    setAttendance(prev => prev.filter(a => a.studentId !== id));
+    setTestAttempts(prev => prev.filter(a => a.studentId !== id));
+    setTestRetakes(prev => prev.filter(r => r.studentId !== id));
+  };
+
+  return (
+    <div className="animate-fadeIn">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-gray-900">Ученики</h2>
+        <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors font-medium">
+          <Plus className="w-5 h-5" /> Добавить
+        </button>
+      </div>
+
+      <div className="relative mb-4">
+        <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск..."
+          className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500" />
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200 text-xs text-gray-600">
+              <th className="px-4 py-3 text-left">№</th>
+              <th className="px-4 py-3 text-left">ФИО</th>
+              <th className="px-4 py-3 text-left">Логин</th>
+              <th className="px-4 py-3 text-left">Дата прибытия</th>
+              <th className="px-4 py-3 text-left">Пароль</th>
+              <th className="px-4 py-3 text-center">Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((s, i) => (
+              <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50">
+                <td className="px-4 py-3 text-gray-500">{i + 1}</td>
+                <td className="px-4 py-3 font-medium text-gray-900">{s.lastName} {s.firstName}</td>
+                <td className="px-4 py-3 text-gray-600">{s.username}</td>
+                <td className="px-4 py-3 text-gray-600">{formatDateDisplay(s.enrollmentDate)}</td>
+                <td className="px-4 py-3 text-gray-600">••••••</td>
+                <td className="px-4 py-3 text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg hover:bg-gray-100"><Edit2 className="w-4 h-4 text-gray-500" /></button>
+                    <button onClick={() => deleteStudent(s.id)} className="p-1.5 rounded-lg hover:bg-red-50"><Trash2 className="w-4 h-4 text-red-500" /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {showModal && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={() => setShowModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4 animate-scaleIn" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-gray-900">{editingStudent ? 'Редактировать' : 'Добавить ученика'}</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Фамилия</label>
+                <input type="text" value={formData.lastName} onChange={e => handleNameChange('lastName', e.target.value)}
+                  placeholder="Иванов" className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Имя</label>
+                <input type="text" value={formData.firstName} onChange={e => handleNameChange('firstName', e.target.value)}
+                  placeholder="Артём" className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Логин <span className="text-gray-400">(генерируется автоматически)</span></label>
+                <input type="text" value={formData.username} onChange={e => setFormData(p => ({ ...p, username: e.target.value }))}
+                  placeholder="ivanov.a" className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Пароль <span className="text-gray-400">(генерируется автоматически)</span></label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input type={showPassword ? 'text' : 'password'} value={formData.password} onChange={e => setFormData(p => ({ ...p, password: e.target.value }))}
+                      placeholder="Пароль" className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 pr-10" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <button onClick={regeneratePassword} className="px-3 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium whitespace-nowrap">
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Дата прибытия в школу</label>
+                <input 
+                  type="date" 
+                  value={formData.enrollmentDate || getTodayString()} 
+                  onChange={e => setFormData(p => ({ ...p, enrollmentDate: e.target.value }))}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500" 
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button onClick={save} className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors font-medium">
+                {editingStudent ? 'Сохранить' : 'Добавить'}
+              </button>
+              <button onClick={() => setShowModal(false)} className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium">
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
 
   return (
     <div className="animate-fadeIn">
