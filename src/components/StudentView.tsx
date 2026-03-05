@@ -507,12 +507,12 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string; 
           <table className="w-full text-sm">
             <thead>
               {monthGroups.length > 0 && (
-                <tr className="bg-gradient-to-r from-primary-50/80 to-blue-50/80">
-                  <th className="sticky left-0 z-10 bg-gradient-to-r from-primary-50/80 to-blue-50/80 px-5 py-3 text-left font-bold text-primary-700 border-b border-r border-primary-300 min-w-[180px]"></th>
+                <tr className="bg-gradient-to-r from-violet-100 to-purple-100">
+                  <th className="sticky left-0 z-10 bg-gradient-to-r from-violet-100 to-purple-100 px-5 py-3 text-left font-bold text-violet-700 border-b border-r border-violet-200 min-w-[180px]"></th>
                   {monthGroups.map((mg, i) => (
-                    <th key={i} colSpan={mg.dates.length} className="px-3 py-3 text-center font-bold text-primary-800 border-b border-r border-primary-300 text-xs uppercase tracking-wide">{mg.month}</th>
+                    <th key={i} colSpan={mg.dates.length} className="px-3 py-3 text-center font-bold text-violet-800 border-b border-r border-violet-200 text-xs uppercase tracking-wide">{mg.month}</th>
                   ))}
-                  <th className="px-4 py-3 text-center font-bold text-primary-700 border-b border-primary-300">Ср.</th>
+                  <th className="px-4 py-3 text-center font-bold text-violet-700 border-b border-violet-200">Ср.</th>
                 </tr>
               )}
               <tr className="bg-gradient-to-r from-gray-100 to-gray-200">
