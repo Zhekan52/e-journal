@@ -162,23 +162,17 @@ export const defaultCustomLessonTypes: CustomLessonType[] = [];
 
 export interface ChatMessage {
   id: string;
-  senderId: string;
-  senderName: string;
-  senderRole: 'student' | 'admin';
-  receiverId: string;
-  receiverName: string;
-  content: string;
-  timestamp: string;
-  attachments?: ChatAttachment[];
+  fromUserId: string;
+  fromUserName: string;
+  fromUserRole: 'student' | 'admin';
+  toUserId: string;
+  text: string;
+  attachment?: {
+    name: string;
+    url: string;
+  };
+  createdAt: string; // ISO string
   read: boolean;
-}
-
-export interface ChatAttachment {
-  id: string;
-  name: string;
-  url: string;
-  type: string;
-  size: number;
 }
 
 // ==================== FIPI TRAINER ====================
