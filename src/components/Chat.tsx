@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth, useData } from '../context';
 import { uploadHomeworkFile } from '../firebase';
 import {
   MessageCircle, Send, Paperclip, Download, X, Check, CheckCheck,
-  User, ChevronDown, Search, File, Image, FileText, Archive
+  User, Search, File, Image, FileText, Archive
 } from 'lucide-react';
 import type { ChatMessage } from '../data';
 
@@ -21,19 +21,19 @@ export const StudentChatWidget: React.FC = () => {
 
   const studentId = user?.id || '';
   
-  // Получаем сообщения текущего ученика
-  const myMessages = chatMessages.filter(
-    m => m.fromUserId === studentId || m.toUserId === studentId
-  ).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const myMessages = useMemo(() => {
+    return chatMessages
+      .filter(m => m.fromUserId === studentId || m.toUserId === studentId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }, [chatMessages, studentId]);
 
-  // Непрочитанные сообщения
-  const unreadCount = myMessages.filter(m => m.toUserId === studentId && !m.read).length;
+  const unreadCount = useMemo(() => {
+    return myMessages.filter(m => m.toUserId === studentId && !m.read).length;
+  }, [myMessages, studentId]);
 
-  // Прокрутка к последнему сообщению
   useEffect(() => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      // Отметить все сообщения как прочитанные
       const toMarkAsRead = myMessages.filter(m => m.toUserId === studentId && !m.read);
       if (toMarkAsRead.length > 0) {
         setChatMessages(prev => 
@@ -113,22 +113,23 @@ export const StudentChatWidget: React.FC = () => {
     return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
   };
 
-  // Группировка сообщений по дате
-  const groupedMessages: { date: string; messages: ChatMessage[] }[] = [];
-  let currentDate = '';
-  myMessages.forEach(msg => {
-    const msgDate = formatDate(msg.createdAt);
-    if (msgDate !== currentDate) {
-      currentDate = msgDate;
-      groupedMessages.push({ date: msgDate, messages: [msg] });
-    } else {
-      groupedMessages[groupedMessages.length - 1].messages.push(msg);
-    }
-  });
+  const groupedMessages = useMemo(() => {
+    const groups: { date: string; messages: ChatMessage[] }[] = [];
+    let currentDate = '';
+    myMessages.forEach(msg => {
+      const msgDate = formatDate(msg.createdAt);
+      if (msgDate !== currentDate) {
+        currentDate = msgDate;
+        groups.push({ date: msgDate, messages: [msg] });
+      } else {
+        groups[groups.length - 1].messages.push(msg);
+      }
+    });
+    return groups;
+  }, [myMessages]);
 
   return (
     <>
-      {/* Кнопка чата */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full shadow-lg shadow-blue-500/30 flex items-center justify-center hover:scale-110 transition-transform z-40"
@@ -141,10 +142,8 @@ export const StudentChatWidget: React.FC = () => {
         )}
       </button>
 
-      {/* Окно чата */}
       {isOpen && createPortal(
         <div className="fixed bottom-24 right-6 w-96 h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden z-50 animate-scaleIn">
-          {/* Header */}
           <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
               <User className="w-5 h-5" />
@@ -158,7 +157,6 @@ export const StudentChatWidget: React.FC = () => {
             </button>
           </div>
 
-          {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
             {groupedMessages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-400">
@@ -209,14 +207,13 @@ export const StudentChatWidget: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  ))
+                  ))}
                 </div>
               ))
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
           <div className="p-3 bg-white border-t border-gray-200">
             <div className="flex items-center gap-2">
               <input
@@ -269,22 +266,10 @@ export const AdminChatView: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Получаем список учеников, с которыми есть переписка
-  const studentsWithChat = useMemo(() => {
-    const studentIds = new Set<string>();
-    chatMessages.forEach(m => {
-      if (m.fromUserRole === 'student') studentIds.add(m.fromUserId);
-      if (m.toUserId !== 'admin') studentIds.add(m.toUserId);
-    });
-    return students.filter(s => studentIds.has(s.id));
-  }, [chatMessages, students]);
-
-  // Все ученики для выбора
   const allStudents = useMemo(() => {
-    return students.sort((a, b) => a.lastName.localeCompare(b.lastName, 'ru'));
+    return [...students].sort((a, b) => a.lastName.localeCompare(b.lastName, 'ru'));
   }, [students]);
 
-  // Фильтрация по поиску
   const filteredStudents = useMemo(() => {
     if (!searchQuery.trim()) return allStudents;
     const query = searchQuery.toLowerCase();
@@ -293,16 +278,14 @@ export const AdminChatView: React.FC = () => {
     );
   }, [allStudents, searchQuery]);
 
-  // Сообщения с выбранным учеником
-  const currentMessages = React.useMemo(() => {
+  const currentMessages = useMemo(() => {
     if (!selectedStudentId) return [];
     return chatMessages
       .filter(m => m.fromUserId === selectedStudentId || m.toUserId === selectedStudentId)
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, [chatMessages, selectedStudentId]);
 
-  // Непрочитанные по ученикам
-  const unreadByStudent = React.useMemo(() => {
+  const unreadByStudent = useMemo(() => {
     const map: Record<string, number> = {};
     chatMessages.forEach(m => {
       if (m.toUserId === 'admin' && m.fromUserRole === 'student' && !m.read) {
@@ -312,15 +295,12 @@ export const AdminChatView: React.FC = () => {
     return map;
   }, [chatMessages]);
 
-  // Выбранный ученик
   const selectedStudent = students.find(s => s.id === selectedStudentId);
 
-  // Прокрутка к последнему сообщению
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [currentMessages]);
 
-  // Отметить как прочитанные при выборе ученика
   useEffect(() => {
     if (selectedStudentId) {
       setChatMessages(prev =>
@@ -399,18 +379,20 @@ export const AdminChatView: React.FC = () => {
     return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
   };
 
-  // Группировка сообщений по дате
-  const groupedMessages: { date: string; messages: ChatMessage[] }[] = [];
-  let currentDate = '';
-  currentMessages.forEach(msg => {
-    const msgDate = formatDate(msg.createdAt);
-    if (msgDate !== currentDate) {
-      currentDate = msgDate;
-      groupedMessages.push({ date: msgDate, messages: [msg] });
-    } else {
-      groupedMessages[groupedMessages.length - 1].messages.push(msg);
-    }
-  });
+  const groupedMessages = useMemo(() => {
+    const groups: { date: string; messages: ChatMessage[] }[] = [];
+    let currentDate = '';
+    currentMessages.forEach(msg => {
+      const msgDate = formatDate(msg.createdAt);
+      if (msgDate !== currentDate) {
+        currentDate = msgDate;
+        groups.push({ date: msgDate, messages: [msg] });
+      } else {
+        groups[groups.length - 1].messages.push(msg);
+      }
+    });
+    return groups;
+  }, [currentMessages]);
 
   const getFileIcon = (filename: string) => {
     const ext = filename.split('.').pop()?.toLowerCase();
@@ -427,9 +409,7 @@ export const AdminChatView: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden h-full flex">
-        {/* Список учеников */}
         <div className="w-80 border-r border-gray-200 flex flex-col">
-          {/* Поиск */}
           <div className="p-3 border-b border-gray-200">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -443,7 +423,6 @@ export const AdminChatView: React.FC = () => {
             </div>
           </div>
 
-          {/* Список */}
           <div className="flex-1 overflow-y-auto">
             {filteredStudents.length === 0 ? (
               <div className="p-4 text-center text-gray-400">
@@ -482,7 +461,7 @@ export const AdminChatView: React.FC = () => {
                       </div>
                       {lastMsg && (
                         <p className="text-xs text-gray-500 truncate mt-0.5">
-                          {lastMsg.text || (lastMsg.attachment ? '📎 Файл' : '')}
+                          {lastMsg.text || (lastMsg.attachment ? 'Файл' : '')}
                         </p>
                       )}
                     </div>
@@ -493,11 +472,9 @@ export const AdminChatView: React.FC = () => {
           </div>
         </div>
 
-        {/* Область чата */}
         <div className="flex-1 flex flex-col">
           {selectedStudentId ? (
             <>
-              {/* Header */}
               <div className="p-4 border-b border-gray-200 flex items-center gap-3 bg-gray-50">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-bold">
                   {selectedStudent?.lastName.charAt(0)}
@@ -510,7 +487,6 @@ export const AdminChatView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
                 {groupedMessages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-gray-400">
@@ -568,7 +544,6 @@ export const AdminChatView: React.FC = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input */}
               <div className="p-3 bg-white border-t border-gray-200">
                 <div className="flex items-center gap-2">
                   <input
