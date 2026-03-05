@@ -158,6 +158,29 @@ export interface CustomLessonType {
 
 export const defaultCustomLessonTypes: CustomLessonType[] = [];
 
+// ==================== CHAT ====================
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderRole: 'student' | 'admin';
+  receiverId: string;
+  receiverName: string;
+  content: string;
+  timestamp: string;
+  attachments?: ChatAttachment[];
+  read: boolean;
+}
+
+export interface ChatAttachment {
+  id: string;
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
+
 // ==================== FIPI TRAINER ====================
 
 export interface FipiTask {

@@ -6,7 +6,7 @@ import {
   type User, type Lesson, type Grade, type DiaryEntry, type Student, type Test,
   type JournalColumn, type LessonTypeEntry, type CustomLessonType, type AttendanceRecord, type TestAttempt,
   type TestAssignment, adminUsers, type FipiTask, type FipiReward, type FipiStudentProgress,
-  type FipiTaskAttempt, type FipiNotification
+  type FipiTaskAttempt, type FipiNotification, type ChatMessage
 } from './data';
 
 // ==================== HELPERS ====================
@@ -247,6 +247,8 @@ interface DataContextType {
   setFipiAttempts: Dispatch<SetStateAction<FipiTaskAttempt[]>>;
   fipiNotifications: FipiNotification[];
   setFipiNotifications: Dispatch<SetStateAction<FipiNotification[]>>;
+  chatMessages: ChatMessage[];
+  setChatMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   loading: boolean;
 }
 
@@ -273,8 +275,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [fipiProgress, setFipiProgress, l15] = useFirestoreCollection<FipiStudentProgress>('fipiProgress');
   const [fipiAttempts, setFipiAttempts, l16] = useFirestoreCollection<FipiTaskAttempt>('fipiAttempts');
   const [fipiNotifications, setFipiNotifications, l17] = useFirestoreCollection<FipiNotification>('fipiNotifications');
+  const [chatMessages, setChatMessages, l18] = useFirestoreCollection<ChatMessage>('chatMessages');
 
-  const loading = !(l1 && l2 && l3 && l4 && l5 && l6 && l7 && l8 && l9 && l10 && l11 && l12 && l13 && l14 && l15 && l16 && l17);
+  const loading = !(l1 && l2 && l3 && l4 && l5 && l6 && l7 && l8 && l9 && l10 && l11 && l12 && l13 && l14 && l15 && l16 && l17 && l18);
 
   return (
     <DataContext.Provider value={{
@@ -285,7 +288,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       testRetakes, setTestRetakes, testAssignments, setTestAssignments,
       fipiTasks, setFipiTasks, fipiRewards, setFipiRewards,
       fipiProgress, setFipiProgress, fipiAttempts, setFipiAttempts,
-      fipiNotifications, setFipiNotifications, loading,
+      fipiNotifications, setFipiNotifications, chatMessages, setChatMessages, loading,
     }}>
       {children}
     </DataContext.Provider>
