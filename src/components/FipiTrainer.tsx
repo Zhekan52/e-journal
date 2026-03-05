@@ -562,8 +562,16 @@ export const FipiTrainer: React.FC = () => {
                     return true;
                   });
                   
-                  // Сортировка по дате убыванию (свежие в начале)
-                  filtered = filtered.sort((a, b) => b.date.localeCompare(a.date));
+                  // Сортировка по дате и времени убыванию (свежие в начале)
+                  filtered = filtered.sort((a, b) => {
+                    // Сначала сравниваем даты
+                    const dateCompare = b.date.localeCompare(a.date);
+                    if (dateCompare !== 0) return dateCompare;
+                    // При одинаковой дате сравниваем время (если есть)
+                    const timeA = a.time || '00:00';
+                    const timeB = b.time || '00:00';
+                    return timeB.localeCompare(timeA);
+                  });
                   
                   if (filtered.length === 0) {
                     return <tr><td colSpan={5} className="p-8 text-center text-gray-500">Нет записей</td></tr>;
