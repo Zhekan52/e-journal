@@ -23,7 +23,7 @@ import {
   formatDate, getTodayString, getTodayDate
 } from '../data';
 
-type Tab = 'dashboard' | 'schedule' | 'journal' | 'attendance' | 'tests' | 'students' | 'lessonTypes' | 'reports' | 'fipi' | 'chat';
+type Tab = 'dashboard' | 'schedule' | 'journal' | 'attendance' | 'tests' | 'lessonTypes' | 'reports' | 'fipi' | 'chat';
 
 // ==================== GRADE WITH TOOLTIP ====================
 interface GradeWithTooltipProps {
@@ -122,7 +122,6 @@ export const AdminView: React.FC = () => {
     { id: 'journal', label: 'Журнал', icon: <ClipboardList className="w-5 h-5" /> },
     { id: 'attendance', label: 'Посещаемость', icon: <CalendarDays className="w-5 h-5" /> },
     { id: 'tests', label: 'Тесты', icon: <FileText className="w-5 h-5" /> },
-    { id: 'students', label: 'Ученики', icon: <Users className="w-5 h-5" /> },
     { id: 'lessonTypes', label: 'Типы уроков', icon: <Tag className="w-5 h-5" /> },
     { id: 'reports', label: 'Отчёты', icon: <FileBarChart className="w-5 h-5" /> },
     { id: 'fipi', label: 'ФИПИ тренажёр', icon: <Brain className="w-5 h-5" /> },
