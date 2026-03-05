@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
@@ -4342,7 +4342,7 @@ function formatDateDisplay(dateStr: string | undefined): string {
 
 // ==================== STUDENTS MANAGER ====================
 const StudentsManager: React.FC = () => {
-  const { students, setStudents, setGrades, setAttendance, setTestAttempts, setTestRetakes } = useData();
+  const { students, grades, setStudents, setGrades, setAttendance, setTestAttempts, setTestRetakes } = useData();
   const [search, setSearch] = useState('');
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -4352,8 +4352,7 @@ const StudentsManager: React.FC = () => {
     lastName: '', 
     username: '', 
     password: '',
-    enrollmentDate: getTodayString() 
-  });
+    enrollmentDate: getTodayString()  });  // Модальное окно графика успеваемости  const [showProgressModal, setShowProgressModal] = useState(false);  const [selectedStudentForProgress, setSelectedStudentForProgress] = useState<Student | null>(null);  const [progressPeriod, setProgressPeriod] = useState<number>(30);
 
   const sorted = useMemo(() =>
     [...students]
@@ -4365,7 +4364,7 @@ const StudentsManager: React.FC = () => {
   const openAdd = () => {
     setEditingStudent(null);
     const newPass = generatePassword();
-    setFormData({ firstName: '', lastName: '', username: '', password: newPass, enrollmentDate: getTodayString() });
+    setFormData({ firstName: '', lastName: '', username: '', password: newPass, enrollmentDate: getTodayString()  });  // Модальное окно графика успеваемости  const [showProgressModal, setShowProgressModal] = useState(false);  const [selectedStudentForProgress, setSelectedStudentForProgress] = useState<Student | null>(null);  const [progressPeriod, setProgressPeriod] = useState<number>(30);
     setShowModal(true);
     setShowPassword(true);
   };
@@ -4465,7 +4464,7 @@ const StudentsManager: React.FC = () => {
                 <td className="px-4 py-3 text-center">
                   <div className="flex items-center justify-center gap-1">
                     <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg hover:bg-gray-100"><Edit2 className="w-4 h-4 text-gray-500" /></button>
-                    <button onClick={() => deleteStudent(s.id)} className="p-1.5 rounded-lg hover:bg-red-50"><Trash2 className="w-4 h-4 text-red-500" /></button>
+                    <button onClick={() => { setSelectedStudentForProgress(s); setShowProgressModal(true); }} className="p-1.5 rounded-lg hover:bg-blue-50" title="Динамика успеваемости"><TrendingUp className="w-4 h-4 text-blue-500" /></button><button onClick={() => deleteStudent(s.id)} className="p-1.5 rounded-lg hover:bg-red-50"><Trash2 className="w-4 h-4 text-red-500" /></button>
                   </div>
                 </td>
               </tr>
@@ -4531,7 +4530,140 @@ const StudentsManager: React.FC = () => {
         </div>,
         document.body
       )}
+
+      {showProgressModal && selectedStudentForProgress && createPortal(
+        <ProgressChartModal 
+          student={selectedStudentForProgress} 
+          grades={grades} 
+          period={progressPeriod}
+          onClose={() => { setShowProgressModal(false); setSelectedStudentForProgress(null); }}
+          onPeriodChange={setProgressPeriod}
+        />,
+        document.body
+      )}
     </div>
   );
 };
 
+const ProgressChartModal: React.FC<{
+  student: Student;
+  grades: any[];
+  period: number;
+  onClose: () => void;
+  onPeriodChange: (period: number) => void;
+}> = ({ student, grades, period, onClose, onPeriodChange }) => {
+  const studentGrades = useMemo(() => {
+    const now = new Date();
+    const startDate = new Date(now.getTime() - period * 24 * 60 * 60 * 1000);
+    return grades
+      .filter(g => g.studentId === student.id && !g.excludeFromAverage)
+      .filter(g => {
+        const gradeDate = new Date(g.date + 'T00:00');
+        return gradeDate >= startDate && gradeDate <= now;
+      })
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [student.id, grades, period]);
+
+  const dailyGrades = useMemo(() => {
+    const grouped: { [date: string]: number[] } = {};
+    studentGrades.forEach(g => {
+      if (!grouped[g.date]) grouped[g.date] = [];
+      grouped[g.date].push(g.value);
+    });
+    return Object.entries(grouped).map(([date, values]) => ({
+      date,
+      avg: values.reduce((a, b) => a + b, 0) / values.length,
+      count: values.length
+    })).sort((a, b) => a.date.localeCompare(b.date));
+  }, [studentGrades]);
+
+  const avgGrade = dailyGrades.length > 0 ? dailyGrades.reduce((s, d) => s + d.avg, 0) / dailyGrades.length : 0;
+
+  const getGradeColor = (value: number) => {
+    if (value >= 4.5) return 'bg-green-500';
+    if (value >= 3.5) return 'bg-blue-500';
+    if (value >= 2.5) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00');
+    return d.getDate() + '.' + (d.getMonth() + 1);
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">Динамика успеваемости</h3>
+            <p className="text-sm text-gray-500">{student.lastName} {student.firstName}</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-xl"><X className="w-5 h-5 text-gray-500" /></button>
+        </div>
+        <div className="p-6 space-y-6">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-gray-700">Период:</span>
+            <div className="flex gap-2">
+              {[7, 14, 30, 60, 90].map(days => (
+                <button key={days} onClick={() => onPeriodChange(days)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium ${period === days ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                  {days} дн.
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-gray-50 rounded-xl p-4 text-center">
+              <div className="text-2xl font-bold text-gray-900">{dailyGrades.length}</div>
+              <div className="text-xs text-gray-500">Дней с оценками</div>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4 text-center">
+              <div className="text-2xl font-bold text-gray-900">{studentGrades.length}</div>
+              <div className="text-xs text-gray-500">Всего оценок</div>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4 text-center">
+              <div className={`text-2xl font-bold ${avgGrade >= 4 ? 'text-green-600' : avgGrade >= 3 ? 'text-blue-600' : 'text-red-600'}`}>{avgGrade.toFixed(2)}</div>
+              <div className="text-xs text-gray-500">Средний балл</div>
+            </div>
+          </div>
+          {dailyGrades.length > 0 ? (
+            <div className="bg-gray-50 rounded-xl p-4">
+              <div className="flex items-end justify-between gap-2 h-48">
+                {dailyGrades.map((day) => {
+                  const height = (day.avg / 5) * 100;
+                  return (
+                    <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full flex flex-col items-center justify-end h-40">
+                        <span className="text-xs text-gray-500 mb-1">{day.avg.toFixed(1)}</span>
+                        <div className={`w-full max-w-8 rounded-t-md transition-all ${getGradeColor(day.avg)}`} style={{ height: Math.max(height, 5) + '%' }} />
+                      </div>
+                      <span className="text-xs text-gray-500">{formatDate(day.date)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              {dailyGrades.length > 1 && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Первая: <span className="font-medium text-gray-900">{dailyGrades[0].avg.toFixed(2)}</span></span>
+                    <span className="text-gray-500">Последняя: <span className="font-medium text-gray-900">{dailyGrades[dailyGrades.length - 1].avg.toFixed(2)}</span></span>
+                    <span className={`font-medium ${dailyGrades[dailyGrades.length - 1].avg - dailyGrades[0].avg >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {dailyGrades[dailyGrades.length - 1].avg - dailyGrades[0].avg >= 0 ? '↑' : '↓'} {Math.abs(dailyGrades[dailyGrades.length - 1].avg - dailyGrades[0].avg).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500"><TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" /><p>Нет оценок за выбранный период</p></div>
+          )}
+        </div>
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <button onClick={onClose} className="w-full px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 font-medium">Закрыть</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
