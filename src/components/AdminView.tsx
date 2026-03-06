@@ -15,7 +15,7 @@ import {
   AlertTriangle, TrendingUp, TrendingDown, FileText,
   BarChart3, Award, ArrowLeft, RefreshCw, ChevronRight, Tag, Info,
   Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft,
-  CalendarDays, FileBarChart, Brain, Clock, MessageCircle, Folder
+  CalendarDays, FileBarChart, Brain, Clock, MessageCircle, Folder, Timer
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
@@ -1343,16 +1343,39 @@ const GradePickerPortal: React.FC<{
   currentGrade?: number;
   currentExcludeFromAverage?: boolean;
   currentReason?: string;
+  currentIsPending?: boolean;
+  currentPendingDays?: number;
+  currentPendingTargetGrade?: number;
+  currentPendingDate?: string;
   studentName?: string;
   date?: string;
   onSelect: (v: number, excludeFromAverage?: boolean, reason?: string) => void;
+  onSetPending?: (isPending: boolean, pendingDays?: number, pendingTargetGrade?: number, pendingDate?: string) => void;
   onDelete?: () => void;
   onClose: () => void;
-}> = ({ anchorRect, currentGrade, currentExcludeFromAverage, currentReason, studentName, date, onSelect, onDelete, onClose }) => {
+}> = ({ 
+  anchorRect, 
+  currentGrade, 
+  currentExcludeFromAverage, 
+  currentReason, 
+  currentIsPending,
+  currentPendingDays,
+  currentPendingTargetGrade,
+  currentPendingDate,
+  studentName, 
+  date, 
+  onSelect, 
+  onSetPending,
+  onDelete, 
+  onClose 
+}) => {
   const ref = useRef<HTMLDivElement>(null);
   const [excludeFromAverage, setExcludeFromAverage] = useState(currentExcludeFromAverage || false);
   const [reason, setReason] = useState(currentReason || '');
   const [showReasonInput, setShowReasonInput] = useState(!!currentReason);
+  const [pendingDays, setPendingDays] = useState(currentPendingDays || 7);
+  const [pendingTargetGrade, setPendingTargetGrade] = useState(currentPendingTargetGrade || 5);
+  const [showPendingConfig, setShowPendingConfig] = useState(false);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -1371,9 +1394,20 @@ const GradePickerPortal: React.FC<{
     setShowReasonInput(!!currentReason);
   }, [currentReason]);
 
+  useEffect(() => {
+    setPendingDays(currentPendingDays || 7);
+    setPendingTargetGrade(currentPendingTargetGrade || 5);
+  }, [currentPendingDays, currentPendingTargetGrade]);
+
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr + 'T00:00');
     return `${d.getDate()} ${MONTH_NAMES_GEN[d.getMonth()]}`;
+  };
+
+  const getPendingDateStr = (days: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
   const handleSelect = (v: number) => {
@@ -1386,8 +1420,23 @@ const GradePickerPortal: React.FC<{
     }
   };
 
-  const widgetW = 260;
-  const widgetH = currentGrade ? 280 : 180;
+  const handleSavePending = () => {
+    if (onSetPending) {
+      const pendingDate = getPendingDateStr(pendingDays);
+      onSetPending(true, pendingDays, pendingTargetGrade, pendingDate);
+      setShowPendingConfig(false);
+    }
+  };
+
+  const handleRemovePending = () => {
+    if (onSetPending) {
+      onSetPending(false);
+      setShowPendingConfig(false);
+    }
+  };
+
+  const widgetW = 280;
+  const widgetH = showPendingConfig ? 420 : (currentGrade ? 320 : 200);
   let top = anchorRect.bottom + 8;
   let left = anchorRect.left + anchorRect.width / 2 - widgetW / 2;
   if (top + widgetH > window.innerHeight) top = anchorRect.top - widgetH - 8;
@@ -1410,6 +1459,108 @@ const GradePickerPortal: React.FC<{
           {studentName && <div className="truncate font-medium">{studentName}</div>}
         </div>
       )}
+
+      {/* Если уже есть отложенная оценка - показываем информацию о ней */}
+      {currentIsPending && currentPendingDate && (
+        <div className="mb-4 p-3 bg-gray-100 rounded-xl border border-gray-200">
+          <div className="flex items-center gap-2 mb-2">
+            <Timer className="w-4 h-4 text-gray-600" />
+            <span className="text-xs font-semibold text-gray-700">Отложенная оценка (точка)</span>
+          </div>
+          <div className="text-xs text-gray-600 space-y-1">
+            <div>Появится через: <span className="font-semibold">{currentPendingDays} дн.</span></div>
+            <div>Превратится в: <span className="font-semibold">{currentPendingTargetGrade}</span></div>
+            <div>Дата появления: <span className="font-semibold">{formatDate(currentPendingDate)}</span></div>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <button 
+              onClick={() => setShowPendingConfig(!showPendingConfig)}
+              className="flex-1 py-1.5 text-xs font-medium bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              Изменить
+            </button>
+            {onSetPending && (
+              <button 
+                onClick={handleRemovePending}
+                className="flex-1 py-1.5 text-xs font-medium bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+              >
+                Удалить точку
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Конфигурация отложенной оценки */}
+      {showPendingConfig && (
+        <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-200 space-y-3">
+          <div className="flex items-center gap-2">
+            <Timer className="w-4 h-4 text-blue-600" />
+            <span className="text-xs font-semibold text-blue-700">Настройка отложенной оценки</span>
+          </div>
+          
+          <div>
+            <label className="block text-xs font-medium text-blue-700 mb-1">Через сколько дней появится?</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="1"
+                max="365"
+                value={pendingDays}
+                onChange={(e) => setPendingDays(Math.max(1, Math.min(365, parseInt(e.target.value) || 1)))}
+                className="flex-1 px-2 py-1.5 text-sm border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <span className="text-xs text-blue-600">
+                {pendingDays === 1 ? 'день' : pendingDays >= 2 && pendingDays <= 4 ? 'дня' : 'дней'}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-blue-700 mb-1">В какую оценку превратится?</label>
+            <div className="flex gap-1">
+              {[2, 3, 4, 5].map(v => (
+                <button
+                  key={v}
+                  onClick={() => setPendingTargetGrade(v)}
+                  className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                    pendingTargetGrade === v 
+                      ? v === 5 ? 'bg-green-500 text-white ring-2 ring-green-300' :
+                        v === 4 ? 'bg-blue-500 text-white ring-2 ring-blue-300' :
+                        v === 3 ? 'bg-yellow-500 text-white ring-2 ring-yellow-300' :
+                        'bg-red-500 text-white ring-2 ring-red-300'
+                      : 'bg-white text-gray-500 border border-blue-200 hover:bg-blue-100'
+                  }`}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="text-xs text-blue-600 bg-blue-100 rounded-lg px-3 py-2">
+            Оценка появится <span className="font-semibold">{formatDate(getPendingDateStr(pendingDays))}</span>
+          </div>
+
+          <button
+            onClick={handleSavePending}
+            className="w-full py-2 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Сохранить точку
+          </button>
+        </div>
+      )}
+
+      {/* Кнопка для создания точки (если нет отложенной оценки) */}
+      {!currentIsPending && onSetPending && !showPendingConfig && (
+        <button
+          onClick={() => setShowPendingConfig(true)}
+          className="w-full mb-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-1.5 border border-gray-200"
+        >
+          <Timer className="w-3.5 h-3.5" /> Поставить точку (отложенная оценка)
+        </button>
+      )}
+
       <div className="flex gap-2 justify-center">
         {[5, 4, 3, 2].map(v => (
           <button key={v} onClick={() => handleSelect(v)}
@@ -1721,12 +1872,44 @@ const Journal: React.FC = () => {
     return result;
   };
 
+  // Функция для установки отложенной оценки
+  const setPendingGrade = (studentId: string, date: string, isPending: boolean, pendingDays?: number, pendingTargetGrade?: number, pendingDate?: string) => {
+    setGrades(prev => {
+      const existing = prev.find(g => g.studentId === studentId && g.date === date && g.subject === selectedSubject
+        && !g.columnId && g.lessonNumber === undefined);
+      if (existing) {
+        return prev.map(g => g.id === existing.id ? { 
+          ...g, 
+          isPending, 
+          pendingDays: isPending ? pendingDays : undefined, 
+          pendingTargetGrade: isPending ? pendingTargetGrade : undefined,
+          pendingDate: isPending ? pendingDate : undefined
+        } : g);
+      }
+      // Если оценки ещё нет, создаём новую отложенную оценку
+      if (isPending && pendingTargetGrade && pendingDate) {
+        return [...prev, { 
+          id: `g${Date.now()}${Math.random().toString(36).slice(2, 6)}`, 
+          studentId, 
+          subject: selectedSubject, 
+          value: pendingTargetGrade, 
+          date, 
+          isPending: true,
+          pendingDays,
+          pendingTargetGrade,
+          pendingDate
+        }];
+      }
+      return prev;
+    });
+  };
+
   const setGrade = (studentId: string, date: string, value: number, columnId?: string, lessonNumber?: number, excludeFromAverage?: boolean, reason?: string) => {
     setGrades(prev => {
       const existing = prev.find(g => g.studentId === studentId && g.date === date && g.subject === selectedSubject
         && (columnId ? g.columnId === columnId : !g.columnId)
         && (lessonNumber !== undefined ? g.lessonNumber === lessonNumber : true));
-      if (existing) return prev.map(g => g.id === existing.id ? { ...g, value, excludeFromAverage, reason } : g);
+      if (existing) return prev.map(g => g.id === existing.id ? { ...g, value, excludeFromAverage, reason, isPending: false, pendingDays: undefined, pendingTargetGrade: undefined, pendingDate: undefined } : g);
       return [...prev, { id: `g${Date.now()}${Math.random().toString(36).slice(2, 6)}`, studentId, subject: selectedSubject, value, date, lessonNumber, columnId, excludeFromAverage, reason }];
     });
   };
@@ -2401,10 +2584,15 @@ const Journal: React.FC = () => {
               currentGrade={currentGradeData?.value}
               currentExcludeFromAverage={currentGradeData?.excludeFromAverage}
               currentReason={currentGradeData?.reason}
+              currentIsPending={currentGradeData?.isPending}
+              currentPendingDays={currentGradeData?.pendingDays}
+              currentPendingTargetGrade={currentGradeData?.pendingTargetGrade}
+              currentPendingDate={currentGradeData?.pendingDate}
               studentName={student ? `${student.lastName} ${student.firstName}` : undefined}
               date={gradePickerState.date}
               onSelect={(v, excludeFromAverage, reason) => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber, excludeFromAverage, reason); setGradePickerState(null); }}
               onDelete={() => { deleteGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
+              onSetPending={(isPending, pendingDays, pendingTargetGrade, pendingDate) => { setPendingGrade(gradePickerState.studentId, gradePickerState.date, isPending, pendingDays, pendingTargetGrade, pendingDate); setGradePickerState(null); }}
               onClose={() => setGradePickerState(null)}
             />
           );
@@ -2835,6 +3023,12 @@ const Journal: React.FC = () => {
                               {isLateness && (
                                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-400 rounded-full flex items-center justify-center ring-2 ring-white">
                                   <Clock className="w-3 h-3 text-white" />
+                                </span>
+                              )}
+                              {/* Индикатор отложенной оценки */}
+                              {mainGrade?.isPending && (
+                                <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-violet-400 rounded-full flex items-center justify-center ring-2 ring-white" title={`Отложенная оценка: ${mainGrade.pendingTargetGrade} появится ${mainGrade.pendingDate}`}>
+                                  <Timer className="w-3 h-3 text-white" />
                                 </span>
                               )}
                             </div>
@@ -3435,10 +3629,15 @@ const Journal: React.FC = () => {
             currentGrade={currentGradeData?.value}
             currentExcludeFromAverage={currentGradeData?.excludeFromAverage}
             currentReason={currentGradeData?.reason}
+            currentIsPending={currentGradeData?.isPending}
+            currentPendingDays={currentGradeData?.pendingDays}
+            currentPendingTargetGrade={currentGradeData?.pendingTargetGrade}
+            currentPendingDate={currentGradeData?.pendingDate}
             studentName={student ? `${student.lastName} ${student.firstName}` : undefined}
             date={gradePickerState.date}
             onSelect={(v, excludeFromAverage, reason) => { setGrade(gradePickerState.studentId, gradePickerState.date, v, gradePickerState.columnId, gradePickerState.lessonNumber, excludeFromAverage, reason); setGradePickerState(null); }}
             onDelete={() => { deleteGrade(gradePickerState.studentId, gradePickerState.date, gradePickerState.columnId, gradePickerState.lessonNumber); setGradePickerState(null); }}
+            onSetPending={(isPending, pendingDays, pendingTargetGrade, pendingDate) => { setPendingGrade(gradePickerState.studentId, gradePickerState.date, isPending, pendingDays, pendingTargetGrade, pendingDate); setGradePickerState(null); }}
             onClose={() => setGradePickerState(null)}
           />
         );
