@@ -27,6 +27,11 @@ export interface Grade {
   columnId?: string;
   excludeFromAverage?: boolean; // Если true — не учитывается при расчёте среднего балла
   reason?: string; // Основание для оценки (за что поставлена)
+  // Отложенная оценка ("точка")
+  isPending?: boolean; // Является ли оценка отложенной (точкой)
+  pendingDays?: number; // Через сколько дней появится оценка
+  pendingTargetGrade?: number; // В какую оценку превратится
+  pendingDate?: string; // Рассчитанная дата появления оценки (YYYY-MM-DD)
 }
 
 export interface DiaryEntryAttachment {
