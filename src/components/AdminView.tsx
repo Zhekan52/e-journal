@@ -36,13 +36,12 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, testTitle })
   const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const colorClass = value === 5 
-    ? 'bg-green-100 text-green-700' 
-    : value === 4 
-      ? 'bg-blue-100 text-blue-700' 
-      : value === 3 
-        ? 'bg-yellow-100 text-yellow-700' 
-        : 'bg-red-100 text-red-700';
+  const gradeStyles = {
+    5: 'bg-gradient-to-br from-emerald-400 to-emerald-500 text-white shadow-emerald-200',
+    4: 'bg-gradient-to-br from-sky-400 to-blue-500 text-white shadow-sky-200',
+    3: 'bg-gradient-to-br from-amber-400 to-orange-400 text-white shadow-amber-200',
+    2: 'bg-gradient-to-br from-rose-400 to-red-500 text-white shadow-rose-200'
+  };
 
   const tooltipText = testTitle ? `Тест: ${testTitle}` : '';
 
@@ -57,14 +56,12 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, testTitle })
     setShowTooltip(true);
   };
 
-  // Вычисляем позицию тултипа с учётом границ экрана
   const getTooltipStyle = () => {
     if (!tooltipPos) return {};
     const tooltipWidth = testTitle ? Math.min(300, testTitle.length * 8 + 40) : 150;
     const padding = 10;
     let left = tooltipPos.left;
     
-    // Корректируем позицию, чтобы тултип не выходил за границы экрана
     if (left - tooltipWidth / 2 < padding) {
       left = padding + tooltipWidth / 2;
     } else if (left + tooltipWidth / 2 > window.innerWidth - padding) {
@@ -82,7 +79,7 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, testTitle })
     <div className="relative inline-flex">
       <button 
         ref={triggerRef}
-        className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${colorClass}`}
+        className={`w-9 h-9 rounded-xl text-sm font-bold transition-all duration-200 shadow-lg hover:scale-110 hover:-translate-y-0.5 ${gradeStyles[value as keyof typeof gradeStyles]}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={() => setShowTooltip(false)}
       >
@@ -90,7 +87,7 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, testTitle })
       </button>
       {showTooltip && tooltipText && tooltipPos && createPortal(
         <div 
-          className="fixed z-[100] px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-xl pointer-events-none"
+          className="fixed z-[100] px-4 py-2.5 bg-gradient-to-r from-slate-800 to-slate-900 text-white text-xs rounded-xl shadow-2xl pointer-events-none border border-slate-700"
           style={{ 
             ...getTooltipStyle(),
             whiteSpace: 'normal',
@@ -99,7 +96,7 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, testTitle })
         >
           {tooltipText}
           <div 
-            className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" 
+            className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-800" 
           />
         </div>,
         document.body
@@ -1383,76 +1380,79 @@ const GradePickerPortal: React.FC<{
     onSelect(v, excludeFromAverage, reason.trim() || undefined);
   };
 
-  // Сохранить только основание (для уже выставленной оценки)
   const handleSaveReason = () => {
     if (currentGrade !== undefined) {
       onSelect(currentGrade, excludeFromAverage, reason.trim() || undefined);
     }
   };
 
-  const widgetW = 240;
-  const widgetH = currentGrade ? 260 : 160;
-  let top = anchorRect.bottom + 4;
+  const widgetW = 260;
+  const widgetH = currentGrade ? 280 : 180;
+  let top = anchorRect.bottom + 8;
   let left = anchorRect.left + anchorRect.width / 2 - widgetW / 2;
-  if (top + widgetH > window.innerHeight) top = anchorRect.top - widgetH - 4;
+  if (top + widgetH > window.innerHeight) top = anchorRect.top - widgetH - 8;
   if (left < 8) left = 8;
   if (left + widgetW > window.innerWidth - 8) left = window.innerWidth - widgetW - 8;
 
+  const gradeStyles = {
+    5: 'bg-gradient-to-br from-emerald-400 to-emerald-500 text-white shadow-lg shadow-emerald-200 hover:shadow-emerald-300',
+    4: 'bg-gradient-to-br from-sky-400 to-blue-500 text-white shadow-lg shadow-sky-200 hover:shadow-sky-300',
+    3: 'bg-gradient-to-br from-amber-400 to-orange-400 text-white shadow-lg shadow-amber-200 hover:shadow-amber-300',
+    2: 'bg-gradient-to-br from-rose-400 to-red-500 text-white shadow-lg shadow-rose-200 hover:shadow-rose-300'
+  };
+
   return createPortal(
-    <div ref={ref} className="fixed z-[100] bg-white rounded-xl shadow-2xl border border-gray-200 p-2 animate-scaleIn"
+    <div ref={ref} className="fixed z-[100] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/50 p-4 animate-scaleIn"
       style={{ top, left, width: widgetW }}>
       {(studentName || date) && (
-        <div className="text-xs text-gray-500 border-b border-gray-100 pb-1.5 mb-2">
-          {date && <div className="font-medium text-gray-700">{formatDate(date)}</div>}
-          {studentName && <div className="truncate">{studentName}</div>}
+        <div className="text-xs text-slate-500 border-b border-slate-100 pb-3 mb-3">
+          {date && <div className="font-semibold text-slate-700">{formatDate(date)}</div>}
+          {studentName && <div className="truncate font-medium">{studentName}</div>}
         </div>
       )}
-      <div className="flex gap-1.5 justify-center">
+      <div className="flex gap-2 justify-center">
         {[5, 4, 3, 2].map(v => (
           <button key={v} onClick={() => handleSelect(v)}
-            className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${
-              v === 5 ? 'bg-green-100 text-green-700 hover:bg-green-200' :
-              v === 4 ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
-              v === 3 ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' :
-              'bg-red-100 text-red-700 hover:bg-red-200'
-            } ${currentGrade === v ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}>
+            className={`w-12 h-12 rounded-xl text-lg font-bold transition-all duration-200 hover:scale-110 ${gradeStyles[v as keyof typeof gradeStyles]} ${currentGrade === v ? 'ring-2 ring-offset-2 ring-slate-400 scale-110' : ''}`}>
             {v}
           </button>
         ))}
       </div>
-      <label className="flex items-center gap-2 mt-2 px-1 cursor-pointer select-none">
-        <input
-          type="checkbox"
-          checked={excludeFromAverage}
-          onChange={(e) => setExcludeFromAverage(e.target.checked)}
-          className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
-        />
-        <span className="text-xs text-gray-600">Не учитывать в среднем</span>
+      <label className="flex items-center gap-2.5 mt-4 px-1 cursor-pointer select-none group">
+        <div className={`w-5 h-5 rounded-md border-2 transition-all duration-200 flex items-center justify-center ${excludeFromAverage ? 'bg-gradient-to-br from-violet-500 to-purple-600 border-violet-500' : 'border-slate-300 group-hover:border-slate-400'}`}>
+          {excludeFromAverage && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+          <input
+            type="checkbox"
+            checked={excludeFromAverage}
+            onChange={(e) => setExcludeFromAverage(e.target.checked)}
+            className="sr-only"
+          />
+        </div>
+        <span className="text-xs text-slate-600 font-medium">Не учитывать в среднем</span>
       </label>
       
-      {/* Поле для ввода основания оценки */}
-      <div className="mt-2">
+      <div className="mt-3">
         {showReasonInput ? (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <div className="relative">
               <input
                 type="text"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="За что оценка..."
-                className="w-full px-2 py-1.5 pr-7 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="w-full px-3 py-2 pr-8 text-xs border-2 border-slate-200 rounded-xl focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all"
               />
               <button
                 onClick={() => { setShowReasonInput(false); setReason(''); }}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
             {currentGrade !== undefined && (
               <button
                 onClick={handleSaveReason}
-                className="w-full py-1 text-xs bg-primary-100 text-primary-700 hover:bg-primary-200 rounded-lg transition-colors"
+                className="w-full py-2 text-xs font-semibold bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl hover:from-violet-600 hover:to-purple-700 transition-all shadow-md shadow-violet-200"
               >
                 Сохранить основание
               </button>
@@ -1461,16 +1461,16 @@ const GradePickerPortal: React.FC<{
         ) : (
           <button
             onClick={() => setShowReasonInput(true)}
-            className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary-600 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-violet-600 transition-colors font-medium"
           >
-            <Info className="w-3 h-3" /> {currentGrade !== undefined ? 'Изменить основание' : 'Добавить основание'}
+            <Info className="w-3.5 h-3.5" /> {currentGrade !== undefined ? 'Изменить основание' : 'Добавить основание'}
           </button>
         )}
       </div>
 
       {currentGrade && onDelete && (
-        <button onClick={onDelete} className="w-full mt-1.5 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-1">
-          <Trash2 className="w-3 h-3" /> Удалить
+        <button onClick={onDelete} className="w-full mt-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors flex items-center justify-center gap-1.5 border border-rose-100">
+          <Trash2 className="w-3.5 h-3.5" /> Удалить
         </button>
       )}
     </div>,
@@ -1495,27 +1495,35 @@ const AttendancePickerPortal: React.FC<{
     return () => document.removeEventListener('mousedown', handler);
   }, [onClose]);
 
-  const widgetW = 220;
-  let top = anchorRect.bottom + 4;
+  const widgetW = 240;
+  let top = anchorRect.bottom + 8;
   let left = anchorRect.left + anchorRect.width / 2 - widgetW / 2;
-  if (top + 120 > window.innerHeight) top = anchorRect.top - 120;
+  if (top + 140 > window.innerHeight) top = anchorRect.top - 140;
   if (left < 8) left = 8;
   if (left + widgetW > window.innerWidth - 8) left = window.innerWidth - widgetW - 8;
 
+  const attendanceStyles = {
+    'Н': 'bg-gradient-to-br from-rose-400 to-red-500 text-white shadow-lg shadow-rose-200',
+    'УП': 'bg-gradient-to-br from-sky-400 to-blue-500 text-white shadow-lg shadow-sky-200',
+    'Б': 'bg-gradient-to-br from-amber-400 to-orange-400 text-white shadow-lg shadow-amber-200',
+    'ОП': 'bg-gradient-to-br from-orange-400 to-amber-500 text-white shadow-lg shadow-orange-200'
+  };
+
   return createPortal(
-    <div ref={ref} className="fixed z-[100] bg-white rounded-xl shadow-2xl border border-gray-200 p-2 animate-scaleIn"
+    <div ref={ref} className="fixed z-[100] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/50 p-3 animate-scaleIn"
       style={{ top, left, width: widgetW }}>
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="grid grid-cols-2 gap-2">
         {ATTENDANCE_TYPES.map(at => (
           <button key={at.value} onClick={() => onSelect(at.value)}
-            className={`px-2 py-2 rounded-lg text-xs font-bold transition-all ${at.bgColor} ${at.color} ${currentType === at.value ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}>
-            {at.short} — {at.label.slice(0, 10)}
+            className={`px-3 py-3 rounded-xl text-xs font-bold transition-all duration-200 hover:scale-105 ${attendanceStyles[at.value as keyof typeof attendanceStyles]} ${currentType === at.value ? 'ring-2 ring-offset-2 ring-slate-400 scale-105' : ''}`}>
+            <span className="text-base">{at.short}</span>
+            <span className="block text-[10px] opacity-90 mt-0.5">{at.label.slice(0, 12)}</span>
           </button>
         ))}
       </div>
       {currentType && (
-        <button onClick={onDelete} className="w-full mt-1.5 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-1">
-          <Trash2 className="w-3 h-3" /> Удалить
+        <button onClick={onDelete} className="w-full mt-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors flex items-center justify-center gap-1.5 border border-rose-100">
+          <Trash2 className="w-3.5 h-3.5" /> Удалить
         </button>
       )}
     </div>,
@@ -1544,6 +1552,7 @@ const Journal: React.FC = () => {
   const [keyboardTarget, setKeyboardTarget] = useState<{ studentId: string; date: string; columnId?: string; lessonNumber?: number } | null>(null);
   const [periodStart, setPeriodStart] = useState<string>('');
   const [periodEnd, setPeriodEnd] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   // Функция для получения ключа localStorage для настроек предмета
   const getSettingsKey = (subject: string) => `journal_settings_${subject}`;
@@ -2344,130 +2353,206 @@ const Journal: React.FC = () => {
 
   // ==================== MAIN JOURNAL VIEW ====================
   return (
-    <div className="animate-fadeIn">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-3">
-          <select value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500">
-            {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+    <div className="animate-fadeIn space-y-5">
+      {/* Современная шапка журнала */}
+      <div className="relative overflow-hidden">
+        {/* Декоративный фон */}
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-3xl opacity-90" />
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/10 rounded-full translate-x-1/4 translate-y-1/4" />
+          <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-white/5 rounded-full" />
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1">
-            {(['grades', 'topics', 'attendance'] as const).map(tab => (
-              <button key={tab} onClick={() => setJournalTab(tab)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${journalTab === tab ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
-                {tab === 'grades' ? 'Оценки' : tab === 'topics' ? 'Темы и ДЗ' : 'Посещаемость'}
-              </button>
-            ))}
+        
+        <div className="relative px-6 py-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            {/* Левая часть - селектор предмета */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                  <ClipboardList className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Журнал</h2>
+                  <p className="text-white/70 text-sm">Оценки и посещаемость</p>
+                </div>
+              </div>
+              
+              {/* Селектор предмета */}
+              <div className="relative">
+                <select 
+                  value={selectedSubject} 
+                  onChange={e => setSelectedSubject(e.target.value)}
+                  className="appearance-none px-5 py-2.5 pr-10 bg-white/20 backdrop-blur-sm border-2 border-white/30 rounded-xl text-white font-semibold text-sm focus:outline-none focus:border-white/60 focus:bg-white/30 transition-all cursor-pointer"
+                >
+                  {SUBJECTS.map(s => <option key={s} value={s} className="text-gray-900 bg-white">{s}</option>)}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Правая часть - статистика */}
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-4 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{students.length}</div>
+                  <div className="text-xs text-white/60">учеников</div>
+                </div>
+                <div className="w-px h-8 bg-white/20" />
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{allSlots.length}</div>
+                  <div className="text-xs text-white/60">уроков</div>
+                </div>
+                <div className="w-px h-8 bg-white/20" />
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{grades.filter(g => g.subject === selectedSubject).length}</div>
+                  <div className="text-xs text-white/60">оценок</div>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* Панель табов и настроек */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* Табы */}
+        <div className="flex items-center gap-1 p-1 bg-gray-100/80 backdrop-blur-sm rounded-2xl">
+          {(['grades', 'topics', 'attendance'] as const).map(tab => (
+            <button 
+              key={tab} 
+              onClick={() => setJournalTab(tab)}
+              className={`relative px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 ${
+                journalTab === tab 
+                  ? 'bg-white text-gray-900 shadow-lg shadow-gray-200/50' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                {tab === 'grades' && <Award className="w-4 h-4" />}
+                {tab === 'topics' && <BookOpen className="w-4 h-4" />}
+                {tab === 'attendance' && <CalendarDays className="w-4 h-4" />}
+                {tab === 'grades' ? 'Оценки' : tab === 'topics' ? 'Темы и ДЗ' : 'Посещаемость'}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Инструменты */}
+        <div className="flex items-center gap-2">
           {journalTab === 'grades' && (
             <>
-              <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1">
+              {/* Режим ввода */}
+              <div className="flex items-center gap-1 p-1 bg-gray-100/80 backdrop-blur-sm rounded-xl">
                 <button
                   onClick={() => { setInputMode('widget'); setKeyboardTarget(null); }}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     inputMode === 'widget'
-                      ? 'bg-primary-100 text-primary-700'
+                      ? 'bg-white text-gray-900 shadow-md'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
-                  title="Ввод виджетом"
                 >
                   <MousePointer2 className="w-4 h-4" />
                   <span className="hidden sm:inline">Виджет</span>
                 </button>
                 <button
                   onClick={() => setInputMode('keyboard')}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     inputMode === 'keyboard'
-                      ? 'bg-primary-100 text-primary-700'
+                      ? 'bg-white text-gray-900 shadow-md'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
-                  title="Ввод с клавиатуры"
                 >
                   <Keyboard className="w-4 h-4" />
                   <span className="hidden sm:inline">Клавиатура</span>
                 </button>
               </div>
-              <button onClick={() => setShowSettings(!showSettings)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <Settings className="w-5 h-5 text-gray-500" />
+              
+              {/* Кнопка настроек */}
+              <button 
+                onClick={() => setShowSettings(!showSettings)} 
+                className={`p-2.5 rounded-xl transition-all duration-200 ${
+                  showSettings 
+                    ? 'bg-indigo-100 text-indigo-600' 
+                    : 'bg-gray-100/80 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
+                }`}
+              >
+                <Settings className={`w-5 h-5 transition-transform duration-300 ${showSettings ? 'rotate-90' : ''}`} />
               </button>
             </>
           )}
         </div>
       </div>
 
-      {/* Settings only for grades tab */}
+      {/* Расширенная панель настроек */}
       {showSettings && journalTab === 'grades' && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 animate-fadeIn">
-          <h4 className="font-medium text-gray-900 mb-3">Настройки журнала</h4>
-          <div className="flex flex-wrap gap-6">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <div className={`w-10 h-6 rounded-full transition-all ${showTrend ? 'bg-primary-600' : 'bg-gray-300'} relative`}
-                onClick={() => setShowTrend(!showTrend)}>
-                <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all ${showTrend ? 'left-[18px]' : 'left-0.5'}`} />
-              </div>
-              <span className="text-sm text-gray-700">Тренд</span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <div className={`w-10 h-6 rounded-full transition-all ${showNotAsked ? 'bg-primary-600' : 'bg-gray-300'} relative`}
-                onClick={() => setShowNotAsked(!showNotAsked)}>
-                <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all ${showNotAsked ? 'left-[18px]' : 'left-0.5'}`} />
-              </div>
-              <span className="text-sm text-gray-700">Давно не спрашивали</span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <div className={`w-10 h-6 rounded-full transition-all ${showFutureDates ? 'bg-primary-600' : 'bg-gray-300'} relative`}
-                onClick={() => setShowFutureDates(!showFutureDates)}>
-                <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all ${showFutureDates ? 'left-[18px]' : 'left-0.5'}`} />
-              </div>
-              <span className="text-sm text-gray-700">Будущие даты</span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <div className={`w-10 h-6 rounded-full transition-all ${highlightToday ? 'bg-primary-600' : 'bg-gray-300'} relative`}
-                onClick={() => setHighlightToday(!highlightToday)}>
-                <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all ${highlightToday ? 'left-[18px]' : 'left-0.5'}`} />
-              </div>
-              <span className="text-sm text-gray-700">Подсветка сегодня</span>
-            </label>
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl border border-gray-200/50 p-5 animate-fadeIn shadow-lg">
+          <div className="flex items-center gap-2 mb-4">
+            <Settings className="w-5 h-5 text-indigo-500" />
+            <h4 className="font-semibold text-gray-900">Настройки отображения</h4>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { key: 'showTrend', label: 'Тренд успеваемости', icon: TrendingUp, value: showTrend, setter: setShowTrend },
+              { key: 'showNotAsked', label: 'Давно не спрашивали', icon: AlertTriangle, value: showNotAsked, setter: setShowNotAsked },
+              { key: 'showFutureDates', label: 'Будущие даты', icon: Calendar, value: showFutureDates, setter: setShowFutureDates },
+              { key: 'highlightToday', label: 'Подсветка сегодня', icon: CalendarDays, value: highlightToday, setter: setHighlightToday },
+            ].map(setting => (
+              <button
+                key={setting.key}
+                onClick={() => setting.setter(!setting.value)}
+                className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 ${
+                  setting.value 
+                    ? 'border-indigo-300 bg-indigo-50 text-indigo-700' 
+                    : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                  setting.value ? 'bg-indigo-100' : 'bg-gray-100'
+                }`}>
+                  <setting.icon className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-medium text-left">{setting.label}</span>
+              </button>
+            ))}
           </div>
           
           {/* Выбор периода */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <h5 className="text-sm font-medium text-gray-700 mb-3">Выбор периода</h5>
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">С:</label>
+          <div className="mt-5 pt-5 border-t border-gray-200/50">
+            <h5 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-indigo-500" />
+              Фильтр по периоду
+            </h5>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 bg-white rounded-xl border-2 border-gray-200 px-3 py-2 focus-within:border-indigo-300 transition-colors">
+                <span className="text-sm text-gray-500">С:</span>
                 <input 
                   type="date" 
                   value={periodStart}
                   onChange={e => setPeriodStart(e.target.value)}
-                  className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="bg-transparent text-sm text-gray-900 focus:outline-none"
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">По:</label>
+              <div className="flex items-center gap-2 bg-white rounded-xl border-2 border-gray-200 px-3 py-2 focus-within:border-indigo-300 transition-colors">
+                <span className="text-sm text-gray-500">По:</span>
                 <input 
                   type="date" 
                   value={periodEnd}
                   onChange={e => setPeriodEnd(e.target.value)}
-                  className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="bg-transparent text-sm text-gray-900 focus:outline-none"
                 />
               </div>
               {(periodStart || periodEnd) && (
                 <button 
                   onClick={() => { setPeriodStart(''); setPeriodEnd(''); }}
-                  className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors"
                 >
+                  <X className="w-4 h-4" />
                   Сбросить
                 </button>
               )}
             </div>
-            {(periodStart || periodEnd) && (
-              <p className="text-xs text-gray-500 mt-2">
-                Отображаются уроки за период: {periodStart || 'начало'} — {periodEnd || 'конец'}
-              </p>
-            )}
           </div>
         </div>
       )}
@@ -2722,252 +2807,360 @@ const Journal: React.FC = () => {
 
       {/* TOPICS TAB */}
       {journalTab === 'topics' && (
-        <div className="glass rounded-3xl shadow-soft-xl overflow-hidden border border-white/50">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gradient-to-r from-gray-100 to-gray-200 border-b border-gray-300 text-xs text-gray-700">
-                <th className="px-3 py-2 text-left w-10">№</th>
-                <th className="px-3 py-2 text-left w-28">Дата</th>
-                <th className="px-3 py-2 text-left min-w-[180px]">Тип урока</th>
-                <th className="px-3 py-2 text-left min-w-[200px]">Тема урока</th>
-                <th className="px-3 py-2 text-left min-w-[200px]">Домашнее задание</th>
-                <th className="px-3 py-2 text-center w-16">Пров. ДЗ</th>
-                <th className="px-3 py-2 text-left w-40">Тест</th>
-              </tr>
-            </thead>
-            <tbody>
-              {allSlots.map((sl, idx) => {
-                // ONLY exact match — no fallback to prevent sharing between lessons on same date
-                const entry = diaryEntries && Array.isArray(diaryEntries) 
-                  ? diaryEntries.find(e => e.date === sl.date && e.subject === selectedSubject && e.lessonNumber === sl.lessonNumber)
-                  : null;
-                const lt = getLessonType(sl.date, sl.lessonNumber);
-                const testObj = entry?.testId && tests && Array.isArray(tests) 
-                  ? tests.find(t => t.id === entry.testId) 
-                  : null;
-                const slotsOnDate = allSlots.filter(s => s.date === sl.date);
-
-                const isToday = highlightToday && sl.date === today;
-                return (
-                  <tr key={sl.key} className={`border-b border-gray-300 hover:bg-gray-50 ${isToday ? 'bg-green-50' : ''}`}>
-                    <td className="px-3 py-2 text-gray-500">{idx + 1}</td>
-                    <td className={`px-3 py-2 font-medium ${isToday ? 'text-green-700' : 'text-gray-700'}`}>
-                      <div>{sl.date.split('-')[2]}.{sl.date.split('-')[1]}</div>
-                      {slotsOnDate.length > 1 && <div className="text-primary-600 text-[10px]">(Ур.{sl.lessonNumber})</div>}
-                      {isToday && <div className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded mt-0.5 inline-block">Сегодня</div>}
-                    </td>
-                    <td className="px-3 py-2">
-                      {lt?.type ? (
-                        <div className="flex items-center gap-2">
-                          {/* Анимированный бейдж типа урока */}
-                          <div className="relative group">
-                            <button
-                              className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-300 hover:scale-105 ${customLessonTypes.find(c => c.value === lt.type)?.color || 'bg-gray-100 text-gray-700'}`}
-                            >
-                              {customLessonTypes.find(c => c.value === lt.type)?.short || lt.type}
-                            </button>
-                            {/* Выпадающий список при клике */}
-                            <select 
-                              value={lt?.type || ''} 
-                              onChange={e => {
-                                const newValue = e.target.value;
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl overflow-hidden border border-gray-200/50">
+          {/* Заголовок таблицы */}
+          <div className="px-5 py-4 bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-200/50">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-indigo-500" />
+              Темы уроков и домашние задания
+            </h3>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 border-b border-gray-200 text-xs text-gray-600">
+                  <th className="px-4 py-3 text-left w-12 font-semibold">№</th>
+                  <th className="px-4 py-3 text-left w-28 font-semibold">Дата</th>
+                  <th className="px-4 py-3 text-left min-w-[160px] font-semibold">Тип урока</th>
+                  <th className="px-4 py-3 text-left min-w-[220px] font-semibold">Тема урока</th>
+                  <th className="px-4 py-3 text-left min-w-[220px] font-semibold">Домашнее задание</th>
+                  <th className="px-4 py-3 text-center w-20 font-semibold">Проверка</th>
+                  <th className="px-4 py-3 text-left w-44 font-semibold">Тест</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allSlots.map((sl, idx) => {
+                  const entry = diaryEntries && Array.isArray(diaryEntries) 
+                    ? diaryEntries.find(e => e.date === sl.date && e.subject === selectedSubject && e.lessonNumber === sl.lessonNumber)
+                    : null;
+                  const lt = getLessonType(sl.date, sl.lessonNumber);
+                  const testObj = entry?.testId && tests && Array.isArray(tests) 
+                    ? tests.find(t => t.id === entry.testId) 
+                    : null;
+                  const slotsOnDate = allSlots.filter(s => s.date === sl.date);
+                  const isToday = highlightToday && sl.date === today;
+                  
+                  return (
+                    <tr 
+                      key={sl.key} 
+                      className={`border-b border-gray-100 transition-colors ${
+                        isToday 
+                          ? 'bg-gradient-to-r from-green-50 to-emerald-50' 
+                          : idx % 2 === 0 
+                            ? 'bg-white hover:bg-gray-50' 
+                            : 'bg-gray-50/30 hover:bg-gray-50'
+                      }`}
+                    >
+                      <td className="px-4 py-3">
+                        <span className="w-7 h-7 rounded-lg bg-gray-100 text-gray-500 text-xs font-bold flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col">
+                          <span className={`font-semibold ${isToday ? 'text-green-700' : 'text-gray-800'}`}>
+                            {sl.date.split('-')[2]}.{sl.date.split('-')[1]}
+                          </span>
+                          {slotsOnDate.length > 1 && (
+                            <span className="text-indigo-500 text-[10px] font-medium">Урок {sl.lessonNumber}</span>
+                          )}
+                          {isToday && (
+                            <span className="mt-1 text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium inline-block w-fit">
+                              Сегодня
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {lt?.type ? (
+                          <div className="flex items-center gap-2">
+                            <div className="relative group">
+                              <span className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 hover:scale-105 inline-block cursor-pointer ${
+                                customLessonTypes.find(c => c.value === lt.type)?.color || 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {customLessonTypes.find(c => c.value === lt.type)?.short || lt.type}
+                              </span>
+                              <select 
+                                value={lt?.type || ''} 
+                                onChange={e => {
+                                  const newValue = e.target.value;
+                                  setLessonTypes(prev => {
+                                    const slotKey = `${sl.date}_${selectedSubject}_${sl.lessonNumber}`;
+                                    if (newValue === '') {
+                                      return prev.filter(l => `${l.date}_${l.subject}_${l.lessonNumber}` !== slotKey);
+                                    }
+                                    const existing = prev.find(l => l.date === sl.date && l.subject === selectedSubject && (l.lessonNumber === sl.lessonNumber || (!l.lessonNumber && !sl.lessonNumber)));
+                                    if (existing) return prev.map(l => l.id === existing.id ? { ...l, type: newValue, lessonNumber: sl.lessonNumber } : l);
+                                    return [...prev, { id: `lt${Date.now()}`, date: sl.date, subject: selectedSubject, type: newValue, lessonNumber: sl.lessonNumber }];
+                                  });
+                                }}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              >
+                                <option value="">—</option>
+                                {customLessonTypes && Array.isArray(customLessonTypes) && customLessonTypes.map(clt => <option key={clt.id} value={clt.value}>{clt.label}</option>)}
+                              </select>
+                            </div>
+                            <button 
+                              onClick={() => {
                                 setLessonTypes(prev => {
                                   const slotKey = `${sl.date}_${selectedSubject}_${sl.lessonNumber}`;
-                                  if (newValue === '') {
-                                    return prev.filter(l => {
-                                      const lKey = `${l.date}_${l.subject}_${l.lessonNumber}`;
-                                      return lKey !== slotKey;
-                                    });
-                                  }
-                                  const existing = prev.find(l => l.date === sl.date && l.subject === selectedSubject && (l.lessonNumber === sl.lessonNumber || (!l.lessonNumber && !sl.lessonNumber)));
-                                  if (existing) return prev.map(l => l.id === existing.id ? { ...l, type: newValue, lessonNumber: sl.lessonNumber } : l);
-                                  return [...prev, { id: `lt${Date.now()}`, date: sl.date, subject: selectedSubject, type: newValue, lessonNumber: sl.lessonNumber }];
+                                  return prev.filter(l => `${l.date}_${l.subject}_${l.lessonNumber}` !== slotKey);
                                 });
-                              }}
-                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              }} 
+                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" 
+                              title="Удалить тип урока"
                             >
-                              <option value="">—</option>
-                              {customLessonTypes && Array.isArray(customLessonTypes) && customLessonTypes.map(clt => <option key={clt.id} value={clt.value}>{clt.label}</option>)}
-                            </select>
+                              <X className="w-3.5 h-3.5" />
+                            </button>
                           </div>
-                          <button onClick={() => {
-                            setLessonTypes(prev => {
-                              const slotKey = `${sl.date}_${selectedSubject}_${sl.lessonNumber}`;
-                              return prev.filter(l => {
-                                const lKey = `${l.date}_${l.subject}_${l.lessonNumber}`;
-                                return lKey !== slotKey;
+                        ) : (
+                          <select 
+                            value={lt?.type || ''} 
+                            onChange={e => {
+                              setLessonTypes(prev => {
+                                const existing = prev.find(l => l.date === sl.date && l.subject === selectedSubject && (l.lessonNumber === sl.lessonNumber || (!l.lessonNumber && !sl.lessonNumber)));
+                                if (existing) return prev.map(l => l.id === existing.id ? { ...l, type: e.target.value, lessonNumber: sl.lessonNumber } : l);
+                                return [...prev, { id: `lt${Date.now()}`, date: sl.date, subject: selectedSubject, type: e.target.value, lessonNumber: sl.lessonNumber }];
                               });
-                            });
-                          }} className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="Удалить тип урока">
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <select value={lt?.type || ''} onChange={e => {
-                          setLessonTypes(prev => {
-                            const existing = prev.find(l => l.date === sl.date && l.subject === selectedSubject && (l.lessonNumber === sl.lessonNumber || (!l.lessonNumber && !sl.lessonNumber)));
-                            if (existing) return prev.map(l => l.id === existing.id ? { ...l, type: e.target.value, lessonNumber: sl.lessonNumber } : l);
-                            return [...prev, { id: `lt${Date.now()}`, date: sl.date, subject: selectedSubject, type: e.target.value, lessonNumber: sl.lessonNumber }];
-                          });
-                        }} className="w-full px-2 py-1.5 text-sm border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500">
-                          <option value="">Выбрать тип</option>
-                          {customLessonTypes && Array.isArray(customLessonTypes) && customLessonTypes.map(clt => <option key={clt.id} value={clt.value}>{clt.label}</option>)}
-                        </select>
-                      )}
-                    </td>
-                    <td className="px-3 py-2">
-                      <input type="text" value={entry?.topic || ''} onChange={e => {
-                        const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
-                        if (ent) {
-                          setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, topic: e.target.value } : de));
-                        }
-                      }} placeholder="Тема..." className="w-full px-2 py-1.5 text-xs border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500" />
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="relative">
-                        <input type="text" value={entry?.homework || ''} onChange={e => {
-                          const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
-                          if (ent) {
-                            setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, homework: e.target.value } : de));
-                          }
-                        }} placeholder="ДЗ..." className="w-full px-2 py-1.5 pr-12 text-xs border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500" />
-                        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                          {entry?.attachment && (
-                            <>
-                              <div className="bg-white p-1 rounded">
-                                <a href={entry.attachment.url} download={entry.attachment.name} className="text-blue-600 hover:bg-blue-50 rounded block" title="Скачать">
-                                  <Download className="w-3 h-3" />
+                            }} 
+                            className="w-full px-3 py-2 text-xs border-2 border-gray-200 rounded-xl bg-white focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+                          >
+                            <option value="">Выбрать тип</option>
+                            {customLessonTypes && Array.isArray(customLessonTypes) && customLessonTypes.map(clt => <option key={clt.id} value={clt.value}>{clt.label}</option>)}
+                          </select>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <input 
+                          type="text" 
+                          value={entry?.topic || ''} 
+                          onChange={e => {
+                            const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
+                            if (ent) {
+                              setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, topic: e.target.value } : de));
+                            }
+                          }} 
+                          placeholder="Тема урока..." 
+                          className="w-full px-3 py-2 text-xs border-2 border-gray-200 rounded-xl bg-white focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all placeholder-gray-400" 
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            value={entry?.homework || ''} 
+                            onChange={e => {
+                              const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
+                              if (ent) {
+                                setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, homework: e.target.value } : de));
+                              }
+                            }} 
+                            placeholder="Домашнее задание..." 
+                            className="w-full px-3 py-2 pr-14 text-xs border-2 border-gray-200 rounded-xl bg-white focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all placeholder-gray-400" 
+                          />
+                          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                            {entry?.attachment && (
+                              <>
+                                <a 
+                                  href={entry.attachment.url} 
+                                  download={entry.attachment.name} 
+                                  className="p-1.5 text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors" 
+                                  title="Скачать файл"
+                                >
+                                  <Download className="w-4 h-4" />
                                 </a>
-                              </div>
-                              <div className="bg-white p-1 rounded">
-                                <button onClick={() => {
-                                  const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
-                                  if (ent) {
-                                    setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, attachment: undefined } : de));
-                                  }
-                                }} className="text-red-500 hover:bg-red-50 rounded block" title="Удалить">
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </>
-                          )}
-                          {!entry?.attachment && (
-                            <label className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded cursor-pointer bg-white" title="Прикрепить файл">
-                              <Paperclip className="w-3 h-3" />
-                              <input type="file" className="hidden" onChange={async e => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  try {
-                                    const { name, url } = await uploadHomeworkFile(file);
+                                <button 
+                                  onClick={() => {
                                     const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
                                     if (ent) {
-                                      setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, attachment: { name, url } } : de));
+                                      setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, attachment: undefined } : de));
                                     }
-                                  } catch (err) {
-                                    console.error('Upload error:', err);
-                                    alert('Ошибка загрузки файла');
-                                  }
-                                }
-                                e.target.value = '';
-                              }} />
-                            </label>
-                          )}
+                                  }} 
+                                  className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" 
+                                  title="Удалить файл"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
+                            {!entry?.attachment && (
+                              <label className="p-1.5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg cursor-pointer transition-colors" title="Прикрепить файл">
+                                <Paperclip className="w-4 h-4" />
+                                <input 
+                                  type="file" 
+                                  className="hidden" 
+                                  onChange={async e => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      try {
+                                        const { name, url } = await uploadHomeworkFile(file);
+                                        const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
+                                        if (ent) {
+                                          setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, attachment: { name, url } } : de));
+                                        }
+                                      } catch (err) {
+                                        console.error('Upload error:', err);
+                                        alert('Ошибка загрузки файла');
+                                      }
+                                    }
+                                    e.target.value = '';
+                                  }} 
+                                />
+                              </label>
+                            )}
+                          </div>
                         </div>
+                        {entry?.attachment && (
+                          <div className="mt-2 flex items-center gap-2 text-xs text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg">
+                            <Paperclip className="w-3.5 h-3.5" />
+                            <span className="truncate font-medium">{entry.attachment.name}</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => {
+                            const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
+                            if (ent) {
+                              const newValue = !entry?.checkHomework;
+                              setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, checkHomework: newValue } : de));
+                              if (newValue) {
+                                const hasCol = journalColumns.some(c => c.date === sl.date && c.subject === selectedSubject && c.type === 'homework' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber));
+                                if (!hasCol) setJournalColumns(prev => [...prev, { id: `jc${Date.now()}`, date: sl.date, subject: selectedSubject, lessonNumber: sl.lessonNumber, type: 'homework' }]);
+                              } else {
+                                setJournalColumns(prev => prev.filter(c => !(c.date === sl.date && c.subject === selectedSubject && c.type === 'homework' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber))));
+                              }
+                            }
+                          }}
+                          className={`w-10 h-10 rounded-xl transition-all duration-200 flex items-center justify-center ${
+                            entry?.checkHomework 
+                              ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white shadow-lg shadow-green-200' 
+                              : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                          }`}
+                          title={entry?.checkHomework ? 'Отключить проверку ДЗ' : 'Включить проверку ДЗ'}
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </button>
+                      </td>
+                      <td className="px-4 py-3">
+                        <select 
+                          value={entry?.testId || ''} 
+                          onChange={e => {
+                            const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
+                            if (ent) {
+                              const prevTestId = ent.testId;
+                              setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, testId: e.target.value || undefined, testType: e.target.value ? 'real' as const : undefined } : de));
+                              
+                              if (e.target.value && !prevTestId) {
+                                const hasCol = journalColumns.some(c => c.date === sl.date && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber));
+                                if (!hasCol) {
+                                  const newCol = { id: `jc${Date.now()}`, date: sl.date, subject: selectedSubject, lessonNumber: sl.lessonNumber, type: 'test' };
+                                  setJournalColumns(prev => [...prev, newCol]);
+                                }
+                              } else if (!e.target.value && prevTestId) {
+                                const testCol = journalColumns.find(c => c.date === sl.date && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber));
+                                if (testCol && setGrades) {
+                                  setGrades(prev => prev.filter(g => !(g.date === sl.date && g.subject === selectedSubject && g.columnId === testCol.id)));
+                                }
+                                setJournalColumns(prev => prev.filter(c => !(c.date === sl.date && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber))));
+                              }
+                            }
+                          }} 
+                          className={`w-full px-3 py-2 text-xs border-2 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all ${
+                            entry?.testId ? 'border-violet-300 bg-violet-50 text-violet-700 font-medium' : 'border-gray-200 focus:border-indigo-400'
+                          }`}
+                        >
+                          <option value="">Без теста</option>
+                          {tests && Array.isArray(tests) && tests.filter(t => t.subject === selectedSubject).map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+                        </select>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {allSlots.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
+                          <CalendarDays className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 font-medium">Нет уроков в расписании</p>
+                        <p className="text-gray-400 text-sm">Добавьте уроки в расписании, чтобы заполнить журнал</p>
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-center">
-                      <input type="checkbox" checked={entry?.checkHomework || false} onChange={e => {
-                        const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
-                        if (ent) {
-                          setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, checkHomework: e.target.checked } : de));
-                          if (e.target.checked) {
-                            const hasCol = journalColumns.some(c => c.date === sl.date && c.subject === selectedSubject && c.type === 'homework' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber));
-                            if (!hasCol) setJournalColumns(prev => [...prev, { id: `jc${Date.now()}`, date: sl.date, subject: selectedSubject, lessonNumber: sl.lessonNumber, type: 'homework' }]);
-                          } else {
-                            setJournalColumns(prev => prev.filter(c => !(c.date === sl.date && c.subject === selectedSubject && c.type === 'homework' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber))));
-                          }
-                        }
-                      }} className="w-4 h-4 rounded border-gray-300 text-primary-600" />
-                    </td>
-                    <td className="px-3 py-2">
-                      <select value={entry?.testId || ''} onChange={e => {
-                        const ent = getOrCreateDiaryEntry(sl.date, sl.lessonNumber);
-                        if (ent) {
-                          const prevTestId = ent.testId;
-                          setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, testId: e.target.value || undefined, testType: e.target.value ? 'real' as const : undefined } : de));
-                          
-                          // При назначении теста создаем колонку, при удалении - удаляем
-                          if (e.target.value && !prevTestId) {
-                            const hasCol = journalColumns.some(c => c.date === sl.date && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber));
-                            if (!hasCol) {
-                              const newCol = { id: `jc${Date.now()}`, date: sl.date, subject: selectedSubject, lessonNumber: sl.lessonNumber, type: 'test' };
-                              setJournalColumns(prev => [...prev, newCol]);
-                            }
-                          } else if (!e.target.value && prevTestId) {
-                            // Удаляем колонку теста и связанные оценки
-                            const testCol = journalColumns.find(c => c.date === sl.date && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber));
-                            if (testCol && setGrades) {
-                              setGrades(prev => prev.filter(g => !(g.date === sl.date && g.subject === selectedSubject && g.columnId === testCol.id)));
-                            }
-                            setJournalColumns(prev => prev.filter(c => !(c.date === sl.date && c.subject === selectedSubject && c.type === 'test' && (c.lessonNumber === sl.lessonNumber || !c.lessonNumber))));
-                          }
-                        }
-                      }} className="w-full px-2 py-1.5 text-xs border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500">
-                        <option value="">—</option>
-                        {tests && Array.isArray(tests) && tests.filter(t => t.subject === selectedSubject).map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
-                      </select>
-                    </td>
                   </tr>
-                );
-              })}
-              {allDates.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Нет дат. Добавьте уроки в расписание.</td></tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* ATTENDANCE TAB */}
       {journalTab === 'attendance' && (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-          <div className="px-4 py-3 border-b border-gray-300 bg-gray-100 flex items-center gap-4">
-            <div className="flex gap-2 text-xs">
-              {ATTENDANCE_TYPES.map(at => (
-                <span key={at.value} className={`px-2 py-1 rounded-md font-bold ${at.bgColor} ${at.color}`}>
-                  {at.short} — {at.label}
-                </span>
-              ))}
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl overflow-hidden border border-gray-200/50">
+          {/* Легенда */}
+          <div className="px-5 py-4 bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-200/50">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm font-medium text-gray-600">Типы отметок:</span>
+              <div className="flex flex-wrap gap-2">
+                {ATTENDANCE_TYPES.map(at => (
+                  <span key={at.value} className={`px-3 py-1.5 rounded-xl text-xs font-bold ${at.bgColor} ${at.color} shadow-sm`}>
+                    {at.short} — {at.label}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
+          
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
+                {/* Месяцы */}
                 {monthGroups.length > 0 && (
-                  <tr className="bg-amber-100">
-                    <th className="sticky left-0 z-20 bg-amber-100 w-[48px] border-b border-r border-amber-300" />
-                    <th className="sticky left-[48px] z-20 bg-amber-100 min-w-[140px] border-b border-r border-amber-300" />
+                  <tr className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50">
+                    <th className="sticky left-0 z-20 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 w-12 border-b border-r border-amber-200" />
+                    <th className="sticky left-[48px] z-20 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 min-w-[140px] border-b border-r border-amber-200" />
                     {monthGroups.map((mg, i) => (
-                      <th key={i} colSpan={mg.slots.length} className="px-2 py-2 text-center font-semibold text-amber-900 border-b border-r border-amber-300 text-xs uppercase">{mg.month}</th>
+                      <th key={i} colSpan={mg.slots.length} className="px-3 py-3 text-center font-bold text-amber-800 border-b border-r border-amber-200 text-xs uppercase tracking-wider">
+                        {mg.month}
+                      </th>
                     ))}
-                    <th className="border-b border-amber-300" />
+                    <th className="border-b border-amber-200 min-w-[120px]" />
                   </tr>
                 )}
-                <tr className="bg-gray-100">
-                  <th className="sticky left-0 z-20 bg-gray-100 px-2 py-2 text-xs font-medium text-gray-600 border-b border-r border-gray-300 w-[48px]">№</th>
-                  <th className="sticky left-[48px] z-20 bg-gray-100 px-3 py-2 text-left text-xs font-medium text-gray-600 border-b border-r border-gray-300 min-w-[140px]">ФИ</th>
+                {/* Даты */}
+                <tr className="bg-gradient-to-r from-gray-50 to-gray-100/50">
+                  <th className="sticky left-0 z-20 bg-gradient-to-r from-gray-50 to-gray-100/50 px-3 py-3 text-xs font-bold text-gray-600 border-b border-r border-gray-200 w-12">№</th>
+                  <th className="sticky left-[48px] z-20 bg-gradient-to-r from-gray-50 to-gray-100/50 px-4 py-3 text-left text-xs font-bold text-gray-600 border-b border-r border-gray-200 min-w-[140px]">ФИО ученика</th>
                   {allSlots.map(sl => {
                     const slotsOnDate = allSlots.filter(s => s.date === sl.date);
                     const isToday = highlightToday && sl.date === today;
                     return (
-                      <th key={sl.key} className={`px-1 py-2 text-center text-xs font-medium border-b border-r border-gray-300 min-w-[44px] ${isToday ? 'bg-green-100' : 'text-gray-700'}`}>
-                        <div className={isToday ? 'text-green-700 font-bold' : ''}>{parseInt(sl.date.split('-')[2])}</div>
-                        {slotsOnDate.length > 1 && <div className={`text-[9px] ${isToday ? 'text-green-700' : 'text-primary-600'}`}>Ур.{sl.lessonNumber}</div>}
-                        {isToday && <div className="w-1 h-1 bg-green-500 rounded-full mx-auto mt-0.5"></div>}
+                      <th 
+                        key={sl.key} 
+                        className={`px-1 py-2 text-center border-b border-r border-gray-200 min-w-[44px] ${
+                          isToday ? 'bg-gradient-to-b from-green-50 to-green-100/50' : ''
+                        }`}
+                      >
+                        <div className={`text-sm font-bold ${isToday ? 'text-green-700' : 'text-gray-700'}`}>
+                          {parseInt(sl.date.split('-')[2])}
+                        </div>
+                        {slotsOnDate.length > 1 && (
+                          <div className={`text-[9px] font-medium mt-0.5 ${isToday ? 'text-green-600' : 'text-indigo-500'}`}>
+                            Ур.{sl.lessonNumber}
+                          </div>
+                        )}
+                        {isToday && (
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full mx-auto mt-1" />
+                        )}
                       </th>
                     );
                   })}
-                  <th className="px-3 py-2 text-center text-xs font-medium text-gray-600 border-b border-gray-300 min-w-[100px]">Итого</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 border-b border-gray-200 min-w-[120px]">Итого</th>
                 </tr>
               </thead>
               <tbody>
@@ -2975,21 +3168,45 @@ const Journal: React.FC = () => {
                   const studentAtt = attendance.filter(a => a.studentId === student.id && a.subject === selectedSubject);
                   const counts = { 'Н': 0, 'УП': 0, 'Б': 0, 'ОП': 0 };
                   studentAtt.forEach(a => { counts[a.type]++; });
+                  
                   return (
-                    <tr key={student.id} className="border-b border-gray-300 hover:bg-gray-50/60">
-                      <td className="sticky left-0 z-10 bg-white px-2 py-1.5 text-center text-xs text-gray-500 border-r border-gray-300">{idx + 1}</td>
-                      <td className="sticky left-[48px] z-10 bg-white px-3 py-1.5 font-medium text-gray-900 text-xs border-r border-gray-300 whitespace-nowrap">{student.lastName} {student.firstName}</td>
+                    <tr 
+                      key={student.id} 
+                      className={`border-b border-gray-100 transition-colors ${
+                        idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/30 hover:bg-gray-50'
+                      }`}
+                    >
+                      <td className="sticky left-0 z-10 bg-white/95 backdrop-blur px-3 py-2.5 text-center border-r border-gray-200">
+                        <span className="w-6 h-6 rounded-lg bg-gray-100 text-gray-500 text-xs font-bold flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                      </td>
+                      <td className="sticky left-[48px] z-10 bg-white/95 backdrop-blur px-4 py-2.5 font-semibold text-gray-900 text-xs border-r border-gray-200 whitespace-nowrap">
+                        {student.lastName} {student.firstName}
+                      </td>
                       {allSlots.map(sl => {
                         const mark = getAttendanceMark(student.id, sl.date);
                         const at = mark ? ATTENDANCE_TYPES.find(a => a.value === mark.type) : null;
                         const isToday = highlightToday && sl.date === today;
                         const isEnrollmentBlocked = isDateBeforeEnrollment(student.id, sl.date);
+                        
                         return (
-                          <td key={sl.key} className={`px-0.5 py-0.5 text-center border-r border-gray-300 ${isEnrollmentBlocked ? 'bg-gray-100' : isToday ? 'bg-green-50' : ''}`}>
+                          <td 
+                            key={sl.key} 
+                            className={`px-0.5 py-1 text-center border-r border-gray-200 ${
+                              isEnrollmentBlocked ? 'bg-gray-100/50' : isToday ? 'bg-green-50/50' : ''
+                            }`}
+                          >
                             <button
                               onClick={e => !isEnrollmentBlocked && setAttendancePickerState({ rect: e.currentTarget.getBoundingClientRect(), studentId: student.id, date: sl.date })}
                               disabled={isEnrollmentBlocked}
-                              className={`w-8 h-8 rounded-md text-[10px] font-bold transition-all ${isEnrollmentBlocked ? 'cursor-not-allowed opacity-50 bg-gray-200 text-gray-400' : at ? `${at.bgColor} ${at.color}` : 'hover:bg-gray-200 text-gray-400 border-2 border-dashed border-gray-400'}`}
+                              className={`w-9 h-9 rounded-xl text-[10px] font-bold transition-all duration-200 ${
+                                isEnrollmentBlocked 
+                                  ? 'cursor-not-allowed opacity-40 bg-gray-200 text-gray-400' 
+                                  : at 
+                                    ? `${at.bgColor} ${at.color} shadow-sm hover:scale-110` 
+                                    : 'hover:bg-gray-100 text-gray-300 border-2 border-dashed border-gray-300 hover:border-gray-400'
+                              }`}
                               title={isEnrollmentBlocked ? `Посещаемость можно отмечать с ${student.enrollmentDate}` : ''}
                             >
                               {mark?.type || ''}
@@ -2997,12 +3214,22 @@ const Journal: React.FC = () => {
                           </td>
                         );
                       })}
-                      <td className="px-2 py-1.5 text-center">
-                        <div className="flex gap-1 justify-center">
+                      <td className="px-3 py-2">
+                        <div className="flex flex-wrap gap-1 justify-center">
                           {Object.entries(counts).filter(([, v]) => v > 0).map(([k, v]) => {
                             const at = ATTENDANCE_TYPES.find(a => a.value === k);
-                            return <span key={k} className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${at?.bgColor} ${at?.color}`}>{k}:{v}</span>;
+                            return (
+                              <span 
+                                key={k} 
+                                className={`px-2 py-1 rounded-lg text-[10px] font-bold ${at?.bgColor} ${at?.color} shadow-sm`}
+                              >
+                                {k}: {v}
+                              </span>
+                            );
                           })}
+                          {Object.values(counts).every(v => v === 0) && (
+                            <span className="text-gray-400 text-xs">—</span>
+                          )}
                         </div>
                       </td>
                     </tr>
