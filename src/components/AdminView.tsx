@@ -15,7 +15,7 @@ import {
   AlertTriangle, TrendingUp, TrendingDown, FileText,
   BarChart3, Award, ArrowLeft, RefreshCw, ChevronRight, Tag, Info,
   Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft,
-  CalendarDays, FileBarChart, Brain, Clock, MessageCircle
+  CalendarDays, FileBarChart, Brain, Clock, MessageCircle, Folder
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
@@ -2014,6 +2014,68 @@ const Journal: React.FC = () => {
                   <Paperclip className="w-4 h-4" />
                   <span className="truncate">{entry.attachment.name}</span>
                 </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Материалы урока (для учителя) */}
+          <div className="mt-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Folder className="w-4 h-4 text-gray-500" />
+              <label className="text-sm font-semibold text-gray-700">Материалы урока</label>
+              <span className="text-xs text-gray-400">(только для учителя)</span>
+            </div>
+            <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4">
+              {/* Список материалов */}
+              {entry?.lessonMaterials && entry.lessonMaterials.length > 0 && (
+                <div className="space-y-2 mb-3">
+                  {entry.lessonMaterials.map((material) => (
+                    <div key={material.id} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-amber-100">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        <span className="text-sm text-gray-700 truncate">{material.name}</span>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <a href={material.url} download={material.name} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Скачать">
+                          <Download className="w-4 h-4" />
+                        </a>
+                        <button onClick={() => {
+                          const ent = getOrCreateDiaryEntry(lessonPageDate, lessonPageLessonNum);
+                          if (ent) {
+                            setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, lessonMaterials: de.lessonMaterials?.filter(m => m.id !== material.id) } : de));
+                          }
+                        }} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Удалить">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Кнопка загрузки */}
+              <label className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border-2 border-dashed border-amber-300 rounded-xl text-amber-700 font-medium text-sm hover:bg-amber-100 hover:border-amber-400 transition-all cursor-pointer">
+                <Plus className="w-4 h-4" />
+                <span>Добавить материал (презентация, методичка и т.д.)</span>
+                <input type="file" className="hidden" onChange={async e => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    try {
+                      const { name, url } = await uploadHomeworkFile(file);
+                      const ent = getOrCreateDiaryEntry(lessonPageDate, lessonPageLessonNum);
+                      if (ent) {
+                        const newMaterial = { id: `lm${Date.now()}`, name, url, uploadedAt: new Date().toISOString() };
+                        setDiaryEntries(prev => prev.map(de => de.id === ent.id ? { ...de, lessonMaterials: [...(de.lessonMaterials || []), newMaterial] } : de));
+                      }
+                    } catch (err) {
+                      console.error('Upload error:', err);
+                      alert('Ошибка загрузки файла');
+                    }
+                  }
+                  e.target.value = '';
+                }} />
+              </label>
+              {(!entry?.lessonMaterials || entry.lessonMaterials.length === 0) && (
+                <p className="text-xs text-amber-600 text-center mt-2">Файлы не видны ученикам</p>
               )}
             </div>
           </div>

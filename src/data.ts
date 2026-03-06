@@ -34,6 +34,14 @@ export interface DiaryEntryAttachment {
   url: string;
 }
 
+// Материалы урока (для учителя) - не видны ученикам
+export interface LessonMaterial {
+  id: string;
+  name: string;
+  url: string;
+  uploadedAt: string;
+}
+
 export interface DiaryEntry {
   id: string;
   date: string;
@@ -42,6 +50,7 @@ export interface DiaryEntry {
   topic: string;
   homework: string;
   attachment?: DiaryEntryAttachment;
+  lessonMaterials?: LessonMaterial[]; // Материалы для учителя (презентации, методички и т.д.)
   grade?: number;
   testId?: string;
   checkHomework?: boolean;
