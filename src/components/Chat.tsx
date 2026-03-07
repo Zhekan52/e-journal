@@ -4,7 +4,7 @@ import { useAuth, useData } from '../context';
 import { uploadHomeworkFile } from '../firebase';
 import {
   MessageCircle, Send, Paperclip, Download, X, Check, CheckCheck,
-  User, Search, File, Image, FileText, Archive, ZoomIn
+  User, Search, File, Image, FileText, Archive, ZoomIn, Trash2
 } from 'lucide-react';
 import type { ChatMessage } from '../data';
 
@@ -58,8 +58,19 @@ export const StudentChatWidget: React.FC = () => {
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const canDeleteMessage = (msg: ChatMessage) => {
+    // Студент может удалять только свои сообщения
+    return msg.fromUserId === studentId;
+  };
+
+  const deleteMessage = (msgId: string) => {
+    if (!confirm('Удалить это сообщение?')) return;
+    setChatMessages(prev => prev.filter(m => m.id !== msgId));
+  };
 
   const studentId = user?.id || '';
   
@@ -101,7 +112,7 @@ export const StudentChatWidget: React.FC = () => {
       createdAt: new Date().toISOString(),
       read: false,
     };
-    
+
     setChatMessages(prev => [...prev, newMessage]);
     setText('');
     setSending(false);
@@ -146,7 +157,7 @@ export const StudentChatWidget: React.FC = () => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    
+
     if (date.toDateString() === today.toDateString()) {
       return 'Сегодня';
     } else if (date.toDateString() === yesterday.toDateString()) {
@@ -212,11 +223,13 @@ export const StudentChatWidget: React.FC = () => {
                   <div className="text-center text-xs text-gray-400 my-3">
                     <span className="bg-white px-3 py-1 rounded-full shadow-sm">{group.date}</span>
                   </div>
-                  {group.messages.map(msg => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.fromUserId === studentId ? 'justify-end' : 'justify-start'} mb-2`}
-                    >
+                      {group.messages.map(msg => (
+                        <div
+                          key={msg.id}
+                          className={`flex ${msg.fromUserId === studentId ? 'justify-end' : 'justify-start'} mb-2`}
+                          onMouseEnter={() => setHoveredMessageId(msg.id)}
+                          onMouseLeave={() => setHoveredMessageId(null)}
+                        >
                       <div
                         className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                           msg.fromUserId === studentId
@@ -260,6 +273,15 @@ export const StudentChatWidget: React.FC = () => {
                         <div className={`flex items-center justify-end gap-1 mt-1 ${
                           msg.fromUserId === studentId ? 'text-blue-100' : 'text-gray-400'
                         }`}>
+                          {canDeleteMessage(msg) && hoveredMessageId === msg.id && (
+                            <button
+                              onClick={() => deleteMessage(msg.id)}
+                              className="p-1 hover:bg-red-500/20 rounded transition-colors"
+                              title="Удалить сообщение"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
                           <span className="text-[10px]">{formatTime(msg.createdAt)}</span>
                           {msg.fromUserId === studentId && (
                             msg.read ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />
@@ -328,8 +350,19 @@ export const AdminChatView: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const canDeleteMessage = (msg: ChatMessage) => {
+    // Админ может удалять любые сообщения
+    return user?.role === 'admin';
+  };
+
+  const deleteMessage = (msgId: string) => {
+    if (!confirm('Удалить это сообщение?')) return;
+    setChatMessages(prev => prev.filter(m => m.id !== msgId));
+  };
 
   const allStudents = useMemo(() => {
     return [...students].sort((a, b) => a.lastName.localeCompare(b.lastName, 'ru'));
@@ -569,6 +602,8 @@ export const AdminChatView: React.FC = () => {
                         <div
                           key={msg.id}
                           className={`flex ${msg.fromUserRole === 'admin' ? 'justify-end' : 'justify-start'} mb-2`}
+                          onMouseEnter={() => setHoveredMessageId(msg.id)}
+                          onMouseLeave={() => setHoveredMessageId(null)}
                         >
                           <div
                             className={`max-w-[70%] rounded-2xl px-4 py-2 ${
@@ -613,6 +648,15 @@ export const AdminChatView: React.FC = () => {
                             <div className={`flex items-center justify-end gap-1 mt-1 ${
                               msg.fromUserRole === 'admin' ? 'text-blue-100' : 'text-gray-400'
                             }`}>
+                              {canDeleteMessage(msg) && hoveredMessageId === msg.id && (
+                                <button
+                                  onClick={() => deleteMessage(msg.id)}
+                                  className="p-1 hover:bg-red-500/20 rounded transition-colors"
+                                  title="Удалить сообщение"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              )}
                               <span className="text-[10px]">{formatTime(msg.createdAt)}</span>
                               {msg.fromUserRole === 'admin' && (
                                 msg.read ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />
