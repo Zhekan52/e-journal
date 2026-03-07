@@ -4,9 +4,50 @@ import { useAuth, useData } from '../context';
 import { uploadHomeworkFile } from '../firebase';
 import {
   MessageCircle, Send, Paperclip, Download, X, Check, CheckCheck,
-  User, Search, File, Image, FileText, Archive
+  User, Search, File, Image, FileText, Archive, ZoomIn
 } from 'lucide-react';
 import type { ChatMessage } from '../data';
+
+// ==================== LIGHTBOX COMPONENT ====================
+const ImageLightbox: React.FC<{ src: string; onClose: () => void }> = ({ src, onClose }) => {
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleEscape);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [onClose]);
+
+  return (
+    <div 
+      className="fixed inset-0 z-[999] bg-black/95 flex items-center justify-center p-4 animate-fadeIn"
+      onClick={onClose}
+    >
+      <button 
+        onClick={onClose}
+        className="absolute top-4 right-4 p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors z-10"
+      >
+        <X className="w-6 h-6" />
+      </button>
+      <img 
+        src={src} 
+        alt="Просмотр изображения" 
+        className="max-w-full max-h-full object-contain animate-scaleIn"
+        onClick={e => e.stopPropagation()}
+      />
+    </div>
+  );
+};
+
+// ==================== HELPER FUNCTIONS ====================
+const isImageFile = (filename: string): boolean => {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '');
+};
 
 // ==================== STUDENT CHAT WIDGET ====================
 export const StudentChatWidget: React.FC = () => {
@@ -16,6 +57,7 @@ export const StudentChatWidget: React.FC = () => {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -184,18 +226,36 @@ export const StudentChatWidget: React.FC = () => {
                       >
                         {msg.text && <p className="text-sm whitespace-pre-wrap">{msg.text}</p>}
                         {msg.attachment && (
-                          <a
-                            href={msg.attachment.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`flex items-center gap-2 p-2 rounded-lg mt-1 ${
-                              msg.fromUserId === studentId ? 'bg-white/20' : 'bg-gray-100'
-                            }`}
-                          >
-                            <File className="w-4 h-4" />
-                            <span className="text-sm truncate max-w-[150px]">{msg.attachment.name}</span>
-                            <Download className="w-4 h-4 ml-auto" />
-                          </a>
+                          isImageFile(msg.attachment.name) ? (
+                            <div 
+                              className="mt-1 cursor-pointer group relative"
+                              onClick={() => setLightboxImage(msg.attachment!.url)}
+                            >
+                              <div className="relative overflow-hidden rounded-lg">
+                                <img 
+                                  src={msg.attachment.url} 
+                                  alt={msg.attachment.name}
+                                  className="max-w-[200px] max-h-[200px] object-cover rounded-lg transition-transform group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                  <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <a
+                              href={msg.attachment.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`flex items-center gap-2 p-2 rounded-lg mt-1 ${
+                                msg.fromUserId === studentId ? 'bg-white/20' : 'bg-gray-100'
+                              }`}
+                            >
+                              <File className="w-4 h-4" />
+                              <span className="text-sm truncate max-w-[150px]">{msg.attachment.name}</span>
+                              <Download className="w-4 h-4 ml-auto" />
+                            </a>
+                          )
                         )}
                         <div className={`flex items-center justify-end gap-1 mt-1 ${
                           msg.fromUserId === studentId ? 'text-blue-100' : 'text-gray-400'
@@ -250,6 +310,10 @@ export const StudentChatWidget: React.FC = () => {
         </div>,
         document.body
       )}
+      {lightboxImage && createPortal(
+        <ImageLightbox src={lightboxImage} onClose={() => setLightboxImage(null)} />,
+        document.body
+      )}
     </>
   );
 };
@@ -263,6 +327,7 @@ export const AdminChatView: React.FC = () => {
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -514,18 +579,36 @@ export const AdminChatView: React.FC = () => {
                           >
                             {msg.text && <p className="text-sm whitespace-pre-wrap">{msg.text}</p>}
                             {msg.attachment && (
-                              <a
-                                href={msg.attachment.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={`flex items-center gap-2 p-2 rounded-lg mt-1 ${
-                                  msg.fromUserRole === 'admin' ? 'bg-white/20' : 'bg-gray-100'
-                                }`}
-                              >
-                                {getFileIcon(msg.attachment.name)}
-                                <span className="text-sm truncate max-w-[200px]">{msg.attachment.name}</span>
-                                <Download className="w-4 h-4 ml-auto flex-shrink-0" />
-                              </a>
+                              isImageFile(msg.attachment.name) ? (
+                                <div 
+                                  className="mt-1 cursor-pointer group relative"
+                                  onClick={() => setLightboxImage(msg.attachment!.url)}
+                                >
+                                  <div className="relative overflow-hidden rounded-lg">
+                                    <img 
+                                      src={msg.attachment.url} 
+                                      alt={msg.attachment.name}
+                                      className="max-w-[200px] max-h-[200px] object-cover rounded-lg transition-transform group-hover:scale-105"
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                      <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <a
+                                  href={msg.attachment.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`flex items-center gap-2 p-2 rounded-lg mt-1 ${
+                                    msg.fromUserRole === 'admin' ? 'bg-white/20' : 'bg-gray-100'
+                                  }`}
+                                >
+                                  {getFileIcon(msg.attachment.name)}
+                                  <span className="text-sm truncate max-w-[200px]">{msg.attachment.name}</span>
+                                  <Download className="w-4 h-4 ml-auto flex-shrink-0" />
+                                </a>
+                              )
                             )}
                             <div className={`flex items-center justify-end gap-1 mt-1 ${
                               msg.fromUserRole === 'admin' ? 'text-blue-100' : 'text-gray-400'
@@ -587,6 +670,9 @@ export const AdminChatView: React.FC = () => {
           )}
         </div>
       </div>
+      {lightboxImage && (
+        <ImageLightbox src={lightboxImage} onClose={() => setLightboxImage(null)} />
+      )}
     </div>
   );
 };
