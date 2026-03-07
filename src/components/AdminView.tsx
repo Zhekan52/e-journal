@@ -3022,7 +3022,7 @@ const Journal: React.FC = () => {
                                   showAttendance 
                                     ? `${at?.bgColor} ${at?.color}` 
                                     : isPendingInactive
-                                      ? 'bg-violet-100 text-violet-400 border-2 border-dashed border-violet-300' // Точка (отложенная оценка ещё не активна)
+                                      ? 'bg-violet-500 text-white border-2 border-violet-600 shadow-lg shadow-violet-300' // Яркая фиолетовая точка
                                       : isPendingActive
                                         ? mainGrade.excludeFromAverage 
                                           ? 'bg-slate-200 text-slate-500'
@@ -3047,7 +3047,7 @@ const Journal: React.FC = () => {
                                 }`}
                                 title={isEnrollmentBlocked ? `Оценки с ${student.enrollmentDate}` : isBlocked ? 'Ученик отсутствует' : isPendingInactive ? `Отложенная оценка ${mainGrade.pendingTargetGrade} появится ${mainGrade.pendingDate}` : ''}
                               >
-                                {showAttendance ? att?.type : isPendingInactive ? '·' : (mainGrade?.value || '·')}
+                                {showAttendance ? att?.type : isPendingInactive ? '●' : (mainGrade?.value || '·')}
                               </button>
                               {isLateness && (
                                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-400 rounded-full flex items-center justify-center ring-2 ring-white">
@@ -3056,7 +3056,7 @@ const Journal: React.FC = () => {
                               )}
                               {/* Индикатор отложенной оценки */}
                               {mainGrade?.isPending && (
-                                <span className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-white ${isPendingInactive ? 'bg-violet-400' : 'bg-violet-300'}`} title={`Отложенная оценка: ${mainGrade.pendingTargetGrade} ${isPendingInactive ? 'появится ' + mainGrade.pendingDate : 'уже активна'}`}>
+                                <span className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-white ${isPendingInactive ? 'bg-violet-600' : 'bg-violet-500'}`} title={`Отложенная оценка: ${mainGrade.pendingTargetGrade} ${isPendingInactive ? 'появится ' + mainGrade.pendingDate : 'уже активна'}`}>
                                   <Timer className="w-3 h-3 text-white" />
                                 </span>
                               )}
