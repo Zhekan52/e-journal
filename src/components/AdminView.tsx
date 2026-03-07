@@ -1944,10 +1944,14 @@ const Journal: React.FC = () => {
 
   const getStudentAvg = (studentId: string) => {
     if (!grades || !lessons) return 0;
+    const today = getTodayString();
     const sg = grades.filter(g =>
       g.studentId === studentId &&
       g.subject === selectedSubject &&
       !g.excludeFromAverage && // Исключаем оценки, не учитываемые в среднем балле
+      !g.isPending && // Исключаем отложенные оценки (точки) из среднего балла
+      // Если оценка отложенная, учитываем только если дата появления уже наступила
+      (!g.pendingDate || g.pendingDate <= today) &&
       lessons.some(l => l.date === g.date && l.subject === selectedSubject)
     );
     return sg.length > 0 ? sg.reduce((a, g) => a + g.value, 0) / sg.length : 0;
@@ -1955,10 +1959,14 @@ const Journal: React.FC = () => {
 
   const getStudentTrend = (studentId: string) => {
     if (!grades || !lessons) return 0;
+    const today = getTodayString();
     const sg = grades.filter(g =>
       g.studentId === studentId &&
       g.subject === selectedSubject &&
       !g.excludeFromAverage && // Исключаем оценки, не учитываемые в среднем балле
+      !g.isPending && // Исключаем отложенные оценки (точки) из тренда
+      // Если оценка отложенная, учитываем только если дата появления уже наступила
+      (!g.pendingDate || g.pendingDate <= today) &&
       lessons.some(l => l.date === g.date && l.subject === selectedSubject)
     ).sort((a, b) => a.date.localeCompare(b.date));
     if (sg.length < 2) return 0;
@@ -1974,10 +1982,14 @@ const Journal: React.FC = () => {
 
   const getLastGradeDate = (studentId: string) => {
     if (!grades || !lessons) return null;
+    const today = getTodayString();
     const sg = grades.filter(g =>
       g.studentId === studentId &&
       g.subject === selectedSubject &&
       !g.excludeFromAverage && // Исключаем оценки, не учитываемые в среднем балле
+      !g.isPending && // Исключаем отложенные оценки (точки)
+      // Если оценка отложенная, учитываем только если дата появления уже наступила
+      (!g.pendingDate || g.pendingDate <= today) &&
       lessons.some(l => l.date === g.date && l.subject === selectedSubject)
     ).sort((a, b) => b.date.localeCompare(a.date));
     return sg.length > 0 ? sg[0].date : null;
@@ -2969,6 +2981,11 @@ const Journal: React.FC = () => {
                       const isLateness = att && att.type === 'ОП';
                       const isToday = highlightToday && sl.date === today;
 
+                      // Проверка: отложенная оценка ещё не активна (дата появления не наступила)
+                      const isPendingInactive = mainGrade?.isPending && mainGrade.pendingDate && mainGrade.pendingDate > sl.date;
+                      // Проверка: отложенная оценка уже активна (дата появления наступила или оценка не отложенная)
+                      const isPendingActive = mainGrade?.isPending && (!mainGrade.pendingDate || mainGrade.pendingDate <= sl.date);
+
                       return (
                         <div 
                           key={sl.key} 
@@ -3004,21 +3021,33 @@ const Journal: React.FC = () => {
                                 } ${
                                   showAttendance 
                                     ? `${at?.bgColor} ${at?.color}` 
-                                    : mainGrade
-                                      ? mainGrade.excludeFromAverage 
-                                        ? 'bg-slate-200 text-slate-500'
-                                        : mainGrade.value === 5 
-                                          ? 'bg-gradient-to-br from-emerald-400 to-green-500 text-white shadow-emerald-200'
-                                          : mainGrade.value === 4 
-                                            ? 'bg-gradient-to-br from-sky-400 to-blue-500 text-white shadow-sky-200'
-                                            : mainGrade.value === 3 
-                                              ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-amber-200'
-                                              : 'bg-gradient-to-br from-rose-400 to-red-500 text-white shadow-rose-200'
-                                      : 'bg-slate-100 text-slate-300 hover:bg-slate-200 hover:text-slate-400 border-2 border-dashed border-slate-200'
+                                    : isPendingInactive
+                                      ? 'bg-violet-100 text-violet-400 border-2 border-dashed border-violet-300' // Точка (отложенная оценка ещё не активна)
+                                      : isPendingActive
+                                        ? mainGrade.excludeFromAverage 
+                                          ? 'bg-slate-200 text-slate-500'
+                                          : mainGrade.value === 5 
+                                            ? 'bg-gradient-to-br from-emerald-400 to-green-500 text-white shadow-emerald-200'
+                                            : mainGrade.value === 4 
+                                              ? 'bg-gradient-to-br from-sky-400 to-blue-500 text-white shadow-sky-200'
+                                              : mainGrade.value === 3 
+                                                ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-amber-200'
+                                                : 'bg-gradient-to-br from-rose-400 to-red-500 text-white shadow-rose-200'
+                                        : mainGrade
+                                          ? mainGrade.excludeFromAverage 
+                                            ? 'bg-slate-200 text-slate-500'
+                                            : mainGrade.value === 5 
+                                              ? 'bg-gradient-to-br from-emerald-400 to-green-500 text-white shadow-emerald-200'
+                                              : mainGrade.value === 4 
+                                                ? 'bg-gradient-to-br from-sky-400 to-blue-500 text-white shadow-sky-200'
+                                                : mainGrade.value === 3 
+                                                  ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-amber-200'
+                                                  : 'bg-gradient-to-br from-rose-400 to-red-500 text-white shadow-rose-200'
+                                          : 'bg-slate-100 text-slate-300 hover:bg-slate-200 hover:text-slate-400 border-2 border-dashed border-slate-200'
                                 }`}
-                                title={isEnrollmentBlocked ? `Оценки с ${student.enrollmentDate}` : isBlocked ? 'Ученик отсутствует' : ''}
+                                title={isEnrollmentBlocked ? `Оценки с ${student.enrollmentDate}` : isBlocked ? 'Ученик отсутствует' : isPendingInactive ? `Отложенная оценка ${mainGrade.pendingTargetGrade} появится ${mainGrade.pendingDate}` : ''}
                               >
-                                {showAttendance ? att?.type : (mainGrade?.value || '·')}
+                                {showAttendance ? att?.type : isPendingInactive ? '·' : (mainGrade?.value || '·')}
                               </button>
                               {isLateness && (
                                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-400 rounded-full flex items-center justify-center ring-2 ring-white">
@@ -3027,7 +3056,7 @@ const Journal: React.FC = () => {
                               )}
                               {/* Индикатор отложенной оценки */}
                               {mainGrade?.isPending && (
-                                <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-violet-400 rounded-full flex items-center justify-center ring-2 ring-white" title={`Отложенная оценка: ${mainGrade.pendingTargetGrade} появится ${mainGrade.pendingDate}`}>
+                                <span className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-white ${isPendingInactive ? 'bg-violet-400' : 'bg-violet-300'}`} title={`Отложенная оценка: ${mainGrade.pendingTargetGrade} ${isPendingInactive ? 'появится ' + mainGrade.pendingDate : 'уже активна'}`}>
                                   <Timer className="w-3 h-3 text-white" />
                                 </span>
                               )}
