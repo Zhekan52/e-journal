@@ -634,23 +634,23 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
         <table className="w-full">
           <thead className="bg-slate-50">
             <tr>
-              <th className="px-4 py-4 text-left text-sm font-bold text-slate-700 sticky left-0 bg-slate-50 z-10">
+              <th className="px-4 py-4 text-left text-sm font-bold text-slate-700 sticky left-0 bg-slate-50 z-10 border-r border-slate-200">
                 Ученик
               </th>
               {SUBJECTS.map(subject => (
-                <th key={subject} className="px-4 py-4 text-center text-sm font-bold text-slate-700 min-w-[80px]">
+                <th key={subject} className="px-4 py-4 text-center text-sm font-bold text-slate-700 min-w-[80px] border-r border-slate-200">
                   {subject}
                 </th>
               ))}
-              <th className="px-4 py-4 text-center text-sm font-bold text-violet-700 min-w-[100px] bg-violet-50">
+              <th className="px-4 py-4 text-center text-sm font-bold text-violet-700 min-w-[100px] bg-violet-50 border-l-2 border-violet-300">
                 Общий средний балл
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-200">
             {sortedStudents.map(student => (
               <tr key={student.id} className="hover:bg-violet-50/50 transition-colors">
-                <td className="px-4 py-3 sticky left-0 bg-white z-10">
+                <td className="px-4 py-3 sticky left-0 bg-white z-10 border-r border-slate-200">
                   <span className="font-semibold text-slate-800">
                     {student.lastName} {student.firstName}
                   </span>
@@ -658,7 +658,7 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
                 {SUBJECTS.map(subject => {
                   const avg = studentSubjectAverages[student.id]?.[subject] ?? -1;
                   return (
-                    <td key={subject} className="px-4 py-3 text-center">
+                    <td key={subject} className="px-4 py-3 text-center border-r border-slate-200">
                       {avg >= 0 ? (
                         <span className={`inline-flex px-2 py-1 rounded-lg text-sm font-semibold ${
                           avg >= 4.5 ? 'bg-emerald-100 text-emerald-700' :
@@ -674,7 +674,7 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
                     </td>
                   );
                 })}
-                <td className="px-4 py-3 text-center bg-violet-50/50">
+                <td className="px-4 py-3 text-center bg-violet-50/50 border-l-2 border-violet-300">
                   {(() => {
                     const overallAvg = studentOverallAverages[student.id] ?? -1;
                     if (overallAvg >= 0) {
@@ -704,7 +704,7 @@ const ClassReport: React.FC<ClassReportProps> = ({ students, grades, dateRange }
               {SUBJECTS.map(subject => {
                 const avg = classSubjectAverages[subject] ?? -1;
                 return (
-                  <td key={subject} className="px-4 py-3 text-center border-r border-violet-100">
+                  <td key={subject} className="px-4 py-3 text-center border-r border-violet-200">
                     {avg >= 0 ? (
                       <span className={`inline-flex px-2 py-1 rounded-lg text-sm font-bold ${
                         avg >= 4.5 ? 'bg-emerald-200 text-emerald-800' :
@@ -796,11 +796,27 @@ interface StatisticsReportProps {
   dateRange: DateRange;
 }
 
-// Определение статуса ученика - новые цвета
-function getStudentStatus(average: number): { label: string; className: string } {
-  if (average >= 4.5) return { label: 'Отличник', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
-  if (average >= 3.5) return { label: 'Хорошист', className: 'bg-sky-100 text-sky-700 border-sky-200' };
-  if (average >= 2.5) return { label: 'Троечник', className: 'bg-amber-100 text-amber-700 border-amber-200' };
+// Определение статуса ученика по оценкам
+// Отличник: все 5
+// Хорошист: 4 или 5 без троек
+// Троечник: выходят 3, но есть и 4 и 5
+// Неуспевающий: есть 2
+function getStudentStatus(grades: number[]): { label: string; className: string } {
+  if (grades.length === 0) return { label: '—', className: 'bg-slate-100 text-slate-500 border-slate-200' };
+  
+  const has2 = grades.some(g => g === 2);
+  const has3 = grades.some(g => g === 3);
+  const has4 = grades.some(g => g === 4);
+  const has5 = grades.some(g => g === 5);
+  const all5 = grades.every(g => g === 5);
+  const only45 = !has3 && !has2 && (has4 || has5);
+  const has3And45 = has3 && (has4 || has5);
+  
+  if (has2) return { label: 'Неуспевающий', className: 'bg-rose-100 text-rose-700 border-rose-200' };
+  if (all5) return { label: 'Отличник', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
+  if (only45) return { label: 'Хорошист', className: 'bg-sky-100 text-sky-700 border-sky-200' };
+  if (has3And45) return { label: 'Троечник', className: 'bg-amber-100 text-amber-700 border-amber-200' };
+  if (has3 && !has4 && !has5) return { label: 'Троечник', className: 'bg-amber-100 text-amber-700 border-amber-200' };
   return { label: 'Неуспевающий', className: 'bg-rose-100 text-rose-700 border-rose-200' };
 }
 
@@ -920,40 +936,44 @@ const StatisticsReport: React.FC<StatisticsReportProps> = ({
           <table className="w-full text-sm">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 sticky left-0 bg-slate-50 z-10">
+                <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 sticky left-0 bg-slate-50 z-10 border-r border-slate-200">
                   Ученик
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-bold text-slate-700">
+                <th className="px-4 py-3 text-center text-sm font-bold text-slate-700 border-r border-slate-200">
                   Средний балл
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-bold text-slate-700">
+                <th className="px-4 py-3 text-center text-sm font-bold text-slate-700 border-r border-slate-200">
                   Место
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-bold text-slate-700">
+                <th className="px-4 py-3 text-center text-sm font-bold text-slate-700 border-l border-slate-200">
                   Статус
                 </th>
-                {SUBJECTS.slice(0, 5).map(subject => (
-                  <th key={subject} className="px-3 py-3 text-center text-sm font-bold text-slate-700 min-w-[70px]">
-                    {subject.slice(0, 4)}
+                {SUBJECTS.map(subject => (
+                  <th key={subject} className="px-3 py-3 text-center text-sm font-bold text-slate-700 min-w-[90px] border-l border-slate-200">
+                    {subject}
                   </th>
                 ))}
-                <th className="px-3 py-3 text-center text-sm font-bold text-slate-700">...</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-200">
               {sortedStudents.map(student => {
                 const overallAverage = studentOverallAverages[student.id] ?? -1;
                 const overallPosition = getOverallPosition(student.id);
-                const status = overallAverage >= 0 ? getStudentStatus(overallAverage) : null;
+                const studentGrades = grades.filter(g => 
+                  g.studentId === student.id && 
+                  isDateInRange(g.date, dateRange) &&
+                  !g.excludeFromAverage
+                ).map(g => g.value);
+                const status = studentGrades.length > 0 ? getStudentStatus(studentGrades) : null;
                 
                 return (
                   <tr key={student.id} className="hover:bg-violet-50/50 transition-colors">
-                    <td className="px-4 py-3 sticky left-0 bg-white z-10">
+                    <td className="px-4 py-3 sticky left-0 bg-white z-10 border-r border-slate-200">
                       <span className="font-semibold text-slate-800">
                         {student.lastName} {student.firstName}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3 text-center border-r border-slate-200">
                       {overallAverage >= 0 ? (
                         <span className={`inline-flex px-3 py-1.5 rounded-lg text-sm font-bold ${
                           overallAverage >= 4.5 ? 'bg-emerald-100 text-emerald-700' :
@@ -967,7 +987,7 @@ const StatisticsReport: React.FC<StatisticsReportProps> = ({
                         <span className="text-slate-400">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3 text-center border-r border-slate-200">
                       {overallPosition > 0 ? (
                         <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
                           overallPosition === 1 ? 'bg-amber-200 text-amber-700' :
@@ -980,7 +1000,7 @@ const StatisticsReport: React.FC<StatisticsReportProps> = ({
                         <span className="text-slate-400">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3 text-center border-l border-slate-200">
                       {status ? (
                         <span className={`inline-flex px-3 py-1 rounded-lg text-xs font-bold border ${status.className}`}>
                           {status.label}
@@ -989,11 +1009,11 @@ const StatisticsReport: React.FC<StatisticsReportProps> = ({
                         <span className="text-slate-400">—</span>
                       )}
                     </td>
-                    {SUBJECTS.slice(0, 5).map(subject => {
+                    {SUBJECTS.map(subject => {
                       const avg = studentSubjectAverages[student.id]?.[subject] ?? -1;
                       const position = getRatingPosition(student.id, subjectRatings[subject]);
                       return (
-                        <td key={subject} className="px-2 py-3 text-center">
+                        <td key={subject} className="px-2 py-3 text-center border-l border-slate-200">
                           {avg >= 0 ? (
                             <div className="flex flex-col items-center">
                               <span className={`inline-flex px-2 py-1 rounded text-xs font-semibold ${
@@ -1002,7 +1022,7 @@ const StatisticsReport: React.FC<StatisticsReportProps> = ({
                                 avg >= 2.5 ? 'bg-amber-100 text-amber-700' :
                                 'bg-rose-100 text-rose-700'
                               }`}>
-                                {avg.toFixed(1)}
+                                {avg.toFixed(2)}
                               </span>
                               {position > 0 && position <= 3 && (
                                 <span className="text-[10px] text-violet-500 font-medium">#{position}</span>
@@ -1014,9 +1034,6 @@ const StatisticsReport: React.FC<StatisticsReportProps> = ({
                         </td>
                       );
                     })}
-                    <td className="px-2 py-3 text-center">
-                      <span className="text-slate-400 text-xs">...</span>
-                    </td>
                   </tr>
                 );
               })}
@@ -1118,33 +1135,33 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
         <table className="w-full">
           <thead className="bg-slate-50">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-bold text-slate-700">Ученик</th>
-              <th className="px-4 py-4 text-center text-sm font-bold text-slate-700">
+              <th className="px-6 py-4 text-left text-sm font-bold text-slate-700 border-r border-slate-200">Ученик</th>
+              <th className="px-4 py-4 text-center text-sm font-bold text-slate-700 border-r border-slate-200">
                 <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-rose-100 text-rose-700 text-xs font-bold">Н</span>
               </th>
-              <th className="px-4 py-4 text-center text-sm font-bold text-slate-700">
+              <th className="px-4 py-4 text-center text-sm font-bold text-slate-700 border-r border-slate-200">
                 <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-sky-100 text-sky-700 text-xs font-bold">УП</span>
               </th>
-              <th className="px-4 py-4 text-center text-sm font-bold text-slate-700">
+              <th className="px-4 py-4 text-center text-sm font-bold text-slate-700 border-r border-slate-200">
                 <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold">Б</span>
               </th>
-              <th className="px-4 py-4 text-center text-sm font-bold text-slate-700">
+              <th className="px-4 py-4 text-center text-sm font-bold text-slate-700 border-r border-slate-200">
                 <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-orange-100 text-orange-700 text-xs font-bold">ОП</span>
               </th>
-              <th className="px-6 py-4 text-center text-sm font-bold text-violet-700">Итого</th>
+              <th className="px-6 py-4 text-center text-sm font-bold text-violet-700 border-l-2 border-violet-300">Итого</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-200">
             {sortedStudents.map(student => {
               const data = studentAttendance[student.id] || { Н: 0, УП: 0, Б: 0, ОП: 0, total: 0 };
               return (
                 <tr key={student.id} className="hover:bg-violet-50/50 transition-colors">
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 border-r border-slate-200">
                     <span className="font-semibold text-slate-800">
                       {student.lastName} {student.firstName}
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-center">
+                  <td className="px-4 py-4 text-center border-r border-slate-200">
                     {data.Н > 0 ? (
                       <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-rose-100 text-rose-700">
                         {data.Н}
@@ -1153,7 +1170,7 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
                       <span className="text-slate-300">0</span>
                     )}
                   </td>
-                  <td className="px-4 py-4 text-center">
+                  <td className="px-4 py-4 text-center border-r border-slate-200">
                     {data.УП > 0 ? (
                       <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-sky-100 text-sky-700">
                         {data.УП}
@@ -1162,7 +1179,7 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
                       <span className="text-slate-300">0</span>
                     )}
                   </td>
-                  <td className="px-4 py-4 text-center">
+                  <td className="px-4 py-4 text-center border-r border-slate-200">
                     {data.Б > 0 ? (
                       <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-amber-100 text-amber-700">
                         {data.Б}
@@ -1171,7 +1188,7 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
                       <span className="text-slate-300">0</span>
                     )}
                   </td>
-                  <td className="px-4 py-4 text-center">
+                  <td className="px-4 py-4 text-center border-r border-slate-200">
                     {data.ОП > 0 ? (
                       <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-orange-100 text-orange-700">
                         {data.ОП}
@@ -1180,7 +1197,7 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
                       <span className="text-slate-300">0</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-center">
+                  <td className="px-6 py-4 text-center border-l-2 border-violet-300">
                     {data.total > 0 ? (
                       <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-bold bg-violet-100 text-violet-700">
                         {data.total}
@@ -1193,10 +1210,10 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
               );
             })}
           </tbody>
-          <tfoot className="bg-gradient-to-r from-violet-100 to-purple-100">
+          <tfoot className="bg-gradient-to-r from-violet-100 to-purple-100 border-t-2 border-violet-200">
             <tr>
-              <td className="px-6 py-4 text-left text-sm font-bold text-violet-800">Итого по классу</td>
-              <td className="px-4 py-4 text-center">
+              <td className="px-6 py-4 text-left text-sm font-bold text-violet-800 border-r border-violet-200">Итого по классу</td>
+              <td className="px-4 py-4 text-center border-r border-violet-200">
                 {totalAttendance.Н > 0 ? (
                   <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-rose-100 text-rose-700">
                     {totalAttendance.Н}
@@ -1205,7 +1222,7 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
                   <span className="text-slate-400">0</span>
                 )}
               </td>
-              <td className="px-4 py-4 text-center">
+              <td className="px-4 py-4 text-center border-r border-violet-200">
                 {totalAttendance.УП > 0 ? (
                   <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-sky-100 text-sky-700">
                     {totalAttendance.УП}
@@ -1214,7 +1231,7 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
                   <span className="text-slate-400">0</span>
                 )}
               </td>
-              <td className="px-4 py-4 text-center">
+              <td className="px-4 py-4 text-center border-r border-violet-200">
                 {totalAttendance.Б > 0 ? (
                   <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-amber-100 text-amber-700">
                     {totalAttendance.Б}
@@ -1223,7 +1240,7 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
                   <span className="text-slate-400">0</span>
                 )}
               </td>
-              <td className="px-4 py-4 text-center">
+              <td className="px-4 py-4 text-center border-r border-violet-200">
                 {totalAttendance.ОП > 0 ? (
                   <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded-lg text-sm font-bold bg-orange-100 text-orange-700">
                     {totalAttendance.ОП}
@@ -1232,7 +1249,7 @@ const AttendanceReport: React.FC<AttendanceReportProps> = ({ students, attendanc
                   <span className="text-slate-400">0</span>
                 )}
               </td>
-              <td className="px-6 py-4 text-center">
+              <td className="px-6 py-4 text-center border-l-2 border-violet-300">
                 {totalAttendance.total > 0 ? (
                   <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-bold bg-white text-violet-800 shadow-sm">
                     {totalAttendance.total}
