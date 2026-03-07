@@ -796,23 +796,25 @@ interface StatisticsReportProps {
   dateRange: DateRange;
 }
 
-// Определение статуса ученика по оценкам
-// Отличник: все 5
-// Хорошист: 4 или 5 без троек
-// Троечник: выходят 3, но есть и 4 и 5
-// Неуспевающий: есть 2
-function getStudentStatus(grades: number[]): { label: string; className: string } {
-  if (grades.length === 0) return { label: '—', className: 'bg-slate-100 text-slate-500 border-slate-200' };
+// Определение статуса ученика по среднему баллу каждого предмета
+// Отличник: все средние баллы >= 4.5 (все 5)
+// Хорошист: все средние баллы >= 3.5 и < 4.5 (4 или 5 без троек)
+// Троечник: средние баллы >= 2.5, но есть предметы < 3.5 (есть 3, но есть и 4 и 5)
+// Неуспевающий: есть предметы со средним баллом < 2.5 (есть 2)
+function getStudentStatus(subjectAverages: Record<string, number>): { label: string; className: string } {
+  const averages = Object.values(subjectAverages).filter(a => a >= 0);
   
-  const has2 = grades.some(g => g === 2);
-  const has3 = grades.some(g => g === 3);
-  const has4 = grades.some(g => g === 4);
-  const has5 = grades.some(g => g === 5);
-  const all5 = grades.every(g => g === 5);
-  const only45 = !has3 && !has2 && (has4 || has5);
-  const has3And45 = has3 && (has4 || has5);
+  if (averages.length === 0) return { label: '—', className: 'bg-slate-100 text-slate-500 border-slate-200' };
   
-  if (has2) return { label: 'Неуспевающий', className: 'bg-rose-100 text-rose-700 border-rose-200' };
+  const hasLow = averages.some(a => a < 2.5); // есть 2
+  const has3 = averages.some(a => a >= 2.5 && a < 3.5); // есть 3
+  const has4 = averages.some(a => a >= 3.5 && a < 4.5); // есть 4
+  const has5 = averages.some(a => a >= 4.5); // есть 5
+  const all5 = averages.every(a => a >= 4.5); // все 5
+  const only45 = !has3 && !hasLow && (has4 || has5); // 4 или 5 без троек
+  const has3And45 = has3 && (has4 || has5); // есть 3 и есть 4 или 5
+  
+  if (hasLow) return { label: 'Неуспевающий', className: 'bg-rose-100 text-rose-700 border-rose-200' };
   if (all5) return { label: 'Отличник', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
   if (only45) return { label: 'Хорошист', className: 'bg-sky-100 text-sky-700 border-sky-200' };
   if (has3And45) return { label: 'Троечник', className: 'bg-amber-100 text-amber-700 border-amber-200' };
@@ -959,12 +961,7 @@ const StatisticsReport: React.FC<StatisticsReportProps> = ({
               {sortedStudents.map(student => {
                 const overallAverage = studentOverallAverages[student.id] ?? -1;
                 const overallPosition = getOverallPosition(student.id);
-                const studentGrades = grades.filter(g => 
-                  g.studentId === student.id && 
-                  isDateInRange(g.date, dateRange) &&
-                  !g.excludeFromAverage
-                ).map(g => g.value);
-                const status = studentGrades.length > 0 ? getStudentStatus(studentGrades) : null;
+                const status = getStudentStatus(studentSubjectAverages[student.id] || {});
                 
                 return (
                   <tr key={student.id} className="hover:bg-violet-50/50 transition-colors">
