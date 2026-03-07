@@ -15,6 +15,12 @@ import { SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, DAY_NAMES, getWeekDates, format
 
 type Tab = 'home' | 'schedule' | 'grades' | 'diary' | 'attendance' | 'statistics';
 
+// Функция форматирования даты для отображения (например: "4 марта 2026")
+const formatEnrollmentDate = (dateStr: string): string => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return `${day} ${MONTH_NAMES_GEN[month - 1]} ${year}`;
+};
+
 // ==================== GRADE WITH TOOLTIP ====================
 interface GradeWithTooltipProps {
   value: number;
@@ -499,7 +505,7 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string; 
           <div className="flex items-center gap-2 text-blue-800">
             <Calendar className="w-5 h-5" />
             <span className="font-medium">
-              Оценки отображаются с даты зачисления: <span className="font-bold">{enrollmentDate}</span>
+              Оценки отображаются с даты зачисления: <span className="font-bold">{formatEnrollmentDate(enrollmentDate)}</span>
             </span>
           </div>
         </div>
@@ -1036,7 +1042,7 @@ const Diary: React.FC<DiaryProps> = ({
           <div className="flex items-center gap-2 text-blue-800">
             <Calendar className="w-5 h-5" />
             <span className="font-medium">
-              Дневник отображается с даты зачисления: <span className="font-bold">{enrollmentDate}</span>
+              Дневник отображается с даты зачисления: <span className="font-bold">{formatEnrollmentDate(enrollmentDate)}</span>
             </span>
           </div>
         </div>
@@ -1298,7 +1304,7 @@ const Attendance: React.FC<AttendanceProps> = ({ studentId, attendance, students
           <div className="flex items-center gap-2 text-blue-800">
             <Calendar className="w-5 h-5" />
             <span className="font-medium">
-              Посещаемость отображается с даты зачисления: <span className="font-bold">{enrollmentDate}</span>
+              Посещаемость отображается с даты зачисления: <span className="font-bold">{formatEnrollmentDate(enrollmentDate)}</span>
             </span>
           </div>
         </div>

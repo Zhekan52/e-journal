@@ -2249,7 +2249,8 @@ const Journal: React.FC = () => {
                           // Если есть посещаемость (кроме опоздания) — показываем её на всю клетку, иначе оценку
                           const showAttendance = att && att.type !== 'ОП';
                           // Блокируем кнопку только при наличии посещаемости (кроме опоздания)
-                          const isBlocked = att && att.type !== 'ОП';
+                          const isEnrollmentBlocked = isDateBeforeEnrollment(s.id, lessonPageDate);
+                            const isBlocked = isEnrollmentBlocked || (att && att.type !== 'ОП');
                           const isLateness = att && att.type === 'ОП';
                           return (
                             <div className="relative inline-block">
@@ -2290,7 +2291,8 @@ const Journal: React.FC = () => {
                         <td className="px-1 py-2 text-center border-r border-gray-300">
                           {(() => {
                             const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
-                            const isBlocked = att && att.type !== 'ОП';
+                            const isEnrollmentBlocked = isDateBeforeEnrollment(s.id, lessonPageDate);
+                            const isBlocked = isEnrollmentBlocked || (att && att.type !== 'ОП');
                             const isLateness = att && att.type === 'ОП';
                             return (
                               <div className="relative inline-block">
@@ -2331,7 +2333,8 @@ const Journal: React.FC = () => {
                       {cols.filter(c => c.type !== 'homework').map(c => {
                         const g = getGrade(s.id, lessonPageDate, c.id, lessonPageLessonNum);
                         const att = attendance.find(a => a.studentId === s.id && a.date === lessonPageDate && a.subject === selectedSubject);
-                        const isBlocked = att && att.type !== 'ОП';
+                        const isEnrollmentBlocked = isDateBeforeEnrollment(s.id, lessonPageDate);
+                            const isBlocked = isEnrollmentBlocked || (att && att.type !== 'ОП');
                         const isLateness = att && att.type === 'ОП';
                         return (
                           <td key={c.id} className="px-1 py-2 text-center border-r border-gray-300">
@@ -2805,7 +2808,7 @@ const Journal: React.FC = () => {
                                 disabled={isBlocked}
                                 className={`w-10 h-10 rounded-2xl text-sm font-bold transition-all duration-200 transform hover:scale-110 ${
                                   isEnrollmentBlocked 
-                                    ? 'bg-slate-100 text-slate-300 cursor-not-allowed border-2 border-dashed border-slate-200' 
+                                    ? 'bg-gray-300 text-gray-600 cursor-not-allowed border-2 border-dashed border-gray-400' 
                                     : isBlocked 
                                       ? 'cursor-not-allowed opacity-60' 
                                       : 'shadow-md hover:shadow-lg cursor-pointer'
@@ -2905,7 +2908,7 @@ const Journal: React.FC = () => {
                                       disabled={isBlocked}
                                       className={`w-9 h-9 rounded-xl text-xs font-bold transition-all duration-200 ${
                                         isEnrollmentBlocked 
-                                          ? 'bg-slate-100 text-slate-300 cursor-not-allowed border border-slate-200' 
+                                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed border border-gray-400' 
                                           : isBlocked 
                                             ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-300'
                                             : 'bg-slate-50 text-slate-300 hover:bg-slate-100 hover:text-slate-400 border-2 border-dashed border-slate-200 cursor-pointer'
@@ -3378,7 +3381,7 @@ const Journal: React.FC = () => {
                           <td 
                             key={sl.key} 
                             className={`px-0.5 py-1 text-center border-r border-gray-200 ${
-                              isEnrollmentBlocked ? 'bg-gray-100/50' : isToday ? 'bg-green-50/50' : ''
+                              isEnrollmentBlocked ? 'bg-gray-300/50' : isToday ? 'bg-green-50/50' : ''
                             }`}
                           >
                             <button
@@ -4954,4 +4957,8 @@ const StudentsManager: React.FC = () => {
     </div>
   );
 };
+
+
+
+
 
