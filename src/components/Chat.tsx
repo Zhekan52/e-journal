@@ -4,7 +4,7 @@ import { useAuth, useData } from '../context';
 import { uploadHomeworkFile } from '../firebase';
 import {
   MessageCircle, Send, Paperclip, Download, X, Check, CheckCheck,
-  User, Search, File, Image, FileText, Archive, ZoomIn, Trash2
+  User, Search, File, Image, FileText, Archive, ZoomIn, Trash2, CheckCircle, XCircle
 } from 'lucide-react';
 import type { ChatMessage } from '../data';
 
@@ -59,6 +59,7 @@ export const StudentChatWidget: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,6 +71,49 @@ export const StudentChatWidget: React.FC = () => {
   const deleteMessage = (msgId: string) => {
     if (!confirm('Удалить это сообщение?')) return;
     setChatMessages(prev => prev.filter(m => m.id !== msgId));
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPendingFile(file);
+    }
+  };
+
+  const confirmFileUpload = async () => {
+    if (!pendingFile || uploading) return;
+
+    setUploading(true);
+    try {
+      const result = await uploadHomeworkFile(pendingFile);
+      const newMessage: ChatMessage = {
+        id: `msg${Date.now()}`,
+        fromUserId: studentId,
+        fromUserName: user?.name || 'Ученик',
+        fromUserRole: 'student',
+        toUserId: 'admin',
+        text: '',
+        attachment: { name: result.name, url: result.url },
+        createdAt: new Date().toISOString(),
+        read: false,
+      };
+      setChatMessages(prev => [...prev, newMessage]);
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Ошибка при загрузке файла');
+    }
+    setUploading(false);
+    setPendingFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const cancelFileUpload = () => {
+    setPendingFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const studentId = user?.id || '';
@@ -180,6 +224,14 @@ export const StudentChatWidget: React.FC = () => {
     });
     return groups;
   }, [myMessages]);
+
+  const getFileIcon = (filename: string) => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '')) return <Image className="w-4 h-4" />;
+    if (['pdf'].includes(ext || '')) return <FileText className="w-4 h-4" />;
+    if (['zip', 'rar', '7z'].includes(ext || '')) return <Archive className="w-4 h-4" />;
+    return <File className="w-4 h-4" />;
+  };
 
   return (
     <>
@@ -297,17 +349,59 @@ export const StudentChatWidget: React.FC = () => {
           </div>
 
           <div className="p-3 bg-white border-t border-gray-200">
+            {/* Подтверждение отправки файла */}
+            {pendingFile && (
+              <div className="mb-2 p-2 bg-blue-50 rounded-lg border border-blue-200 animate-fadeIn">
+                <div className="flex items-center gap-2 mb-2">
+                  {isImageFile(pendingFile.name) ? (
+                    <img 
+                      src={URL.createObjectURL(pendingFile)} 
+                      alt="Превью" 
+                      className="w-10 h-10 object-cover rounded"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center">
+                      {getFileIcon(pendingFile.name)}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{pendingFile.name}</p>
+                    <p className="text-xs text-gray-500">{(pendingFile.size / 1024).toFixed(1)} КБ</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600 mb-2">Отправить этот файл?</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={confirmFileUpload}
+                    disabled={uploading}
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition-colors disabled:opacity-50"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Да
+                  </button>
+                  <button
+                    onClick={cancelFileUpload}
+                    disabled={uploading}
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition-colors"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    Отмена
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <input
                 ref={fileInputRef}
                 type="file"
-                onChange={handleFileUpload}
+                onChange={handleFileSelect}
                 className="hidden"
                 accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
+                disabled={uploading}
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
+                disabled={uploading || !!pendingFile}
                 className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
               >
                 <Paperclip className="w-5 h-5" />
@@ -351,6 +445,7 @@ export const AdminChatView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -362,6 +457,49 @@ export const AdminChatView: React.FC = () => {
   const deleteMessage = (msgId: string) => {
     if (!confirm('Удалить это сообщение?')) return;
     setChatMessages(prev => prev.filter(m => m.id !== msgId));
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPendingFile(file);
+    }
+  };
+
+  const confirmFileUpload = async () => {
+    if (!pendingFile || !selectedStudentId || uploading) return;
+
+    setUploading(true);
+    try {
+      const result = await uploadHomeworkFile(pendingFile);
+      const newMessage: ChatMessage = {
+        id: `msg${Date.now()}`,
+        fromUserId: 'admin',
+        fromUserName: user?.name || 'Учитель',
+        fromUserRole: 'admin',
+        toUserId: selectedStudentId,
+        text: '',
+        attachment: { name: result.name, url: result.url },
+        createdAt: new Date().toISOString(),
+        read: false,
+      };
+      setChatMessages(prev => [...prev, newMessage]);
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Ошибка при загрузке файла');
+    }
+    setUploading(false);
+    setPendingFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const cancelFileUpload = () => {
+    setPendingFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const allStudents = useMemo(() => {
@@ -672,17 +810,59 @@ export const AdminChatView: React.FC = () => {
               </div>
 
               <div className="p-3 bg-white border-t border-gray-200">
+                {/* Подтверждение отправки файла */}
+                {pendingFile && (
+                  <div className="mb-2 p-2 bg-blue-50 rounded-lg border border-blue-200 animate-fadeIn">
+                    <div className="flex items-center gap-2 mb-2">
+                      {isImageFile(pendingFile.name) ? (
+                        <img 
+                          src={URL.createObjectURL(pendingFile)} 
+                          alt="Превью" 
+                          className="w-10 h-10 object-cover rounded"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center">
+                          {getFileIcon(pendingFile.name)}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{pendingFile.name}</p>
+                        <p className="text-xs text-gray-500">{(pendingFile.size / 1024).toFixed(1)} КБ</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-600 mb-2">Отправить этот файл?</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={confirmFileUpload}
+                        disabled={uploading}
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition-colors disabled:opacity-50"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Да
+                      </button>
+                      <button
+                        onClick={cancelFileUpload}
+                        disabled={uploading}
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition-colors"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Отмена
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <input
                     ref={fileInputRef}
                     type="file"
-                    onChange={handleFileUpload}
+                    onChange={handleFileSelect}
                     className="hidden"
                     accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
+                    disabled={uploading}
                   />
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
+                    disabled={uploading || !!pendingFile}
                     className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
                   >
                     <Paperclip className="w-5 h-5" />
