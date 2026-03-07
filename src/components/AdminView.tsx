@@ -2473,12 +2473,12 @@ const Journal: React.FC = () => {
                                   inputMode === 'keyboard' && keyboardTarget?.studentId === s.id && keyboardTarget?.date === lessonPageDate && keyboardTarget?.lessonNumber === lessonPageLessonNum && !keyboardTarget?.columnId
                                     ? 'ring-2 ring-primary-500 ring-offset-1 bg-primary-50 text-primary-700'
                                     : showAttendance ? `${at?.bgColor} ${at?.color}` : mainGrade ?
-                                      (mainGrade.excludeFromAverage ? 'bg-gray-200 text-gray-500' : mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
+                                      (mainGrade.isPending ? 'bg-violet-100 text-violet-700' : mainGrade.excludeFromAverage ? 'bg-gray-200 text-gray-500' : mainGrade.value === 5 ? 'bg-green-100 text-green-700' : mainGrade.value === 4 ? 'bg-blue-100 text-blue-700' : mainGrade.value === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')
                                       : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-2 border-dashed border-gray-400'
                                 }`}
-                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : ''}
+                                title={isBlocked ? 'Нельзя поставить оценку при отсутствии' : mainGrade?.isPending ? `Отложенная оценка: ${mainGrade.pendingTargetGrade} (появится ${mainGrade.pendingDate})` : ''}
                               >
-                                {showAttendance ? att?.type : (mainGrade?.value || '')}
+                                {showAttendance ? att?.type : (mainGrade?.isPending ? '●' : (mainGrade?.value || ''))}
                               </button>
                               {/* Индикатор опоздания */}
                               {isLateness && (
