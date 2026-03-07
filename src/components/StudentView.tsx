@@ -22,32 +22,9 @@ interface GradeWithTooltipProps {
   reason?: string;
   testTitle?: string;
   size?: 'sm' | 'md';
-  // Отложенная оценка ("точка")
-  isPending?: boolean;
-  pendingDays?: number;
-  pendingTargetGrade?: number;
-  pendingDate?: string;
-  // Обработчик клика для открытия модального окна настройки
-  onPendingClick?: (gradeData: {
-    id: string;
-    value: number;
-    subject: string;
-    date: string;
-    isPending: boolean;
-    pendingDays?: number;
-    pendingTargetGrade?: number;
-    pendingDate?: string;
-  }) => void;
-  gradeId?: string;
-  subject?: string;
-  date?: string;
 }
 
-const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ 
-  value, excludeFromAverage, reason, testTitle, size = 'md',
-  isPending, pendingDays, pendingTargetGrade, pendingDate,
-  onPendingClick, gradeId, subject, date
-}) => {
+const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromAverage, reason, testTitle, size = 'md' }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
@@ -56,38 +33,25 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({
     ? 'w-8 h-8 text-xs' 
     : 'w-9 h-9 text-sm';
     
-  // Цвет для отложенной оценки (точка) - серый с точечным узором
-  const pendingClass = 'bg-gray-300 text-gray-600 cursor-pointer hover:bg-gray-400';
-  const colorClass = isPending 
-    ? pendingClass
+  const colorClass = excludeFromAverage 
+    ? 'bg-gray-200 text-gray-500 cursor-help' 
+    : value === 5 
+      ? 'bg-success-100 text-success-700 cursor-help' 
+      : value === 4 
+        ? 'bg-primary-100 text-primary-700 cursor-help' 
+        : value === 3 
+          ? 'bg-warning-100 text-warning-700 cursor-help' 
+          : 'bg-danger-100 text-danger-700 cursor-help';
+
+  const tooltipText = testTitle 
+    ? `Тест: ${testTitle}` 
     : excludeFromAverage 
-      ? 'bg-gray-200 text-gray-500 cursor-help' 
-      : value === 5 
-        ? 'bg-success-100 text-success-700 cursor-help' 
-        : value === 4 
-          ? 'bg-primary-100 text-primary-700 cursor-help' 
-          : value === 3 
-            ? 'bg-warning-100 text-warning-700 cursor-help' 
-            : 'bg-danger-100 text-danger-700 cursor-help';
+      ? 'Не учитывается в среднем балле' 
+      : reason 
+        ? reason 
+        : '';
 
-  // Текст тултипа для отложенной оценки
-  const pendingTooltipText = isPending && pendingTargetGrade
-    ? `Появится ${pendingDays} дн. → Оценка: ${pendingTargetGrade}`
-    : isPending 
-      ? 'Нажмите для настройки'
-      : '';
-
-  const tooltipText = isPending && pendingTooltipText
-    ? pendingTooltipText
-    : testTitle 
-      ? `Тест: ${testTitle}` 
-      : excludeFromAverage 
-        ? 'Не учитывается в среднем балле' 
-        : reason 
-          ? reason 
-          : '';
-
-  const showIndicator = isPending || excludeFromAverage || reason || testTitle;
+  const showIndicator = excludeFromAverage || reason || testTitle;
 
   const handleMouseEnter = () => {
     if (triggerRef.current) {
@@ -103,7 +67,7 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({
   // Вычисляем позицию тултипа с учётом границ экрана
   const getTooltipStyle = () => {
     if (!tooltipPos) return {};
-    const tooltipWidth = 250; // увеличим для отложенных оценок
+    const tooltipWidth = 200; // примерная ширина тултипа
     const padding = 10;
     let left = tooltipPos.left;
     
@@ -121,48 +85,29 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({
     };
   };
 
-  // Обработчик клика на оценку
-  const handleClick = () => {
-    if (isPending && onPendingClick && gradeId && subject && date) {
-      // Открываем модальное окно настройки отложенной оценки
-      onPendingClick({
-        id: gradeId,
-        value,
-        subject,
-        date,
-        isPending: true,
-        pendingDays,
-        pendingTargetGrade,
-        pendingDate
-      });
-    } else {
-      // Показываем тултип как раньше
-      if (!showTooltip && triggerRef.current) {
-        const rect = triggerRef.current.getBoundingClientRect();
-        setTooltipPos({ top: rect.top, left: rect.left + rect.width / 2 });
-      }
-      setShowTooltip(!showTooltip);
-    }
-  };
-
   return (
     <div className="relative inline-flex">
       <span 
         ref={triggerRef}
-        className={`inline-flex items-center justify-center rounded-xl font-bold ${sizeClasses} ${colorClass} ${isPending ? 'ring-2 ring-gray-400 ring-offset-1' : ''}`}
+        className={`inline-flex items-center justify-center rounded-xl font-bold ${sizeClasses} ${colorClass}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={() => setShowTooltip(false)}
-        onClick={handleClick}
+        onClick={() => {
+          if (!showTooltip && triggerRef.current) {
+            const rect = triggerRef.current.getBoundingClientRect();
+            setTooltipPos({ top: rect.top, left: rect.left + rect.width / 2 });
+          }
+          setShowTooltip(!showTooltip);
+        }}
       >
-        {/* Показываем точку для отложенной оценки */}
-        {isPending ? '•' : value}
-        {showIndicator && !isPending && (
+        {value}
+        {showIndicator && (
           <span className={`ml-0.5 ${size === 'sm' ? 'text-[8px]' : 'text-[10px]'} leading-none opacity-60`}>•</span>
         )}
       </span>
       {showTooltip && tooltipText && tooltipPos && createPortal(
         <div 
-          className={`fixed z-[100] px-3 py-2 text-white text-xs rounded-lg shadow-xl pointer-events-none max-w-[300px] ${isPending ? 'bg-gray-800' : 'bg-gray-900'}`}
+          className="fixed z-[100] px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-xl pointer-events-none max-w-[300px]"
           style={{ 
             ...getTooltipStyle(),
             whiteSpace: 'normal'
@@ -170,7 +115,7 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({
         >
           {tooltipText}
           <div 
-            className={`absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent ${isPending ? 'border-t-gray-800' : 'border-t-gray-900'}`} 
+            className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" 
           />
         </div>,
         document.body
@@ -480,75 +425,23 @@ const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons
 
 // ==================== GRADES ====================
 const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string; students: any[] }> = ({ myGrades, attendance, studentId, students }) => {
-  const { setGrades } = useData();
-  const [pendingGradeModal, setPendingGradeModal] = useState<{
-    id: string;
-    value: number;
-    subject: string;
-    date: string;
-    isPending: boolean;
-    pendingDays?: number;
-    pendingTargetGrade?: number;
-    pendingDate?: string;
-  } | null>(null);
-  const [pendingDaysInput, setPendingDaysInput] = useState<number>(7);
-  const [pendingTargetGradeInput, setPendingTargetGradeInput] = useState<number>(5);
-
   // Получаем дату зачисления ученика
   const enrollmentDate = useMemo(() => {
     const student = students?.find((s: any) => s.id === studentId);
     return student?.enrollmentDate || null;
   }, [students, studentId]);
 
-  // Функция для активации отложенных оценок при наступлении даты
-  useEffect(() => {
-    const today = getTodayString();
-    let hasUpdates = false;
-    
-    const updatedGrades = myGrades.map((g: any) => {
-      // Проверяем, есть ли отложенная оценка, которая должна активироваться
-      if (g.isPending && g.pendingDate && g.pendingDate <= today) {
-        hasUpdates = true;
-        // Активируем оценку - убираем флаг isPending и устанавливаем целевую оценку
-        return {
-          ...g,
-          value: g.pendingTargetGrade || g.value,
-          isPending: false,
-          pendingDays: undefined,
-          pendingTargetGrade: undefined,
-          pendingDate: undefined
-        };
-      }
-      return g;
-    });
-    
-    if (hasUpdates) {
-      setGrades(updatedGrades);
-    }
-  }, [myGrades, setGrades]);
-
   const gradesBySubject = useMemo(() => {
-    const map: Record<string, { dates: Record<string, { value: number; excludeFromAverage?: boolean; reason?: string; isPending?: boolean; pendingDays?: number; pendingTargetGrade?: number; pendingDate?: string; gradeId?: string }[]>; allGrades: number[]; hasAttendance: Set<string> }> = {};
+    const map: Record<string, { dates: Record<string, { value: number; excludeFromAverage?: boolean; reason?: string }[]>; allGrades: number[]; hasAttendance: Set<string> }> = {};
     SUBJECTS.forEach(s => { map[s] = { dates: {}, allGrades: [], hasAttendance: new Set() }; });
     
-    // Добавляем оценки (включая информацию о excludeFromAverage, reason и отложенные оценки)
-    myGrades.forEach((g: any) => {
+    // Добавляем оценки (включая информацию о excludeFromAverage и reason)
+    myGrades.forEach(g => {
       if (!map[g.subject]) map[g.subject] = { dates: {}, allGrades: [], hasAttendance: new Set() };
       if (!map[g.subject].dates[g.date]) map[g.subject].dates[g.date] = [];
-      map[g.subject].dates[g.date].push({ 
-        value: g.value, 
-        excludeFromAverage: g.excludeFromAverage, 
-        reason: g.reason,
-        isPending: g.isPending,
-        pendingDays: g.pendingDays,
-        pendingTargetGrade: g.pendingTargetGrade,
-        pendingDate: g.pendingDate,
-        gradeId: g.id
-      });
-      // Включаем все оценки в общий список для отображения (только не отложенные)
-      if (!g.isPending) {
-        map[g.subject].allGrades.push(g.value);
-      }
+      map[g.subject].dates[g.date].push({ value: g.value, excludeFromAverage: g.excludeFromAverage, reason: g.reason });
+      // Включаем все оценки в общий список для отображения
+      map[g.subject].allGrades.push(g.value);
     });
     
     // Добавляем информацию о посещаемости
@@ -562,60 +455,6 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string; 
     
     return map;
   }, [myGrades, attendance, studentId, enrollmentDate]);
-
-  // Обработчик клика на отложенную оценку
-  const handlePendingGradeClick = (gradeData: any) => {
-    setPendingGradeModal(gradeData);
-    setPendingDaysInput(gradeData.pendingDays || 7);
-    setPendingTargetGradeInput(gradeData.pendingTargetGrade || 5);
-  };
-
-  // Сохранить настройки отложенной оценки
-  const savePendingGrade = () => {
-    if (!pendingGradeModal) return;
-    
-    // Вычисляем дату появления оценки
-    const currentDate = new Date();
-    currentDate.setDate(currentDate.getDate() + pendingDaysInput);
-    const pendingDate = formatDate(currentDate);
-    
-    const updatedGrades = myGrades.map((g: any) => {
-      if (g.id === pendingGradeModal.id) {
-        return {
-          ...g,
-          isPending: true,
-          pendingDays: pendingDaysInput,
-          pendingTargetGrade: pendingTargetGradeInput,
-          pendingDate: pendingDate
-        };
-      }
-      return g;
-    });
-    
-    setGrades(updatedGrades);
-    setPendingGradeModal(null);
-  };
-
-  // Удалить отложенность (сделать оценку обычной)
-  const removePendingGrade = () => {
-    if (!pendingGradeModal) return;
-    
-    const updatedGrades = myGrades.map((g: any) => {
-      if (g.id === pendingGradeModal.id) {
-        return {
-          ...g,
-          isPending: false,
-          pendingDays: undefined,
-          pendingTargetGrade: undefined,
-          pendingDate: undefined
-        };
-      }
-      return g;
-    });
-    
-    setGrades(updatedGrades);
-    setPendingGradeModal(null);
-  };
 
   const allDates = useMemo(() => {
     const dateSet = new Set<string>();
@@ -728,21 +567,7 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string; 
                           <div className="relative inline-flex">
                             <div className="flex flex-wrap gap-1 justify-center overflow-visible">
                               {vals.map((gradeObj: any, i: number) => (
-                                <GradeWithTooltip 
-                                  key={i} 
-                                  value={gradeObj.value} 
-                                  excludeFromAverage={gradeObj.excludeFromAverage} 
-                                  reason={gradeObj.reason} 
-                                  size="sm"
-                                  isPending={gradeObj.isPending}
-                                  pendingDays={gradeObj.pendingDays}
-                                  pendingTargetGrade={gradeObj.pendingTargetGrade}
-                                  pendingDate={gradeObj.pendingDate}
-                                  gradeId={gradeObj.id}
-                                  subject={subject}
-                                  date={d}
-                                  onPendingClick={handlePendingGradeClick}
-                                />
+                                <GradeWithTooltip key={i} value={gradeObj.value} excludeFromAverage={gradeObj.excludeFromAverage} reason={gradeObj.reason} size="sm" />
                               ))}
                               {vals.length === 0 && <span className="text-gray-400">—</span>}
                             </div>
@@ -772,116 +597,6 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string; 
           </table>
         </div>
       </div>
-
-      {/* Модальное окно настройки отложенной оценки */}
-      {pendingGradeModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scaleIn">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl font-bold text-gray-600">•</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900">Настройка отложенной оценки</h3>
-              <p className="text-sm text-gray-500 mt-1">
-                {pendingGradeModal.subject} • {pendingGradeModal.date}
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {/* Текущее значение */}
-              <div className="p-4 bg-gray-50 rounded-xl">
-                <div className="text-sm text-gray-500 mb-1">Текущее значение</div>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl font-bold bg-gray-300 text-gray-600">
-                    •
-                  </span>
-                  <span className="text-gray-400 text-sm">(отложенная оценка)</span>
-                </div>
-              </div>
-
-              {/* Выбор количества дней */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Через сколько дней появится оценка?
-                </label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="number"
-                    min="1"
-                    max="365"
-                    value={pendingDaysInput}
-                    onChange={(e) => setPendingDaysInput(Math.max(1, Math.min(365, parseInt(e.target.value) || 1)))}
-                    className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-medium"
-                  />
-                  <span className="text-gray-600 font-medium">
-                    {pendingDaysInput === 1 ? 'день' : pendingDaysInput >= 2 && pendingDaysInput <= 4 ? 'дня' : 'дней'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Выбор оценки */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  В какую оценку превратится?
-                </label>
-                <div className="flex gap-2">
-                  {[2, 3, 4, 5].map((grade) => (
-                    <button
-                      key={grade}
-                      onClick={() => setPendingTargetGradeInput(grade)}
-                      className={`flex-1 py-3 rounded-xl font-bold text-lg transition-all ${
-                        pendingTargetGradeInput === grade
-                          ? grade === 5 ? 'bg-green-100 text-green-700 ring-2 ring-green-500' :
-                            grade === 4 ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-500' :
-                            grade === 3 ? 'bg-yellow-100 text-yellow-700 ring-2 ring-yellow-500' :
-                            'bg-red-100 text-red-700 ring-2 ring-red-500'
-                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                      }`}
-                    >
-                      {grade}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Предпросмотр даты */}
-              <div className="p-4 bg-blue-50 rounded-xl">
-                <div className="text-sm text-blue-600 mb-1">Оценка появится</div>
-                <div className="text-lg font-bold text-blue-900">
-                  {(() => {
-                    const date = new Date();
-                    date.setDate(date.getDate() + pendingDaysInput);
-                    return `${date.getDate()} ${MONTH_NAMES_GEN[date.getMonth()]}`;
-                  })()}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              {pendingGradeModal.isPending && (
-                <button
-                  onClick={removePendingGrade}
-                  className="flex-1 px-4 py-3 bg-red-100 text-red-700 rounded-xl font-medium hover:bg-red-200 transition-colors"
-                >
-                  Удалить отложенность
-                </button>
-              )}
-              <button
-                onClick={() => setPendingGradeModal(null)}
-                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
-              >
-                Отмена
-              </button>
-              <button
-                onClick={savePendingGrade}
-                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
-              >
-                Сохранить
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
