@@ -405,8 +405,8 @@ export const StudentView: React.FC = () => {
 const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons }) => {
   const today = getTodayString();
   const todayLessons = lessons.filter((l: any) => l.date === today).sort((a: any, b: any) => a.lessonNumber - b.lessonNumber);
-  // Фильтруем оценки, исключая те, которые не учитываются в среднем балле и отложенные оценки
-  const gradesForAvg = myGrades.filter((g: any) => !g.excludeFromAverage && !g.isPending);
+  // Фильтруем оценки, исключая те, которые не учитываются в среднем балле
+  const gradesForAvg = myGrades.filter((g: any) => !g.excludeFromAverage);
   const avgGrade = gradesForAvg.length > 0 ? (gradesForAvg.reduce((s: number, g: any) => s + g.value, 0) / gradesForAvg.length).toFixed(2) : '—';
 
   return (
@@ -695,8 +695,8 @@ const Grades: React.FC<{ myGrades: any[]; attendance: any[]; studentId: string; 
                 const data = gradesBySubject[subject];
                 // Показываем предмет если у него есть оценки или посещаемость
                 if (!data || (data.allGrades.length === 0 && data.hasAttendance.size === 0)) return null;
-                // Фильтруем оценки для расчёта среднего (исключаем те, которые не учитываются, и отложенные оценки)
-                const gradesForAvg = myGrades.filter((g: any) => g.subject === subject && !g.excludeFromAverage && !g.isPending);
+                // Фильтруем оценки для расчёта среднего (исключаем те, которые не учитываются)
+                const gradesForAvg = myGrades.filter((g: any) => g.subject === subject && !g.excludeFromAverage);
                 const avg = gradesForAvg.length > 0 
                   ? gradesForAvg.reduce((a: number, b: any) => a + b.value, 0) / gradesForAvg.length 
                   : null;
@@ -1696,10 +1696,10 @@ const Statistics: React.FC<StatisticsProps> = ({ studentId, grades, lessons, stu
   // Используем все оценки без фильтрации по урокам, чтобы совпадало с расчётами админа
   const allGrades = grades;
 
-  // Средний балл текущего ученика по всем предметам (исключая оценки с excludeFromAverage и отложенные оценки)
+  // Средний балл текущего ученика по всем предметам (исключая оценки с excludeFromAverage)
   const myGrades = useMemo(() => allGrades.filter(g => g.studentId === studentId), [allGrades, studentId]);
   const myOverallAvg = useMemo(() => {
-    const gradesForAvg = myGrades.filter(g => !g.excludeFromAverage && !g.isPending);
+    const gradesForAvg = myGrades.filter(g => !g.excludeFromAverage);
     if (gradesForAvg.length === 0) return 0;
     return gradesForAvg.reduce((sum, g) => sum + g.value, 0) / gradesForAvg.length;
   }, [myGrades]);
@@ -1722,8 +1722,8 @@ const Statistics: React.FC<StatisticsProps> = ({ studentId, grades, lessons, stu
     subjects.forEach(subject => {
       // Оценки текущего ученика по предмету
       const subjectMyGrades = myGrades.filter(g => g.subject === subject);
-      // Фильтруем оценки ученика (исключая те, которые не учитываются в среднем, и отложенные оценки)
-      const subjectMyGradesForAvg = subjectMyGrades.filter(g => !g.excludeFromAverage && !g.isPending);
+      // Фильтруем оценки ученика (исключая те, которые не учитываются в среднем)
+      const subjectMyGradesForAvg = subjectMyGrades.filter(g => !g.excludeFromAverage);
       const myAvg = subjectMyGradesForAvg.length > 0
         ? subjectMyGradesForAvg.reduce((sum, g) => sum + g.value, 0) / subjectMyGradesForAvg.length
         : 0;
@@ -1731,15 +1731,15 @@ const Statistics: React.FC<StatisticsProps> = ({ studentId, grades, lessons, stu
       // Оценки всех учеников по предмету
       const subjectAllGrades = allGrades.filter(g => g.subject === subject);
 
-      // Средний балл класса по предмету - исключаем оценки с excludeFromAverage и отложенные оценки (как в AdminView)
-      const subjectAllGradesForAvg = subjectAllGrades.filter(g => !g.excludeFromAverage && !g.isPending);
+      // Средний балл класса по предмету - исключаем оценки с excludeFromAverage (как в AdminView)
+      const subjectAllGradesForAvg = subjectAllGrades.filter(g => !g.excludeFromAverage);
       const classAvg = subjectAllGradesForAvg.length > 0
         ? subjectAllGradesForAvg.reduce((sum, g) => sum + g.value, 0) / subjectAllGradesForAvg.length
         : 0;
 
       // Вычисляем средний балл для каждого ученика по предмету (для определения позиции)
-      // Фильтруем оценки - исключаем те, которые не учитываются в среднем балле и отложенные оценки
-      const subjectAllGradesForPosition = subjectAllGrades.filter(g => !g.excludeFromAverage && !g.isPending);
+      // Фильтруем оценки - исключаем те, которые не учитываются в среднем балле
+      const subjectAllGradesForPosition = subjectAllGrades.filter(g => !g.excludeFromAverage);
       
       const studentAvgs: { studentId: string; avg: number; count: number }[] = [];
       const studentGradesMap: Record<string, number[]> = {};
@@ -1778,9 +1778,9 @@ const Statistics: React.FC<StatisticsProps> = ({ studentId, grades, lessons, stu
     return stats.sort((a, b) => a.subject.localeCompare(b.subject));
   }, [allGrades, myGrades, studentId]);
 
-  // Средний балл класса по всем предметам (исключая оценки с excludeFromAverage и отложенные оценки)
+  // Средний балл класса по всем предметам (исключая оценки с excludeFromAverage)
   const classOverallAvg = useMemo(() => {
-    const gradesForAvg = allGrades.filter(g => !g.excludeFromAverage && !g.isPending);
+    const gradesForAvg = allGrades.filter(g => !g.excludeFromAverage);
     if (gradesForAvg.length === 0) return 0;
     return gradesForAvg.reduce((sum, g) => sum + g.value, 0) / gradesForAvg.length;
   }, [allGrades]);
