@@ -1562,6 +1562,16 @@ const GradePickerPortal: React.FC<{
       )}
 
       <div className="flex gap-2 justify-center">
+        {/* Кнопка быстрой точки */}
+        {onSetPending && (
+          <button
+            onClick={() => setShowPendingConfig(true)}
+            className="w-12 h-12 rounded-xl text-2xl font-bold bg-gray-200 text-gray-600 hover:bg-gray-300 transition-all duration-200 hover:scale-110 flex items-center justify-center"
+            title="Поставить точку (отложенная оценка)"
+          >
+            ●
+          </button>
+        )}
         {[5, 4, 3, 2].map(v => (
           <button key={v} onClick={() => handleSelect(v)}
             className={`w-12 h-12 rounded-xl text-lg font-bold transition-all duration-200 hover:scale-110 ${gradeStyles[v as keyof typeof gradeStyles]} ${currentGrade === v ? 'ring-2 ring-offset-2 ring-slate-400 scale-110' : ''}`}>
