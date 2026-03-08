@@ -2008,4 +2008,14 @@ const Journal: React.FC = () => {
                         }
                         e.target.value = '';
                       }} />
-                    </
+                    </label>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
