@@ -49,13 +49,18 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromA
           ? 'bg-warning-100 text-warning-700 cursor-help' 
           : 'bg-danger-100 text-danger-700 cursor-help';
 
-  const tooltipText = testTitle 
-    ? `Тест: ${testTitle}` 
-    : excludeFromAverage 
-      ? 'Не учитывается в среднем балле' 
-      : reason 
-        ? reason 
-        : '';
+  // Формируем текст тултипа: показываем testTitle и reason вместе, если они есть
+  const tooltipParts: string[] = [];
+  if (testTitle) {
+    tooltipParts.push(`Тест: ${testTitle}`);
+  }
+  if (excludeFromAverage) {
+    tooltipParts.push('Не учитывается в среднем балле');
+  }
+  if (reason) {
+    tooltipParts.push(reason);
+  }
+  const tooltipText = tooltipParts.length > 0 ? tooltipParts.join('\n') : '';
 
   const showIndicator = excludeFromAverage || reason || testTitle;
 
@@ -73,7 +78,8 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromA
   // Вычисляем позицию тултипа с учётом границ экрана
   const getTooltipStyle = () => {
     if (!tooltipPos) return {};
-    const tooltipWidth = 200; // примерная ширина тултипа
+    // Динамическая ширина с учётом всех строк тултипа
+    const tooltipWidth = Math.max(200, tooltipText.length * 8);
     const padding = 10;
     let left = tooltipPos.left;
     
@@ -116,7 +122,7 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromA
           className="fixed z-[100] px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-xl pointer-events-none max-w-[300px]"
           style={{ 
             ...getTooltipStyle(),
-            whiteSpace: 'normal'
+            whiteSpace: 'pre-wrap'
           }}
         >
           {tooltipText}
