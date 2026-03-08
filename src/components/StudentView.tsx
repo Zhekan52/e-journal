@@ -4,17 +4,17 @@ import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
 import { FipiWidget } from './FipiWidget';
 import { StudentChatWidget } from './Chat';
-import { GamificationWidget } from './Gamification';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import {
   BookOpen, Calendar, ClipboardList, BarChart3, LogOut, ChevronLeft, ChevronRight,
   FileText, Clock, CheckCircle, AlertCircle, Play, ArrowLeft, ArrowRight, Download,
-  UserCheck, Trophy
+  UserCheck
 } from 'lucide-react';
 import { SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, DAY_NAMES, getWeekDates, formatDate, ATTENDANCE_TYPES, getTodayString, getTodayDate } from '../data';
+import { GamificationWidget } from './gamification';
 
-type Tab = 'home' | 'schedule' | 'grades' | 'diary' | 'attendance' | 'statistics' | 'achievements';
+type Tab = 'home' | 'schedule' | 'grades' | 'diary' | 'attendance' | 'statistics';
 
 // Функция форматирования даты для отображения (например: "4 марта 2026")
 const formatEnrollmentDate = (dateStr: string): string => {
@@ -50,18 +50,13 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromA
           ? 'bg-warning-100 text-warning-700 cursor-help' 
           : 'bg-danger-100 text-danger-700 cursor-help';
 
-  // Формируем текст тултипа: показываем testTitle и reason вместе, если они есть
-  const tooltipParts: string[] = [];
-  if (testTitle) {
-    tooltipParts.push(`Тест: ${testTitle}`);
-  }
-  if (excludeFromAverage) {
-    tooltipParts.push('Не учитывается в среднем балле');
-  }
-  if (reason) {
-    tooltipParts.push(reason);
-  }
-  const tooltipText = tooltipParts.length > 0 ? tooltipParts.join('\n') : '';
+  const tooltipText = testTitle 
+    ? `Тест: ${testTitle}` 
+    : excludeFromAverage 
+      ? 'Не учитывается в среднем балле' 
+      : reason 
+        ? reason 
+        : '';
 
   const showIndicator = excludeFromAverage || reason || testTitle;
 
@@ -79,8 +74,7 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromA
   // Вычисляем позицию тултипа с учётом границ экрана
   const getTooltipStyle = () => {
     if (!tooltipPos) return {};
-    // Динамическая ширина с учётом всех строк тултипа
-    const tooltipWidth = Math.max(200, tooltipText.length * 8);
+    const tooltipWidth = 200; // примерная ширина тултипа
     const padding = 10;
     let left = tooltipPos.left;
     
@@ -123,7 +117,7 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromA
           className="fixed z-[100] px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-xl pointer-events-none max-w-[300px]"
           style={{ 
             ...getTooltipStyle(),
-            whiteSpace: 'pre-wrap'
+            whiteSpace: 'normal'
           }}
         >
           {tooltipText}
@@ -285,7 +279,6 @@ export const StudentView: React.FC = () => {
     { id: 'diary', label: 'Дневник', icon: <FileText className="w-5 h-5" /> },
     { id: 'attendance', label: 'Посещаемость', icon: <UserCheck className="w-5 h-5" /> },
     { id: 'statistics', label: 'Статистика', icon: <BarChart3 className="w-5 h-5" /> },
-    { id: 'achievements', label: 'Достижения', icon: <Trophy className="w-5 h-5" /> },
   ];
 
   return (
@@ -352,7 +345,6 @@ export const StudentView: React.FC = () => {
         )}
         {activeTab === 'statistics' && <Statistics studentId={studentId} grades={grades} lessons={lessons} students={students} />}
         {activeTab === 'attendance' && <Attendance studentId={studentId} attendance={attendance} students={students} />}
-        {activeTab === 'achievements' && <GamificationWidget />}
       </main>
       
       {/* Chat Widget */}
@@ -384,34 +376,42 @@ const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons
       {/* FIPI Widget */}
       <FipiWidget />
 
-      {/* Stats Cards - Modern Style */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="glass rounded-3xl p-6 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:-translate-y-1 card-hover">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg shadow-green-500/20">
-              <BarChart3 className="w-6 h-6 text-white" />
+      {/* Gamification Widget */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          {/* Stats Cards - Modern Style */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-0">
+            <div className="glass rounded-3xl p-6 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:-translate-y-1 card-hover">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg shadow-green-500/20">
+                  <BarChart3 className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-sm font-semibold text-gray-500">Средний балл</span>
+              </div>
+              <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{avgGrade}</div>
             </div>
-            <span className="text-sm font-semibold text-gray-500">Средний балл</span>
+            <div className="glass rounded-3xl p-6 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:-translate-y-1 card-hover">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                  <ClipboardList className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-sm font-semibold text-gray-500">Всего оценок</span>
+              </div>
+              <div className="text-4xl font-bold text-gray-900">{myGrades.length}</div>
+            </div>
+            <div className="glass rounded-3xl p-6 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:-translate-y-1 card-hover">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
+                  <Calendar className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-sm font-semibold text-gray-500">Уроков сегодня</span>
+              </div>
+              <div className="text-4xl font-bold text-gray-900">{todayLessons.length}</div>
+            </div>
           </div>
-          <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{avgGrade}</div>
         </div>
-        <div className="glass rounded-3xl p-6 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:-translate-y-1 card-hover">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
-              <ClipboardList className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-sm font-semibold text-gray-500">Всего оценок</span>
-          </div>
-          <div className="text-4xl font-bold text-gray-900">{myGrades.length}</div>
-        </div>
-        <div className="glass rounded-3xl p-6 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:-translate-y-1 card-hover">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
-              <Calendar className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-sm font-semibold text-gray-500">Уроков сегодня</span>
-          </div>
-          <div className="text-4xl font-bold text-gray-900">{todayLessons.length}</div>
+        <div>
+          <GamificationWidget />
         </div>
       </div>
       {todayLessons.length > 0 && (
