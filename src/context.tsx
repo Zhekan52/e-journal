@@ -6,8 +6,7 @@ import {
   type User, type Lesson, type Grade, type DiaryEntry, type Student, type Test,
   type JournalColumn, type LessonTypeEntry, type CustomLessonType, type AttendanceRecord, type TestAttempt,
   type TestAssignment, adminUsers, type FipiTask, type FipiReward, type FipiStudentProgress,
-  type FipiTaskAttempt, type FipiNotification, type ChatMessage,
-  type Achievement, type StudentAchievement, type StudentLevel, type StudentRating
+  type FipiTaskAttempt, type FipiNotification, type ChatMessage
 } from './data';
 
 // ==================== HELPERS ====================
@@ -250,15 +249,6 @@ interface DataContextType {
   setFipiNotifications: Dispatch<SetStateAction<FipiNotification[]>>;
   chatMessages: ChatMessage[];
   setChatMessages: Dispatch<SetStateAction<ChatMessage[]>>;
-  // Gamification
-  achievements: Achievement[];
-  setAchievements: Dispatch<SetStateAction<Achievement[]>>;
-  studentAchievements: StudentAchievement[];
-  setStudentAchievements: Dispatch<SetStateAction<StudentAchievement[]>>;
-  studentLevels: StudentLevel[];
-  setStudentLevels: Dispatch<SetStateAction<StudentLevel[]>>;
-  studentRatings: StudentRating[];
-  setStudentRatings: Dispatch<SetStateAction<StudentRating[]>>;
   loading: boolean;
 }
 
@@ -289,13 +279,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Chat messages
   const [chatMessages, setChatMessages, l18] = useFirestoreCollection<ChatMessage>('chatMessages');
 
-  // Gamification collections
-  const [achievements, setAchievements, l19] = useFirestoreCollection<Achievement>('achievements');
-  const [studentAchievements, setStudentAchievements, l20] = useFirestoreCollection<StudentAchievement>('studentAchievements');
-  const [studentLevels, setStudentLevels, l21] = useFirestoreCollection<StudentLevel>('studentLevels');
-  const [studentRatings, setStudentRatings, l22] = useFirestoreCollection<StudentRating>('studentRatings');
-
-  const loading = !(l1 && l2 && l3 && l4 && l5 && l6 && l7 && l8 && l9 && l10 && l11 && l12 && l13 && l14 && l15 && l16 && l17 && l18 && l19 && l20 && l21 && l22);
+  const loading = !(l1 && l2 && l3 && l4 && l5 && l6 && l7 && l8 && l9 && l10 && l11 && l12 && l13 && l14 && l15 && l16 && l17 && l18);
 
   return (
     <DataContext.Provider value={{
@@ -306,9 +290,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       testRetakes, setTestRetakes, testAssignments, setTestAssignments,
       fipiTasks, setFipiTasks, fipiRewards, setFipiRewards,
       fipiProgress, setFipiProgress, fipiAttempts, setFipiAttempts,
-      fipiNotifications, setFipiNotifications, chatMessages, setChatMessages,
-      achievements, setAchievements, studentAchievements, setStudentAchievements,
-      studentLevels, setStudentLevels, studentRatings, setStudentRatings, loading,
+      fipiNotifications, setFipiNotifications, chatMessages, setChatMessages, loading,
     }}>
       {children}
     </DataContext.Provider>
