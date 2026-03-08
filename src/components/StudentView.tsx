@@ -4,16 +4,17 @@ import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
 import { FipiWidget } from './FipiWidget';
 import { StudentChatWidget } from './Chat';
+import { GamificationWidget } from './Gamification';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import {
   BookOpen, Calendar, ClipboardList, BarChart3, LogOut, ChevronLeft, ChevronRight,
   FileText, Clock, CheckCircle, AlertCircle, Play, ArrowLeft, ArrowRight, Download,
-  UserCheck
+  UserCheck, Trophy
 } from 'lucide-react';
 import { SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, DAY_NAMES, getWeekDates, formatDate, ATTENDANCE_TYPES, getTodayString, getTodayDate } from '../data';
 
-type Tab = 'home' | 'schedule' | 'grades' | 'diary' | 'attendance' | 'statistics';
+type Tab = 'home' | 'schedule' | 'grades' | 'diary' | 'attendance' | 'statistics' | 'achievements';
 
 // Функция форматирования даты для отображения (например: "4 марта 2026")
 const formatEnrollmentDate = (dateStr: string): string => {
@@ -284,6 +285,7 @@ export const StudentView: React.FC = () => {
     { id: 'diary', label: 'Дневник', icon: <FileText className="w-5 h-5" /> },
     { id: 'attendance', label: 'Посещаемость', icon: <UserCheck className="w-5 h-5" /> },
     { id: 'statistics', label: 'Статистика', icon: <BarChart3 className="w-5 h-5" /> },
+    { id: 'achievements', label: 'Достижения', icon: <Trophy className="w-5 h-5" /> },
   ];
 
   return (
@@ -350,6 +352,7 @@ export const StudentView: React.FC = () => {
         )}
         {activeTab === 'statistics' && <Statistics studentId={studentId} grades={grades} lessons={lessons} students={students} />}
         {activeTab === 'attendance' && <Attendance studentId={studentId} attendance={attendance} students={students} />}
+        {activeTab === 'achievements' && <GamificationWidget />}
       </main>
       
       {/* Chat Widget */}

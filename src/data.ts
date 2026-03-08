@@ -167,6 +167,184 @@ export interface CustomLessonType {
 
 export const defaultCustomLessonTypes: CustomLessonType[] = [];
 
+// ==================== GAMIFICATION ====================
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string; // lucide-react icon name
+  condition: AchievementCondition;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  points: number;
+}
+
+export type AchievementCondition = 
+  | { type: 'first_five'; subject?: string }
+  | { type: 'streak'; count: number; subject?: string }
+  | { type: 'perfect_test'; count: number }
+  | { type: 'attendance_full'; days: number }
+  | { type: 'all_subjects_avg'; minAvg: number }
+  | { type: 'homework_completed'; count: number }
+  | { type: 'tests_passed'; count: number }
+  | { type: 'level_reached'; level: number };
+
+export interface StudentGamification {
+  id: string;
+  studentId: string;
+  level: number;
+  totalPoints: number;
+  earnedAchievements: string[]; // achievement IDs
+  streakDays: number; // дни подряд с оценками 4-5
+  lastActivityDate: string;
+  weeklyPoints: number;
+  weeklyPointsDate: string; // понедельник текущей недели
+}
+
+export const ACHIEVEMENTS: Achievement[] = [
+  {
+    id: 'first_five',
+    title: 'Первая пятёрка',
+    description: 'Получите первую оценку 5',
+    icon: 'Star',
+    condition: { type: 'first_five' },
+    rarity: 'common',
+    points: 10
+  },
+  {
+    id: 'first_five_math',
+    title: 'Математик',
+    description: 'Получите первую пятёрку по математике',
+    icon: 'Calculator',
+    condition: { type: 'first_five', subject: 'Математика' },
+    rarity: 'rare',
+    points: 25
+  },
+  {
+    id: 'streak_3',
+    title: 'Набираем обороты',
+    description: 'Получите 3 отличные оценки подряд',
+    icon: 'TrendingUp',
+    condition: { type: 'streak', count: 3 },
+    rarity: 'common',
+    points: 30
+  },
+  {
+    id: 'streak_7',
+    title: 'Недельная серия',
+    description: 'Получайте отличные оценки всю неделю',
+    icon: 'Flame',
+    condition: { type: 'streak', count: 7 },
+    rarity: 'rare',
+    points: 75
+  },
+  {
+    id: 'perfect_test',
+    title: 'Перфекционист',
+    description: 'Наберите 100% на тесте',
+    icon: 'Award',
+    condition: { type: 'perfect_test', count: 1 },
+    rarity: 'rare',
+    points: 50
+  },
+  {
+    id: 'perfect_test_3',
+    title: 'Мастер тестов',
+    description: 'Наберите 100% на 3 тестах',
+    icon: 'Trophy',
+    condition: { type: 'perfect_test', count: 3 },
+    rarity: 'epic',
+    points: 150
+  },
+  {
+    id: 'attendance_week',
+    title: 'Пунктуальный',
+    description: 'Посещайте все уроки неделю без пропусков',
+    icon: 'CalendarCheck',
+    condition: { type: 'attendance_full', days: 5 },
+    rarity: 'common',
+    points: 40
+  },
+  {
+    id: 'attendance_month',
+    title: 'Дисциплинированный',
+    description: 'Посещайте все уроки месяц',
+    icon: 'Calendar',
+    condition: { type: 'attendance_full', days: 20 },
+    rarity: 'epic',
+    points: 200
+  },
+  {
+    id: 'homework_10',
+    title: 'Трудяга',
+    description: 'Выполните 10 домашних заданий',
+    icon: 'BookOpen',
+    condition: { type: 'homework_completed', count: 10 },
+    rarity: 'common',
+    points: 35
+  },
+  {
+    id: 'tests_5',
+    title: 'Тестировщик',
+    description: 'Успешно пройдите 5 тестов',
+    icon: 'FileText',
+    condition: { type: 'tests_passed', count: 5 },
+    rarity: 'common',
+    points: 45
+  },
+  {
+    id: 'level_5',
+    title: 'Пятый уровень',
+    description: 'Достигните 5 уровня',
+    icon: 'Zap',
+    condition: { type: 'level_reached', level: 5 },
+    rarity: 'rare',
+    points: 100
+  },
+  {
+    id: 'all_subjects_45',
+    title: 'Отличник',
+    description: 'Получите средний балл 4.5 по всем предметам',
+    icon: 'GraduationCap',
+    condition: { type: 'all_subjects_avg', minAvg: 4.5 },
+    rarity: 'legendary',
+    points: 300
+  },
+];
+
+export const LEVELS = [
+  { level: 1, points: 0, title: 'Новичок' },
+  { level: 2, points: 50, title: 'Ученик' },
+  { level: 3, points: 120, title: 'Старательный' },
+  { level: 4, points: 250, title: 'Знаток' },
+  { level: 5, points: 450, title: 'Отличник' },
+  { level: 6, points: 700, title: 'Мастер' },
+  { level: 7, points: 1000, title: 'Эксперт' },
+  { level: 8, points: 1500, title: 'Гений' },
+  { level: 9, points: 2200, title: 'Легенда' },
+  { level: 10, points: 3000, title: 'Чемпион' },
+];
+
+export function getLevelFromPoints(points: number): { level: number; title: string; progress: number; nextLevelPoints: number } {
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (points >= LEVELS[i].points) {
+      const nextLevel = LEVELS[i + 1];
+      const nextPoints = nextLevel ? nextLevel.points : LEVELS[i].points;
+      const currentLevelPoints = LEVELS[i].points;
+      const progress = nextLevel 
+        ? ((points - currentLevelPoints) / (nextPoints - currentLevelPoints)) * 100 
+        : 100;
+      return { 
+        level: LEVELS[i].level, 
+        title: LEVELS[i].title,
+        progress: Math.min(progress, 100),
+        nextLevelPoints: nextPoints
+      };
+    }
+  }
+  return { level: 1, title: 'Новичок', progress: 0, nextLevelPoints: 50 };
+}
+
 // ==================== CHAT ====================
 
 export interface ChatMessage {
