@@ -394,8 +394,7 @@ const StudentReport: React.FC<StudentReportProps> = ({
       html += '<tr style="background: #f3e8ff;">';
       html += '<th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Предмет</th>';
       monthGroups.forEach(mg => {
-        const monthName = mg.month || '';
-        html += `<th style="border: 1px solid #ccc; padding: 8px; text-align: center;" colspan="${mg.dates.length}">${monthName}</th>`;
+        html += `<th style="border: 1px solid #ccc; padding: 8px; text-align: center;" colspan="${mg.dates.length}">Месяц</th>`;
       });
       html += '<th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Ср.</th></tr>';
       
