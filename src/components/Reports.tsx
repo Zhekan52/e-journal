@@ -369,85 +369,122 @@ const StudentReport: React.FC<StudentReportProps> = ({
   };
 
   // Функция экспорта в PDF
-  const exportToPDF = () => {
-    if (!selectedStudentData) {
+  const exportToPDF = async () => {
+    if (!selectedStudentData || !tableRef.current) {
       alert('Пожалуйста, выберите ученика');
       return;
     }
     
     try {
-      const doc = new jsPDF('landscape', 'mm', 'a4');
-      const pageWidth = doc.internal.pageSize.getWidth();
+      // Создаём временный контейнер с упрощёнными стилями
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+      container.style.width = '1200px';
+      container.style.backgroundColor = '#ffffff';
+      container.style.padding = '20px';
+      container.style.fontFamily = 'Arial, sans-serif';
+      container.style.color = '#000000';
       
       // Заголовок
-      doc.setFontSize(18);
-      doc.setTextColor(76, 29, 149);
-      doc.text('Табель успеваемости', pageWidth / 2, 15, { align: 'center' });
+      const title = document.createElement('h1');
+      title.textContent = `Табель успеваемости - ${selectedStudentData.lastName} ${selectedStudentData.firstName}`;
+      title.style.color = '#4c1d95';
+      title.style.fontSize = '24px';
+      title.style.marginBottom = '10px';
+      container.appendChild(title);
       
-      doc.setFontSize(14);
-      doc.setTextColor(51, 65, 85);
-      doc.text(`${selectedStudentData.lastName} ${selectedStudentData.firstName}`, pageWidth / 2, 24, { align: 'center' });
-      doc.text(`${formatDateDisplay(dateRange.start)} - ${formatDateDisplay(dateRange.end)}`, pageWidth / 2, 31, { align: 'center' });
+      const period = document.createElement('p');
+      period.textContent = `${formatDateDisplay(dateRange.start)} - ${formatDateDisplay(dateRange.end)}`;
+      period.style.color = '#333';
+      period.style.marginBottom = '20px';
+      container.appendChild(period);
       
       if (overallStudentAverage) {
-        doc.setFontSize(12);
-        doc.text(`Средний балл: ${overallStudentAverage}`, pageWidth / 2, 38, { align: 'center' });
+        const avg = document.createElement('p');
+        avg.textContent = `Средний балл: ${overallStudentAverage}`;
+        avg.style.fontWeight = 'bold';
+        avg.style.marginBottom = '20px';
+        container.appendChild(avg);
       }
       
-      // Подготовка данных для таблицы
-      const tableData: any[] = [];
+      // Клонируем таблицу
+      const tableClone = tableRef.current.querySelector('table')?.cloneNode(true) as HTMLElement;
+      if (!tableClone) {
+        alert('Таблица не найдена');
+        return;
+      }
       
-      SUBJECTS.forEach((subject) => {
-        const data = gradesBySubject[subject];
-        if (!data || Object.keys(data.dates).length === 0) return;
-        
-        const row: any[] = [subject];
-        
-        allDates.slice(0, 15).forEach(d => {
-          const vals = data.dates[d] || [];
-          row.push(vals.length > 0 ? vals.map((v: any) => v.value.toString()).join(',') : '');
-        });
-        
-        const avg = calculateAverage(subject);
-        row.push(avg || '-');
-        
-        tableData.push(row);
+      // Упрощаем стили таблицы
+      tableClone.style.border = '1px solid #ccc';
+      tableClone.style.width = '100%';
+      tableClone.style.fontSize = '12px';
+      
+      const cells = tableClone.querySelectorAll('td, th');
+      cells.forEach(cell => {
+        const htmlCell = cell as HTMLElement;
+        htmlCell.style.border = '1px solid #ccc';
+        htmlCell.style.padding = '5px';
+        // Заменяем цвета на базовые
+        const bgColor = htmlCell.style.backgroundColor;
+        if (bgColor && bgColor.includes('oklch')) {
+          htmlCell.style.backgroundColor = '#f0f0f0';
+        }
+        if (htmlCell.className && htmlCell.className.includes('bg-emerald')) {
+          htmlCell.style.backgroundColor = '#d1fae5';
+        } else if (htmlCell.className && htmlCell.className.includes('bg-sky')) {
+          htmlCell.style.backgroundColor = '#e0f2fe';
+        } else if (htmlCell.className && htmlCell.className.includes('bg-amber')) {
+          htmlCell.style.backgroundColor = '#fef3c7';
+        } else if (htmlCell.className && htmlCell.className.includes('bg-rose')) {
+          htmlCell.style.backgroundColor = '#ffe4e6';
+        }
       });
       
-      // Заголовки столбцов
-      const headers = ['Предмет', ...allDates.slice(0, 15).map(d => d.split('-')[2]), 'Ср.'];
+      container.appendChild(tableClone);
+      document.body.appendChild(container);
       
-      // Создание таблицы
-      autoTable(doc, {
-        head: [headers],
-        body: tableData,
-        startY: 45,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [238, 232, 255],
-          textColor: [76, 29, 149],
-          fontStyle: 'bold',
-          fontSize: 9
-        },
-        bodyStyles: {
-          fontSize: 8,
-          textColor: [51, 65, 85]
-        },
-        alternateRowStyles: {
-          fillColor: [248, 250, 252]
-        },
-        columnStyles: {
-          0: { fontStyle: 'bold', cellWidth: 40 }
-        },
-        margin: { left: 10, right: 10 }
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        onclone: (clonedDoc) => {
+          // Удаляем все oklch цвета из клонированного документа
+          const all = clonedDoc.querySelectorAll('*');
+          all.forEach(el => {
+            const style = (el as HTMLElement).style;
+            const styleProps: string[] = [];
+            for (let i = 0; i < style.length; i++) {
+              styleProps.push(style[i]);
+            }
+            styleProps.forEach(prop => {
+              const value = style.getPropertyValue(prop);
+              if (value && value.includes('oklch')) {
+                style.setProperty(prop, '');
+              }
+            });
+          });
+        }
       });
+      
+      document.body.removeChild(container);
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('landscape', 'mm', 'a4');
+      
+      const imgWidth = 287;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, Math.min(imgHeight, 180));
       
       const fileName = `tabel_${selectedStudentData.lastName}_${selectedStudentData.firstName}_${dateRange.start}_${dateRange.end}.pdf`;
-      doc.save(fileName);
+      pdf.save(fileName);
       console.log('PDF saved');
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      alert(`Error exporting PDF: ${error instanceof Error ? error.message : String(error)}`);
+      alert(`Error: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
