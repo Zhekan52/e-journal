@@ -5,7 +5,8 @@ import { collection, doc, onSnapshot, setDoc, deleteDoc, getDocs } from 'firebas
 import {
   type User, type Lesson, type Grade, type DiaryEntry, type Student, type Test,
   type JournalColumn, type LessonTypeEntry, type CustomLessonType, type AttendanceRecord, type TestAttempt,
-  type TestAssignment, adminUsers, type ChatMessage
+  type TestAssignment, adminUsers, type ChatMessage,
+  type QuestionBankItem, type TrialExam, type TrialResult
 } from './data';
 
 // ==================== HELPERS ====================
@@ -238,6 +239,13 @@ interface DataContextType {
   setTestAssignments: Dispatch<SetStateAction<TestAssignment[]>>;
   chatMessages: ChatMessage[];
   setChatMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  // Question Bank for Trial Exams
+  questionBank: QuestionBankItem[];
+  setQuestionBank: Dispatch<SetStateAction<QuestionBankItem[]>>;
+  trialExams: TrialExam[];
+  setTrialExams: Dispatch<SetStateAction<TrialExam[]>>;
+  trialResults: TrialResult[];
+  setTrialResults: Dispatch<SetStateAction<TrialResult[]>>;
   loading: boolean;
 }
 
@@ -258,10 +266,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [testRetakes, setTestRetakes, l11] = useFirestoreCollection<{ id: string; studentId: string; testId: string; date: string }>('testRetakes');
   const [testAssignments, setTestAssignments, l12] = useFirestoreCollection<TestAssignment>('testAssignments');
 
+  // Question Bank for Trial Exams
+  const [questionBank, setQuestionBank, l13] = useFirestoreCollection<QuestionBankItem>('questionBank');
+  const [trialExams, setTrialExams, l14] = useFirestoreCollection<TrialExam>('trialExams');
+  const [trialResults, setTrialResults, l15] = useFirestoreCollection<TrialResult>('trialResults');
+
   // Chat messages
   const [chatMessages, setChatMessages, l18] = useFirestoreCollection<ChatMessage>('chatMessages');
 
-  const loading = !(l1 && l2 && l3 && l4 && l5 && l6 && l7 && l8 && l9 && l10 && l11 && l12 && l18);
+  const loading = !(l1 && l2 && l3 && l4 && l5 && l6 && l7 && l8 && l9 && l10 && l11 && l12 && l13 && l14 && l15 && l18);
 
   return (
     <DataContext.Provider value={{
@@ -270,7 +283,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       lessonTypes, setLessonTypes, customLessonTypes, setCustomLessonTypes,
       attendance, setAttendance, testAttempts, setTestAttempts,
       testRetakes, setTestRetakes, testAssignments, setTestAssignments,
-      chatMessages, setChatMessages, loading,
+      chatMessages, setChatMessages,
+      questionBank, setQuestionBank, trialExams, setTrialExams, trialResults, setTrialResults,
+      loading,
     }}>
       {children}
     </DataContext.Provider>

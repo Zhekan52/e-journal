@@ -5,7 +5,7 @@ import { Schedule } from './Schedule';
 import { QuestionEditor } from './QuestionEditor';
 import { Reports } from './Reports';
 import { AdminChatView } from './Chat';
-import { ProbniкManager } from './PracticeManager';
+import { PracticeManager } from './PracticeManager';
 import { uploadHomeworkFile } from '../firebase';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';

@@ -140,6 +140,65 @@ export interface TestAssignment {
   deadlineDate?: string; // Дата, до которой нужно пройти тест (если установлен - тест с дедлайном)
 }
 
+// ==================== QUESTION BANK (ПРОБНЫЕ ЭКЗАМЕНЫ) ====================
+
+export interface QuestionBankItem {
+  id: string;
+  subject: string; // Предмет
+  theme: string; // Тема/раздел
+  taskNumber: number; // Номер задания (1, 2, 3...)
+  text: string; // Текст вопроса
+  image?: string; // Изображение (URL)
+  options: { id: string; text: string; correct: boolean }[]; // Варианты ответов
+  correctAnswer?: string; // Правильный ответ (для текстовых вопросов)
+  points: number; // Баллы за задание
+  createdAt: string;
+}
+
+export interface TrialExam {
+  id: string;
+  title: string; // Название пробника
+  subject: string; // Предмет
+  year: number; // Год ОГЭ
+  date: string; // Дата проведения (YYYY-MM-DD)
+  lessonNumber: number; // Номер урока
+  variantCount: number; // Количество вариантов для генерации
+  questionsPerVariant: number; // Количество вопросов в варианте
+  timeLimit: number; // Время в минутах
+  generated: boolean; // Сгенерированы ли варианты
+  variants: TrialVariant[]; // Сгенерированные варианты
+  createdAt: string;
+}
+
+export interface TrialVariant {
+  id: string;
+  name: string; // "Вариант 1", "Вариант 2"
+  questions: TrialQuestion[];
+}
+
+export interface TrialQuestion {
+  id: string;
+  taskNumber: number; // Номер задания
+  text: string;
+  image?: string;
+  options: { id: string; text: string; correct: boolean }[];
+  points: number;
+}
+
+export interface TrialResult {
+  id: string;
+  examId: string; // ID пробника
+  studentId: string; // ID ученика
+  variantId: string; // ID варианта
+  date: string; // Дата проведения
+  maxPoints: number; // Максимальный балл
+  earnedPoints: number; // Полученный балл
+  percent: number; // Процент
+  grade: number; // Оценка (2-5)
+  answers: { questionId: string; answer: string; correct: boolean }[];
+  completedAt: string;
+}
+
 // Notifications removed
 
 export interface AttendanceRecord {

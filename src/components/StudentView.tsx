@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
 import { StudentChatWidget } from './Chat';
-import { PracticeManager } from './PracticeManager';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import {
@@ -278,11 +277,10 @@ export const StudentView: React.FC = () => {
     { id: 'grades', label: 'Оценки', icon: <ClipboardList className="w-5 h-5" /> },
     { id: 'diary', label: 'Дневник', icon: <FileText className="w-5 h-5" /> },
     { id: 'attendance', label: 'Посещаемость', icon: <UserCheck className="w-5 h-5" /> },
-    { id: 'practice', label: 'Пробники', icon: <ClipboardCheck className="w-5 h-5" /> },
     { id: 'statistics', label: 'Статистика', icon: <BarChart3 className="w-5 h-5" /> },
   ];
 
-  const tabOrder: Tab[] = ['home', 'schedule', 'grades', 'diary', 'attendance', 'practice', 'statistics'];
+  const tabOrder: Tab[] = ['home', 'schedule', 'grades', 'diary', 'attendance', 'statistics'];
 
   const handleTabChange = (newTab: Tab) => {
     setPrevTab(activeTab);
@@ -364,7 +362,6 @@ export const StudentView: React.FC = () => {
           />
         )}
         {activeTab === 'statistics' && <Statistics studentId={studentId} grades={grades} lessons={lessons} students={students} />}
-        {activeTab === 'practice' && <PracticeManager />}
         {activeTab === 'attendance' && <Attendance studentId={studentId} attendance={attendance} students={students} />}
       </main>
       
