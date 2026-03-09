@@ -411,7 +411,7 @@ const StudentReport: React.FC<StudentReportProps> = ({
       console.log('PDF сохранён');
     } catch (error) {
       console.error('Ошибка при экспорте в PDF:', error);
-      alert('Ошибка при экспорте в PDF');
+      alert(`Ошибка при экспорте в PDF: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
