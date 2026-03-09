@@ -369,75 +369,95 @@ const StudentReport: React.FC<StudentReportProps> = ({
 
   // Функция экспорта в PDF
   const exportToPDF = async () => {
-    console.log('Экспорт в PDF начат', { tableRef: !!tableRef.current, selectedStudentData: !!selectedStudentData });
-    if (!tableRef.current || !selectedStudentData) {
+    console.log('Экспорт в PDF начат', { selectedStudentData: !!selectedStudentData });
+    if (!selectedStudentData) {
       alert('Пожалуйста, выберите ученика');
       return;
     }
     
     try {
-      // Создаём клон таблицы без modern CSS цветов
-      const clone = tableRef.current.cloneNode(true) as HTMLElement;
-      clone.style.background = '#ffffff';
-      
-      // Удаляем все oklch цвета из стилей
-      const allElements = clone.querySelectorAll('*');
-      allElements.forEach(el => {
-        const style = (el as HTMLElement).style;
-        const styleProps: string[] = [];
-        for (let i = 0; i < style.length; i++) {
-          styleProps.push(style[i]);
-        }
-        styleProps.forEach(prop => {
-          const value = style.getPropertyValue(prop);
-          if (value && value.includes('oklch')) {
-            style.setProperty(prop, '');
-          }
-        });
-      });
-      
-      // Добавляем клон во временный контейнер
-      const container = document.createElement('div');
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
-      container.style.background = '#ffffff';
-      container.appendChild(clone);
-      document.body.appendChild(container);
-      
-      const canvas = await html2canvas(clone, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        allowTaint: true,
-        removeContainer: true
-      });
-      
-      // Удаляем временный контейнер
-      document.body.removeChild(container);
-      
-      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('landscape', 'mm', 'a4');
-      
-      const imgWidth = 287;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
       
       // Заголовок
-      pdf.setFontSize(16);
+      pdf.setFontSize(18);
       pdf.setTextColor(76, 29, 149);
-      pdf.text('Табель успеваемости', 148, 15, { align: 'center' });
+      pdf.text('Табель успеваемости', pageWidth / 2, 15, { align: 'center' });
       
-      pdf.setFontSize(12);
+      pdf.setFontSize(14);
       pdf.setTextColor(51, 65, 85);
-      pdf.text(`${selectedStudentData.lastName} ${selectedStudentData.firstName}`, 148, 22, { align: 'center' });
-      pdf.text(`${formatDateDisplay(dateRange.start)} — ${formatDateDisplay(dateRange.end)}`, 148, 28, { align: 'center' });
+      pdf.text(`${selectedStudentData.lastName} ${selectedStudentData.firstName}`, pageWidth / 2, 24, { align: 'center' });
+      pdf.text(`${formatDateDisplay(dateRange.start)} — ${formatDateDisplay(dateRange.end)}`, pageWidth / 2, 31, { align: 'center' });
       
       if (overallStudentAverage) {
-        pdf.setFontSize(11);
-        pdf.text(`Средний балл: ${overallStudentAverage}`, 148, 34, { align: 'center' });
+        pdf.setFontSize(12);
+        pdf.setTextColor(51, 65, 85);
+        pdf.text(`Средний балл: ${overallStudentAverage}`, pageWidth / 2, 38, { align: 'center' });
       }
       
-      pdf.addImage(imgData, 'PNG', 10, 40, imgWidth, imgHeight);
+      // Заголовки таблицы
+      let yPos = 48;
+      const marginLeft = 10;
+      const colWidth = 35;
+      const rowHeight = 10;
+      
+      pdf.setFillColor(238, 232, 255);
+      pdf.rect(marginLeft, yPos, pageWidth - 2 * marginLeft, rowHeight, 'F');
+      pdf.setFontSize(10);
+      pdf.setTextColor(76, 29, 149);
+      pdf.setFont('helvetica', 'bold');
+      
+      pdf.text('Предмет', marginLeft + 2, yPos + 7);
+      
+      // Выводим оценки
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(51, 65, 85);
+      
+      let hasGrades = false;
+      
+      SUBJECTS.forEach((subject, index) => {
+        const data = gradesBySubject[subject];
+        if (!data || Object.keys(data.dates).length === 0) return;
+        
+        hasGrades = true;
+        yPos += rowHeight;
+        
+        // Чересстрочный фон
+        if (index % 2 === 0) {
+          pdf.setFillColor(248, 250, 252);
+          pdf.rect(marginLeft, yPos, pageWidth - 2 * marginLeft, rowHeight, 'F');
+        }
+        
+        // Название предмета
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(subject, marginLeft + 2, yPos + 7);
+        
+        // Оценки за все даты
+        let xPos = marginLeft + 40;
+        allDates.slice(0, 20).forEach(d => {
+          const vals = data.dates[d] || [];
+          if (vals.length > 0) {
+            const gradesStr = vals.map(v => v.value.toString()).join(',');
+            pdf.setFont('helvetica', 'normal');
+            pdf.text(gradesStr, xPos, yPos + 7);
+          }
+          xPos += 12;
+        });
+        
+        // Средний балл
+        const avg = calculateAverage(subject);
+        if (avg) {
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(avg, pageWidth - marginLeft - 15, yPos + 7);
+        }
+      });
+      
+      if (!hasGrades) {
+        pdf.setFontSize(12);
+        pdf.setTextColor(100, 116, 139);
+        pdf.text('Нет оценок за выбранный период', pageWidth / 2, yPos + 20, { align: 'center' });
+      }
       
       const fileName = `табель_${selectedStudentData.lastName}_${selectedStudentData.firstName}_${dateRange.start}_${dateRange.end}.pdf`;
       pdf.save(fileName);
