@@ -390,13 +390,21 @@ const StudentReport: React.FC<StudentReportProps> = ({
       
       html += '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">';
       
+      // Заголовок с месяцами - объединенный с днями
+      html += '<tr style="background: #f3e8ff;">';
+      html += '<th style="border: 1px solid #ccc; padding: 8px; text-align: left;" rowspan="2">Предмет</th>';
+      monthGroups.forEach(mg => {
+        const monthName = mg.month || '';
+        html += `<th style="border: 1px solid #ccc; padding: 8px; text-align: center;" colspan="${mg.dates.length}">${monthName}</th>`;
+      });
+      html += '<th style="border: 1px solid #ccc; padding: 8px; text-align: center;" rowspan="2">Ср.</th></tr>';
+      
       // Заголовок с днями
       html += '<tr style="background: #f3e8ff;">';
-      html += '<th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Предмет</th>';
       allDates.forEach(d => {
         html += `<th style="border: 1px solid #ccc; padding: 8px; text-align: center;">${d.split('-')[2]}</th>`;
       });
-      html += '<th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Ср.</th></tr>';
+      html += '</tr>';
       
       // Строки с данными
       let rowIndex = 0;
