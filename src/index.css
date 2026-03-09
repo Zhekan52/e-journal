@@ -88,39 +88,114 @@ body {
 /* Dark Theme */
 .dark body {
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  color: #e2e8f0;
 }
 
+/* Override ALL bg-white and similar */
+.dark [class*="bg-white"],
+.dark [class*="bg-gray-"],
+.dark [class*="bg-slate-"] {
+  background-color: #1e293b !important;
+}
+
+.dark [class*="text-gray-"]:not([class*="text-gray-50"]):not([class*="text-gray-100"]):not([class*="text-gray-200"]):not([class*="text-gray-300"]):not([class*="text-white"]) {
+  color: #cbd5e1 !important;
+}
+
+.dark [class*="border-gray-"] {
+  border-color: #475569 !important;
+}
+
+/* Dark theme backgrounds */
+.dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-gray-50 { background-color: #0f172a !important; }
+.dark .bg-gray-100 { background-color: #1e293b !important; }
+.dark .bg-gray-200 { background-color: #334155 !important; }
+.dark .bg-gray-300 { background-color: #475569 !important; }
+.dark .bg-gray-400 { background-color: #64748b !important; }
+.dark .bg-gray-500 { background-color: #64748b !important; }
+.dark .bg-gray-800 { background-color: #1e293b !important; }
+.dark .bg-gray-900 { background-color: #0f172a !important; }
+
+/* Dark theme text colors */
+.dark { color-scheme: dark; }
+.dark .text-gray-900 { color: #f1f5f9 !important; }
+.dark .text-gray-800 { color: #e2e8f0 !important; }
+.dark .text-gray-700 { color: #cbd5e1 !important; }
+.dark .text-gray-600 { color: #94a3b8 !important; }
+.dark .text-gray-500 { color: #64748b !important; }
+.dark .text-gray-400 { color: #475569 !important; }
+.dark .text-gray-300 { color: #cbd5e1 !important; }
+.dark .text-gray-200 { color: #e2e8f0 !important; }
+.dark .text-gray-100 { color: #f1f5f9 !important; }
+.dark .text-white { color: #f8fafc !important; }
+.dark .text-black { color: #f1f5f9 !important; }
+.dark .text-blue-100 { color: #dbeafe !important; }
+.dark .text-blue-200 { color: #bfdbfe !important; }
+
+/* Dark theme borders */
+.dark .border-gray-100 { border-color: #334155 !important; }
+.dark .border-gray-200 { border-color: #475569 !important; }
+.dark .border-gray-300 { border-color: #64748b !important; }
+.dark .border-gray-400 { border-color: #94a3b8 !important; }
+.dark .border-white { border-color: #475569 !important; }
+.dark .border { border-color: #475569 !important; }
+
+/* Dark theme specific components */
 .dark .glass {
-  background: rgba(30, 41, 59, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.4);
+  background: rgba(30, 41, 59, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.4) !important;
 }
 
 .dark .glass-dark {
-  background: rgba(15, 23, 42, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.98) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.5) !important;
 }
 
-/* Dark theme text colors */
-.dark .text-gray-900 { color: #f1f5f9; }
-.dark .text-gray-800 { color: #e2e8f0; }
-.dark .text-gray-700 { color: #cbd5e1; }
-.dark .text-gray-600 { color: #94a3b8; }
-.dark .text-gray-500 { color: #64748b; }
-.dark .text-gray-400 { color: #475569; }
+/* Dark mode headers and nav */
+.dark header, 
+.dark .header, 
+.dark nav,
+.dark .nav,
+.dark aside,
+.dark .sidebar {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  border-color: #334155 !important;
+}
 
-/* Dark theme backgrounds */
-.dark .bg-white { background-color: #1e293b; }
-.dark .bg-gray-50 { background-color: #0f172a; }
-.dark .bg-gray-100 { background-color: #1e293b; }
-.dark .bg-gray-200 { background-color: #334155; }
-.dark .bg-gray-300 { background-color: #475569; }
+/* Dark mode inputs */
+.dark input, 
+.dark textarea, 
+.dark select {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #f1f5f9 !important;
+}
 
-/* Dark theme borders */
-.dark .border-gray-100 { border-color: #334155; }
-.dark .border-gray-200 { border-color: #475569; }
-.dark .border-gray-300 { border-color: #64748b; }
+.dark input::placeholder {
+  color: #64748b !important;
+}
+
+/* Dark mode shadows */
+.dark .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4) !important; }
+.dark .shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important; }
+.dark .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important; }
+
+/* Dark mode scrollbar */
+.dark * {
+  scrollbar-color: #475569 transparent;
+}
+.dark *::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+.dark *::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+.dark *::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
 
 /* Clean card effect - Modern style */
 .glass {
