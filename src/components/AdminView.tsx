@@ -5,7 +5,6 @@ import { Schedule } from './Schedule';
 import { QuestionEditor } from './QuestionEditor';
 import { Reports } from './Reports';
 import { AdminChatView } from './Chat';
-import { ThemeToggle } from './ThemeToggle';
 import { uploadHomeworkFile } from '../firebase';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -194,9 +193,6 @@ export const AdminView: React.FC = () => {
             <LogOut className="w-5 h-5" />
             {!sidebarCollapsed && <span className="text-sm font-semibold">Выход</span>}
           </button>
-          <div className="px-4 mt-2">
-            <ThemeToggle />
-          </div>
         </div>
 
         {/* Collapse button */}

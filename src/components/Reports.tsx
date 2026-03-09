@@ -1,10 +1,12 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useData } from '../context';
 import { SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, getTodayString, getTodayDate, ATTENDANCE_TYPES } from '../data';
 import {
   FileText, Calendar, Users, TrendingUp, ChevronDown, ChevronUp,
-  Filter, User, BarChart3, AlertCircle, ChevronRight, ChevronLeft
+  Filter, User, BarChart3, AlertCircle, ChevronRight, ChevronLeft, Download
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 type ReportTab = 'student' | 'class' | 'attendance' | 'statistics';
 
@@ -280,6 +282,7 @@ const StudentReport: React.FC<StudentReportProps> = ({
   dateRange
 }) => {
   const [selectedStudent, setSelectedStudent] = useState<string>('');
+  const tableRef = useRef<HTMLDivElement>(null);
 
   // Сортируем учеников по фамилии
   const sortedStudents = [...students].sort((a, b) => 
@@ -364,6 +367,48 @@ const StudentReport: React.FC<StudentReportProps> = ({
     return v === 5 ? 'bg-emerald-100 text-emerald-700' : v === 4 ? 'bg-sky-100 text-sky-700' : v === 3 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700';
   };
 
+  // Функция экспорта в PDF
+  const exportToPDF = async () => {
+    if (!tableRef.current || !selectedStudentData) return;
+    
+    try {
+      const canvas = await html2canvas(tableRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('landscape', 'mm', 'a4');
+      
+      const imgWidth = 287;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      // Заголовок
+      pdf.setFontSize(16);
+      pdf.setTextColor(76, 29, 149);
+      pdf.text('Табель успеваемости', 148, 15, { align: 'center' });
+      
+      pdf.setFontSize(12);
+      pdf.setTextColor(51, 65, 85);
+      pdf.text(`${selectedStudentData.lastName} ${selectedStudentData.firstName}`, 148, 22, { align: 'center' });
+      pdf.text(`${formatDateDisplay(dateRange.start)} — ${formatDateDisplay(dateRange.end)}`, 148, 28, { align: 'center' });
+      
+      if (overallStudentAverage) {
+        pdf.setFontSize(11);
+        pdf.text(`Средний балл: ${overallStudentAverage}`, 148, 34, { align: 'center' });
+      }
+      
+      pdf.addImage(imgData, 'PNG', 10, 40, imgWidth, imgHeight);
+      
+      const fileName = `табель_${selectedStudentData.lastName}_${selectedStudentData.firstName}_${dateRange.start}_${dateRange.end}.pdf`;
+      pdf.save(fileName);
+    } catch (error) {
+      console.error('Ошибка при экспорте в PDF:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Выбор ученика через Select - новый дизайн */}
@@ -390,16 +435,25 @@ const StudentReport: React.FC<StudentReportProps> = ({
       {/* Табель успеваемости - как в личном кабинете ученика - новый дизайн */}
       {selectedStudent && selectedStudentData && (
         <div className="bg-gradient-to-br from-white to-slate-50 rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/50 overflow-hidden">
-          <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-violet-50/50 to-purple-50/50">
-            <h3 className="text-xl font-bold bg-gradient-to-r from-violet-700 to-purple-700 bg-clip-text text-transparent">
-              Табель успеваемости
-            </h3>
-            <p className="text-slate-500 mt-1 font-medium">
-              <span className="text-violet-600">{selectedStudentData.lastName} {selectedStudentData.firstName}</span> · {formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}
-            </p>
+          <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-violet-50/50 to-purple-50/50 flex justify-between items-start">
+            <div>
+              <h3 className="text-xl font-bold bg-gradient-to-r from-violet-700 to-purple-700 bg-clip-text text-transparent">
+                Табель успеваемости
+              </h3>
+              <p className="text-slate-500 mt-1 font-medium">
+                <span className="text-violet-600">{selectedStudentData.lastName} {selectedStudentData.firstName}</span> · {formatDateDisplay(dateRange.start)} — {formatDateDisplay(dateRange.end)}
+              </p>
+            </div>
+            <button
+              onClick={exportToPDF}
+              className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg font-medium hover:bg-violet-700 transition-colors shadow-md"
+            >
+              <Download className="w-4 h-4" />
+              Скачать PDF
+            </button>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" ref={tableRef}>
             <table className="w-full text-sm">
               {/* Заголовок с месяцами */}
               <thead>
