@@ -6,6 +6,7 @@ import {
   Filter, User, BarChart3, AlertCircle, ChevronRight, ChevronLeft, Download
 } from 'lucide-react';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 
 type ReportTab = 'student' | 'class' | 'attendance' | 'statistics';
@@ -367,15 +368,87 @@ const StudentReport: React.FC<StudentReportProps> = ({
     return v === 5 ? 'bg-emerald-100 text-emerald-700' : v === 4 ? 'bg-sky-100 text-sky-700' : v === 3 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700';
   };
 
-  // Функция экспорта в PDF через печать
+  // Функция экспорта в PDF
   const exportToPDF = () => {
     if (!selectedStudentData) {
       alert('Пожалуйста, выберите ученика');
       return;
     }
     
-    // Открываем окно печати
-    window.print();
+    try {
+      const doc = new jsPDF('landscape', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Заголовок
+      doc.setFontSize(18);
+      doc.setTextColor(76, 29, 149);
+      doc.text('Табель успеваемости', pageWidth / 2, 15, { align: 'center' });
+      
+      doc.setFontSize(14);
+      doc.setTextColor(51, 65, 85);
+      doc.text(`${selectedStudentData.lastName} ${selectedStudentData.firstName}`, pageWidth / 2, 24, { align: 'center' });
+      doc.text(`${formatDateDisplay(dateRange.start)} - ${formatDateDisplay(dateRange.end)}`, pageWidth / 2, 31, { align: 'center' });
+      
+      if (overallStudentAverage) {
+        doc.setFontSize(12);
+        doc.text(`Средний балл: ${overallStudentAverage}`, pageWidth / 2, 38, { align: 'center' });
+      }
+      
+      // Подготовка данных для таблицы
+      const tableData: any[] = [];
+      
+      SUBJECTS.forEach((subject) => {
+        const data = gradesBySubject[subject];
+        if (!data || Object.keys(data.dates).length === 0) return;
+        
+        const row: any[] = [subject];
+        
+        allDates.slice(0, 15).forEach(d => {
+          const vals = data.dates[d] || [];
+          row.push(vals.length > 0 ? vals.map((v: any) => v.value.toString()).join(',') : '');
+        });
+        
+        const avg = calculateAverage(subject);
+        row.push(avg || '-');
+        
+        tableData.push(row);
+      });
+      
+      // Заголовки столбцов
+      const headers = ['Предмет', ...allDates.slice(0, 15).map(d => d.split('-')[2]), 'Ср.'];
+      
+      // Создание таблицы
+      autoTable(doc, {
+        head: [headers],
+        body: tableData,
+        startY: 45,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [238, 232, 255],
+          textColor: [76, 29, 149],
+          fontStyle: 'bold',
+          fontSize: 9
+        },
+        bodyStyles: {
+          fontSize: 8,
+          textColor: [51, 65, 85]
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252]
+        },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 40 }
+        },
+        margin: { left: 10, right: 10 }
+      });
+      
+      const fileName = `tabel_${selectedStudentData.lastName}_${selectedStudentData.firstName}_${dateRange.start}_${dateRange.end}.pdf`;
+      doc.save(fileName);
+      console.log('PDF saved');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert(`Error exporting PDF: ${error instanceof Error ? error.message : String(error)}`);
+    }
   };
 
   return (
@@ -418,7 +491,7 @@ const StudentReport: React.FC<StudentReportProps> = ({
               className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg font-medium hover:bg-violet-700 transition-colors shadow-md"
             >
               <Download className="w-4 h-4" />
-              Печать
+              Скачать PDF
             </button>
           </div>
 
