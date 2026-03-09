@@ -370,103 +370,80 @@ const StudentReport: React.FC<StudentReportProps> = ({
 
   // Функция экспорта в PDF
   const exportToPDF = async () => {
-    if (!selectedStudentData || !tableRef.current) {
+    if (!selectedStudentData) {
       alert('Пожалуйста, выберите ученика');
       return;
     }
     
     try {
-      // Создаём временный контейнер с упрощёнными стилями
+      // Создаём чистую HTML таблицу без Tailwind классов
+      let html = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: white; color: black;">
+          <h1 style="color: #4c1d95; font-size: 24px; margin-bottom: 10px;">Табель успеваемости</h1>
+          <p style="color: #333; margin-bottom: 5px;">${selectedStudentData.lastName} ${selectedStudentData.firstName}</p>
+          <p style="color: #666; margin-bottom: 15px;">${formatDateDisplay(dateRange.start)} - ${formatDateDisplay(dateRange.end)}</p>
+      `;
+      
+      if (overallStudentAverage) {
+        html += `<p style="font-weight: bold; margin-bottom: 20px;">Средний балл: ${overallStudentAverage}</p>`;
+      }
+      
+      html += '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">';
+      
+      // Заголовок
+      html += '<tr style="background: #f3e8ff;">';
+      html += '<th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Предмет</th>';
+      allDates.slice(0, 15).forEach(d => {
+        html += `<th style="border: 1px solid #ccc; padding: 8px; text-align: center;">${d.split('-')[2]}</th>`;
+      });
+      html += '<th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Ср.</th></tr>';
+      
+      // Строки с данными
+      let rowIndex = 0;
+      SUBJECTS.forEach((subject) => {
+        const data = gradesBySubject[subject];
+        if (!data || Object.keys(data.dates).length === 0) return;
+        
+        const bg = rowIndex % 2 === 0 ? '#f9fafb' : '#ffffff';
+        html += `<tr style="background: ${bg};">`;
+        html += `<td style="border: 1px solid #ccc; padding: 6px; font-weight: bold;">${subject}</td>`;
+        
+        allDates.slice(0, 15).forEach(d => {
+          const vals = data.dates[d] || [];
+          const gradeColors: Record<number, string> = { 5: '#d1fae5', 4: '#e0f2fe', 3: '#fef3c7', 2: '#ffe4e6' };
+          const textColors: Record<number, string> = { 5: '#065f46', 4: '#075985', 3: '#92400e', 2: '#9f1239' };
+          
+          if (vals.length > 0) {
+            const v = vals[0].value;
+            html += `<td style="border: 1px solid #ccc; padding: 4px; text-align: center; background: ${gradeColors[v] || '#eee'}; color: ${textColors[v] || '#000'};">${vals.map((v: any) => v.value).join(',')}</td>`;
+          } else {
+            html += '<td style="border: 1px solid #ccc; padding: 4px; text-align: center;"></td>';
+          }
+        });
+        
+        const avg = calculateAverage(subject);
+        html += `<td style="border: 1px solid #ccc; padding: 6px; text-align: center; font-weight: bold;">${avg || '-'}</td>`;
+        html += '</tr>';
+        rowIndex++;
+      });
+      
+      html += '</table></div>';
+      
+      // Создаём контейнер
       const container = document.createElement('div');
+      container.innerHTML = html;
       container.style.position = 'absolute';
       container.style.left = '-9999px';
       container.style.top = '0';
       container.style.width = '1200px';
       container.style.backgroundColor = '#ffffff';
-      container.style.padding = '20px';
-      container.style.fontFamily = 'Arial, sans-serif';
-      container.style.color = '#000000';
-      
-      // Заголовок
-      const title = document.createElement('h1');
-      title.textContent = `Табель успеваемости - ${selectedStudentData.lastName} ${selectedStudentData.firstName}`;
-      title.style.color = '#4c1d95';
-      title.style.fontSize = '24px';
-      title.style.marginBottom = '10px';
-      container.appendChild(title);
-      
-      const period = document.createElement('p');
-      period.textContent = `${formatDateDisplay(dateRange.start)} - ${formatDateDisplay(dateRange.end)}`;
-      period.style.color = '#333';
-      period.style.marginBottom = '20px';
-      container.appendChild(period);
-      
-      if (overallStudentAverage) {
-        const avg = document.createElement('p');
-        avg.textContent = `Средний балл: ${overallStudentAverage}`;
-        avg.style.fontWeight = 'bold';
-        avg.style.marginBottom = '20px';
-        container.appendChild(avg);
-      }
-      
-      // Клонируем таблицу
-      const tableClone = tableRef.current.querySelector('table')?.cloneNode(true) as HTMLElement;
-      if (!tableClone) {
-        alert('Таблица не найдена');
-        return;
-      }
-      
-      // Упрощаем стили таблицы
-      tableClone.style.border = '1px solid #ccc';
-      tableClone.style.width = '100%';
-      tableClone.style.fontSize = '12px';
-      
-      const cells = tableClone.querySelectorAll('td, th');
-      cells.forEach(cell => {
-        const htmlCell = cell as HTMLElement;
-        htmlCell.style.border = '1px solid #ccc';
-        htmlCell.style.padding = '5px';
-        // Заменяем цвета на базовые
-        const bgColor = htmlCell.style.backgroundColor;
-        if (bgColor && bgColor.includes('oklch')) {
-          htmlCell.style.backgroundColor = '#f0f0f0';
-        }
-        if (htmlCell.className && htmlCell.className.includes('bg-emerald')) {
-          htmlCell.style.backgroundColor = '#d1fae5';
-        } else if (htmlCell.className && htmlCell.className.includes('bg-sky')) {
-          htmlCell.style.backgroundColor = '#e0f2fe';
-        } else if (htmlCell.className && htmlCell.className.includes('bg-amber')) {
-          htmlCell.style.backgroundColor = '#fef3c7';
-        } else if (htmlCell.className && htmlCell.className.includes('bg-rose')) {
-          htmlCell.style.backgroundColor = '#ffe4e6';
-        }
-      });
-      
-      container.appendChild(tableClone);
       document.body.appendChild(container);
       
       const canvas = await html2canvas(container, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff',
-        onclone: (clonedDoc) => {
-          // Удаляем все oklch цвета из клонированного документа
-          const all = clonedDoc.querySelectorAll('*');
-          all.forEach(el => {
-            const style = (el as HTMLElement).style;
-            const styleProps: string[] = [];
-            for (let i = 0; i < style.length; i++) {
-              styleProps.push(style[i]);
-            }
-            styleProps.forEach(prop => {
-              const value = style.getPropertyValue(prop);
-              if (value && value.includes('oklch')) {
-                style.setProperty(prop, '');
-              }
-            });
-          });
-        }
+        backgroundColor: '#ffffff'
       });
       
       document.body.removeChild(container);
