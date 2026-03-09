@@ -376,12 +376,45 @@ const StudentReport: React.FC<StudentReportProps> = ({
     }
     
     try {
-      const canvas = await html2canvas(tableRef.current, {
+      // Создаём клон таблицы без modern CSS цветов
+      const clone = tableRef.current.cloneNode(true) as HTMLElement;
+      clone.style.background = '#ffffff';
+      
+      // Удаляем все oklch цвета из стилей
+      const allElements = clone.querySelectorAll('*');
+      allElements.forEach(el => {
+        const style = (el as HTMLElement).style;
+        const styleProps: string[] = [];
+        for (let i = 0; i < style.length; i++) {
+          styleProps.push(style[i]);
+        }
+        styleProps.forEach(prop => {
+          const value = style.getPropertyValue(prop);
+          if (value && value.includes('oklch')) {
+            style.setProperty(prop, '');
+          }
+        });
+      });
+      
+      // Добавляем клон во временный контейнер
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.background = '#ffffff';
+      container.appendChild(clone);
+      document.body.appendChild(container);
+      
+      const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        allowTaint: true,
+        removeContainer: true
       });
+      
+      // Удаляем временный контейнер
+      document.body.removeChild(container);
       
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('landscape', 'mm', 'a4');
