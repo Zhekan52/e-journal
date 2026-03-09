@@ -390,10 +390,19 @@ const StudentReport: React.FC<StudentReportProps> = ({
       
       html += '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">';
       
-      // Заголовок
+      // Заголовок с месяцами
       html += '<tr style="background: #f3e8ff;">';
       html += '<th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Предмет</th>';
-      allDates.slice(0, 15).forEach(d => {
+      monthGroups.forEach(mg => {
+        const monthName = mg.month || '';
+        html += `<th style="border: 1px solid #ccc; padding: 8px; text-align: center;" colspan="${mg.dates.length}">${monthName}</th>`;
+      });
+      html += '<th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Ср.</th></tr>';
+      
+      // Заголовок с днями
+      html += '<tr style="background: #f3e8ff;">';
+      html += '<th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Предмет</th>';
+      allDates.forEach(d => {
         html += `<th style="border: 1px solid #ccc; padding: 8px; text-align: center;">${d.split('-')[2]}</th>`;
       });
       html += '<th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Ср.</th></tr>';
@@ -404,18 +413,14 @@ const StudentReport: React.FC<StudentReportProps> = ({
         const data = gradesBySubject[subject];
         if (!data || Object.keys(data.dates).length === 0) return;
         
-        const bg = rowIndex % 2 === 0 ? '#f9fafb' : '#ffffff';
-        html += `<tr style="background: ${bg};">`;
+        html += '<tr>';
         html += `<td style="border: 1px solid #ccc; padding: 6px; font-weight: bold;">${subject}</td>`;
         
-        allDates.slice(0, 15).forEach(d => {
+        allDates.forEach(d => {
           const vals = data.dates[d] || [];
-          const gradeColors: Record<number, string> = { 5: '#d1fae5', 4: '#e0f2fe', 3: '#fef3c7', 2: '#ffe4e6' };
-          const textColors: Record<number, string> = { 5: '#065f46', 4: '#075985', 3: '#92400e', 2: '#9f1239' };
           
           if (vals.length > 0) {
-            const v = vals[0].value;
-            html += `<td style="border: 1px solid #ccc; padding: 4px; text-align: center; background: ${gradeColors[v] || '#eee'}; color: ${textColors[v] || '#000'};">${vals.map((v: any) => v.value).join(',')}</td>`;
+            html += `<td style="border: 1px solid #ccc; padding: 4px; text-align: center;">${vals.map((v: any) => v.value).join(',')}</td>`;
           } else {
             html += '<td style="border: 1px solid #ccc; padding: 4px; text-align: center;"></td>';
           }
@@ -435,7 +440,7 @@ const StudentReport: React.FC<StudentReportProps> = ({
       container.style.position = 'absolute';
       container.style.left = '-9999px';
       container.style.top = '0';
-      container.style.width = '1200px';
+      container.style.width = '1400px';
       container.style.backgroundColor = '#ffffff';
       document.body.appendChild(container);
       
