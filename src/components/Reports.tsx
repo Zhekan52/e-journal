@@ -7,6 +7,12 @@ import {
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+// @ts-ignore
+import pdfMake from 'pdfmake/build/pdfmake';
+// @ts-ignore
+import pdfFonts from 'pdfmake/build/vfs_fonts';
+// @ts-ignore
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 type ReportTab = 'student' | 'class' | 'attendance' | 'statistics';
 
@@ -376,91 +382,101 @@ const StudentReport: React.FC<StudentReportProps> = ({
     }
     
     try {
-      const pdf = new jsPDF('landscape', 'mm', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      
-      // Заголовок
-      pdf.setFontSize(18);
-      pdf.setTextColor(76, 29, 149);
-      pdf.text('Табель успеваемости', pageWidth / 2, 15, { align: 'center' });
-      
-      pdf.setFontSize(14);
-      pdf.setTextColor(51, 65, 85);
-      pdf.text(`${selectedStudentData.lastName} ${selectedStudentData.firstName}`, pageWidth / 2, 24, { align: 'center' });
-      pdf.text(`${formatDateDisplay(dateRange.start)} — ${formatDateDisplay(dateRange.end)}`, pageWidth / 2, 31, { align: 'center' });
+      // Создаём документ pdfMake
+      const docDefinition: any = {
+        pageSize: 'A4',
+        pageOrientation: 'landscape',
+        pageMargins: [10, 20, 10, 20],
+        content: [
+          {
+            text: 'Табель успеваемости',
+            style: 'title',
+            alignment: 'center'
+          },
+          {
+            text: `${selectedStudentData.lastName} ${selectedStudentData.firstName}`,
+            style: 'subtitle',
+            alignment: 'center'
+          },
+          {
+            text: `${formatDateDisplay(dateRange.start)} — ${formatDateDisplay(dateRange.end)}`,
+            style: 'normal',
+            alignment: 'center'
+          }
+        ],
+        styles: {
+          title: { fontSize: 18, bold: true, color: '#4c1d95' as any, margin: [0, 0, 0, 10] },
+          subtitle: { fontSize: 14, color: '#334155' as any, margin: [0, 0, 0, 5] },
+          normal: { fontSize: 10, color: '#334155' as any },
+          tableHeader: { bold: true, fontSize: 10, color: '#4c1d95' as any, fillColor: '#eee2ff' },
+          tableCell: { fontSize: 9, color: '#334155' as any },
+        }
+      };
       
       if (overallStudentAverage) {
-        pdf.setFontSize(12);
-        pdf.setTextColor(51, 65, 85);
-        pdf.text(`Средний балл: ${overallStudentAverage}`, pageWidth / 2, 38, { align: 'center' });
+        docDefinition.content.push({
+          text: `Средний балл: ${overallStudentAverage}`,
+          style: 'normal',
+          alignment: 'center',
+          margin: [0, 5, 0, 15]
+        });
+      } else {
+        docDefinition.content.push({ text: '', margin: [0, 0, 0, 15] });
       }
       
-      // Заголовки таблицы
-      let yPos = 48;
-      const marginLeft = 10;
-      const colWidth = 35;
-      const rowHeight = 10;
+      // Создаём таблицу
+      const tableBody: any[] = [];
       
-      pdf.setFillColor(238, 232, 255);
-      pdf.rect(marginLeft, yPos, pageWidth - 2 * marginLeft, rowHeight, 'F');
-      pdf.setFontSize(10);
-      pdf.setTextColor(76, 29, 149);
-      pdf.setFont('helvetica', 'bold');
+      // Заголовок таблицы
+      const headerRow: any[] = [{ text: 'Предмет', style: 'tableHeader' }];
+      allDates.slice(0, 15).forEach(d => {
+        headerRow.push({ text: d.split('-')[2], style: 'tableHeader', alignment: 'center' });
+      });
+      headerRow.push({ text: 'Ср.', style: 'tableHeader', alignment: 'center' });
+      tableBody.push(headerRow);
       
-      pdf.text('Предмет', marginLeft + 2, yPos + 7);
-      
-      // Выводим оценки
-      pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(51, 65, 85);
-      
-      let hasGrades = false;
-      
-      SUBJECTS.forEach((subject, index) => {
+      // Строки с оценками
+      let rowIndex = 0;
+      SUBJECTS.forEach((subject) => {
         const data = gradesBySubject[subject];
         if (!data || Object.keys(data.dates).length === 0) return;
         
-        hasGrades = true;
-        yPos += rowHeight;
+        const row: any[] = [];
+        row.push({ text: subject, style: 'tableCell', bold: true });
         
-        // Чересстрочный фон
-        if (index % 2 === 0) {
-          pdf.setFillColor(248, 250, 252);
-          pdf.rect(marginLeft, yPos, pageWidth - 2 * marginLeft, rowHeight, 'F');
-        }
-        
-        // Название предмета
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(subject, marginLeft + 2, yPos + 7);
-        
-        // Оценки за все даты
-        let xPos = marginLeft + 40;
-        allDates.slice(0, 20).forEach(d => {
+        allDates.slice(0, 15).forEach(d => {
           const vals = data.dates[d] || [];
           if (vals.length > 0) {
-            const gradesStr = vals.map(v => v.value.toString()).join(',');
-            pdf.setFont('helvetica', 'normal');
-            pdf.text(gradesStr, xPos, yPos + 7);
+            row.push({ text: vals.map(v => v.value.toString()).join(','), style: 'tableCell', alignment: 'center' });
+          } else {
+            row.push({ text: '', style: 'tableCell' });
           }
-          xPos += 12;
         });
         
-        // Средний балл
         const avg = calculateAverage(subject);
-        if (avg) {
-          pdf.setFont('helvetica', 'bold');
-          pdf.text(avg, pageWidth - marginLeft - 15, yPos + 7);
+        row.push({ text: avg || '-', style: 'tableCell', bold: !!avg, alignment: 'center' });
+        
+        tableBody.push(row);
+        rowIndex++;
+      });
+      
+      docDefinition.content.push({
+        table: {
+          headerRows: 1,
+          widths: ['*', ...Array(15).fill(25), 40],
+          body: tableBody
+        },
+        layout: {
+          hLineWidth: () => 0.5,
+          vLineWidth: () => 0.5,
+          hLineColor: () => '#e2e8f0',
+          vLineColor: () => '#e2e8f0',
+          fillColor: (rowIndex: number) => rowIndex % 2 === 0 ? '#f8fafc' : '#ffffff'
         }
       });
       
-      if (!hasGrades) {
-        pdf.setFontSize(12);
-        pdf.setTextColor(100, 116, 139);
-        pdf.text('Нет оценок за выбранный период', pageWidth / 2, yPos + 20, { align: 'center' });
-      }
-      
       const fileName = `табель_${selectedStudentData.lastName}_${selectedStudentData.firstName}_${dateRange.start}_${dateRange.end}.pdf`;
-      pdf.save(fileName);
+      pdfMake.createPdf(docDefinition).download(fileName);
       console.log('PDF сохранён');
     } catch (error) {
       console.error('Ошибка при экспорте в PDF:', error);
