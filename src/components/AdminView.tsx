@@ -5,6 +5,7 @@ import { Schedule } from './Schedule';
 import { QuestionEditor } from './QuestionEditor';
 import { Reports } from './Reports';
 import { AdminChatView } from './Chat';
+import { ProbniкManager } from './PracticeManager';
 import { uploadHomeworkFile } from '../firebase';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -14,7 +15,7 @@ import {
   AlertTriangle, TrendingUp, TrendingDown, FileText,
   BarChart3, Award, ArrowLeft, RefreshCw, ChevronRight, Tag, Info,
   Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft,
-  CalendarDays, FileBarChart, Clock, MessageCircle, Folder
+  CalendarDays, FileBarChart, Clock, MessageCircle, Folder, ClipboardCheck
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
@@ -22,7 +23,7 @@ import {
   formatDate, getTodayString, getTodayDate
 } from '../data';
 
-type Tab = 'dashboard' | 'schedule' | 'journal' | 'attendance' | 'tests' | 'students' | 'lessonTypes' | 'reports' | 'chat';
+type Tab = 'dashboard' | 'schedule' | 'journal' | 'attendance' | 'tests' | 'probniки' | 'students' | 'lessonTypes' | 'reports' | 'chat';
 
 // ==================== GRADE WITH TOOLTIP ====================
 interface GradeWithTooltipProps {
@@ -113,7 +114,7 @@ export const AdminView: React.FC = () => {
   const [lessonPageParams, setLessonPageParams] = useState<{ subject: string; date: string; lessonNumber: number } | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
-  const tabOrder: Tab[] = ['dashboard', 'schedule', 'journal', 'attendance', 'tests', 'students', 'lessonTypes', 'reports', 'chat'];
+  const tabOrder: Tab[] = ['dashboard', 'schedule', 'journal', 'attendance', 'tests', 'probniки', 'students', 'lessonTypes', 'reports', 'chat'];
 
   const handleTabChange = (newTab: Tab) => {
     setPrevTab(activeTab);
@@ -138,6 +139,7 @@ export const AdminView: React.FC = () => {
     { id: 'journal', label: 'Журнал', icon: <ClipboardList className="w-5 h-5" /> },
     { id: 'attendance', label: 'Посещаемость', icon: <CalendarDays className="w-5 h-5" /> },
     { id: 'tests', label: 'Тесты', icon: <FileText className="w-5 h-5" /> },
+    { id: 'probniки', label: 'Пробники', icon: <ClipboardCheck className="w-5 h-5" /> },
     { id: 'students', label: 'Ученики', icon: <Users className="w-5 h-5" /> },
     { id: 'lessonTypes', label: 'Типы уроков', icon: <Tag className="w-5 h-5" /> },
     { id: 'reports', label: 'Отчёты', icon: <FileBarChart className="w-5 h-5" /> },
@@ -256,6 +258,7 @@ export const AdminView: React.FC = () => {
           {activeTab === 'journal' && <Journal />}
           {activeTab === 'attendance' && <AttendanceCalendar />}
           {activeTab === 'tests' && <TestsManager />}
+          {activeTab === 'probniки' && <PracticeManager />}
           {activeTab === 'students' && <StudentsManager />}
           {activeTab === 'lessonTypes' && <LessonTypesManager />}
           {activeTab === 'reports' && <Reports />}
