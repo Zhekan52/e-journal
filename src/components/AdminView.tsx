@@ -4,7 +4,6 @@ import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
 import { QuestionEditor } from './QuestionEditor';
 import { Reports } from './Reports';
-import { FipiTrainer } from './FipiTrainer';
 import { AdminChatView } from './Chat';
 import { uploadHomeworkFile } from '../firebase';
 import katex from 'katex';
@@ -15,7 +14,7 @@ import {
   AlertTriangle, TrendingUp, TrendingDown, FileText,
   BarChart3, Award, ArrowLeft, RefreshCw, ChevronRight, Tag, Info,
   Paperclip, Download, Keyboard, MousePointer2, PanelLeftClose, PanelLeft,
-  CalendarDays, FileBarChart, Brain, Clock, MessageCircle, Folder
+  CalendarDays, FileBarChart, Clock, MessageCircle, Folder
 } from 'lucide-react';
 import {
   SUBJECTS, MONTH_NAMES, MONTH_NAMES_GEN, ATTENDANCE_TYPES,
@@ -23,7 +22,7 @@ import {
   formatDate, getTodayString, getTodayDate
 } from '../data';
 
-type Tab = 'dashboard' | 'schedule' | 'journal' | 'attendance' | 'tests' | 'students' | 'lessonTypes' | 'reports' | 'fipi' | 'chat';
+type Tab = 'dashboard' | 'schedule' | 'journal' | 'attendance' | 'tests' | 'students' | 'lessonTypes' | 'reports' | 'chat';
 
 // ==================== GRADE WITH TOOLTIP ====================
 interface GradeWithTooltipProps {
@@ -122,7 +121,6 @@ export const AdminView: React.FC = () => {
     { id: 'students', label: 'Ученики', icon: <Users className="w-5 h-5" /> },
     { id: 'lessonTypes', label: 'Типы уроков', icon: <Tag className="w-5 h-5" /> },
     { id: 'reports', label: 'Отчёты', icon: <FileBarChart className="w-5 h-5" /> },
-    { id: 'fipi', label: 'ФИПИ тренажёр', icon: <Brain className="w-5 h-5" /> },
     { id: 'chat', label: 'Чат', icon: <MessageCircle className="w-5 h-5" /> },
   ];
 
@@ -239,7 +237,6 @@ export const AdminView: React.FC = () => {
         {activeTab === 'students' && <StudentsManager />}
         {activeTab === 'lessonTypes' && <LessonTypesManager />}
         {activeTab === 'reports' && <Reports />}
-        {activeTab === 'fipi' && <FipiTrainer />}
         {activeTab === 'chat' && <AdminChatView />}
         </div>
       </main>

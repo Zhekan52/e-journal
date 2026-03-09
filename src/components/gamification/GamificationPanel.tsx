@@ -22,7 +22,7 @@ export const GamificationPanel: React.FC<GamificationPanelProps> = ({
   const { user } = useAuth();
   const { 
     achievements, studentAchievements, studentLevels, studentRatings,
-    grades, testAttempts, fipiProgress, fipiAttempts, chatMessages, students
+    grades, testAttempts, chatMessages, students
   } = useData();
   
   const [activeTab, setActiveTab] = useState<GamificationTab>('overview');
@@ -53,8 +53,6 @@ export const GamificationPanel: React.FC<GamificationPanelProps> = ({
   const stats = useMemo(() => {
     const myGrades = grades.filter(g => g.studentId === studentId);
     const myTests = testAttempts.filter(ta => ta.studentId === studentId);
-    const myFipiProgress = fipiProgress.find(fp => fp.studentId === studentId);
-    const myFipiAttempts = fipiAttempts.filter(fa => fa.studentId === studentId);
     const myChatMessages = chatMessages.filter(cm => cm.fromUserId === studentId);
     
     // Количество пятёрок
@@ -65,14 +63,8 @@ export const GamificationPanel: React.FC<GamificationPanelProps> = ({
       ? myGrades.reduce((sum, g) => sum + g.value, 0) / myGrades.length 
       : 0;
     
-    // Количество FIPI заданий
-    const fipiTasksCount = myFipiAttempts.length;
-    
-    // Баллы FIPI
-    const fipiPoints = myFipiProgress?.totalPoints || 0;
-    
     // Общее количество очков (сумма всех источников)
-    const totalPoints = (myLevel?.totalPoints || 0) + fipiPoints;
+    const totalPoints = (myLevel?.totalPoints || 0);
     
     // Текущий уровень
     const levelInfo = getLevelByPoints(totalPoints);
@@ -81,14 +73,12 @@ export const GamificationPanel: React.FC<GamificationPanelProps> = ({
       grade5Count,
       avgGrade,
       testCount: myTests.length,
-      fipiTasksCount,
-      fipiPoints,
       chatCount: myChatMessages.length,
       totalPoints,
       levelInfo,
       achievementsCount: myAchievements.length,
     };
-  }, [grades, testAttempts, fipiProgress, fipiAttempts, chatMessages, studentId, myLevel, myAchievements]);
+  }, [grades, testAttempts, chatMessages, studentId, myLevel, myAchievements]);
   
   const tabs: { id: GamificationTab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Обзор', icon: <BarChart3 className="w-4 h-4" /> },
@@ -169,16 +159,11 @@ export const GamificationPanel: React.FC<GamificationPanelProps> = ({
         {activeTab === 'overview' && (
           <div className="space-y-4">
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-3 text-center border border-amber-100">
                 <Trophy className="w-5 h-5 mx-auto text-amber-500 mb-1" />
                 <div className="text-xl font-bold text-gray-900">{stats.achievementsCount}</div>
                 <div className="text-xs text-gray-500">Достижений</div>
-              </div>
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3 text-center border border-green-100">
-                <Target className="w-5 h-5 mx-auto text-green-500 mb-1" />
-                <div className="text-xl font-bold text-gray-900">{stats.fipiTasksCount}</div>
-                <div className="text-xs text-gray-500">Заданий FIPI</div>
               </div>
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-3 text-center border border-blue-100">
                 <Star className="w-5 h-5 mx-auto text-blue-500 mb-1" />
@@ -266,19 +251,7 @@ export const GamificationPanel: React.FC<GamificationPanelProps> = ({
               </div>
               
               <div className="bg-gray-50 rounded-xl p-4">
-                <div className="flex items-center gap-2 text-gray-600 mb-2">
-                  <Target className="w-4 h-4" />
-                  <span className="text-sm font-medium">FIPI</span>
-                </div>
                 <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-xs text-gray-500">Заданий</span>
-                    <span className="text-sm font-bold">{stats.fipiTasksCount}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-xs text-gray-500">Баллов</span>
-                    <span className="text-sm font-bold text-purple-600">{stats.fipiPoints}</span>
-                  </div>
                   <div className="flex justify-between">
                     <span className="text-xs text-gray-500">Тестов пройдено</span>
                     <span className="text-sm font-bold">{stats.testCount}</span>
@@ -337,7 +310,7 @@ export const GamificationPanel: React.FC<GamificationPanelProps> = ({
 // Компактная версия для главной страницы
 export const GamificationWidget: React.FC<{ className?: string }> = ({ className = '' }) => {
   const { user } = useAuth();
-  const { achievements, studentAchievements, studentLevels, studentRatings, grades, fipiProgress, fipiAttempts } = useData();
+  const { achievements, studentAchievements, studentLevels, studentRatings, grades } = useData();
   
   const studentId = user?.id || '';
   
@@ -361,18 +334,15 @@ export const GamificationWidget: React.FC<{ className?: string }> = ({ className
   
   const stats = useMemo(() => {
     const myGrades = grades.filter(g => g.studentId === studentId);
-    const fipiPoints = fipiProgress.find(fp => fp.studentId === studentId)?.totalPoints || 0;
-    const fipiTasksCount = fipiAttempts.filter(fa => fa.studentId === studentId).length;
-    const totalPoints = (myLevel?.totalPoints || 0) + fipiPoints;
+    const totalPoints = (myLevel?.totalPoints || 0);
     
     return {
       totalPoints,
       levelInfo: getLevelByPoints(totalPoints),
       achievementsCount: myAchievements.length,
-      fipiTasksCount,
       ratingPosition: myRating?.position,
     };
-  }, [grades, fipiProgress, fipiAttempts, studentId, myLevel, myAchievements, myRating]);
+  }, [grades, studentId, myLevel, myAchievements, myRating]);
   
   return (
     <div className={`glass rounded-2xl p-4 ${className}`}>
@@ -408,14 +378,10 @@ export const GamificationWidget: React.FC<{ className?: string }> = ({ className
       />
       
       {/* Quick Stats */}
-      <div className="grid grid-cols-3 gap-2 text-center">
+      <div className="grid grid-cols-2 gap-2 text-center">
         <div className="bg-gray-50 rounded-lg p-2">
           <div className="text-lg font-bold text-gray-900">{stats.achievementsCount}</div>
           <div className="text-xs text-gray-500">Достижений</div>
-        </div>
-        <div className="bg-gray-50 rounded-lg p-2">
-          <div className="text-lg font-bold text-gray-900">{stats.fipiTasksCount}</div>
-          <div className="text-xs text-gray-500">Заданий</div>
         </div>
         <div className="bg-gray-50 rounded-lg p-2">
           <div className="text-lg font-bold text-gray-900">#{stats.ratingPosition || '—'}</div>

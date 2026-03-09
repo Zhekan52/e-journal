@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom';
 import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
-import { FipiWidget } from './FipiWidget';
 import { StudentChatWidget } from './Chat';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -371,9 +370,6 @@ const Home: React.FC<{ myGrades: any[]; lessons: any[] }> = ({ myGrades, lessons
           <p className="text-blue-100 text-lg font-medium">Сегодня {getTodayDate().getDate()} {MONTH_NAMES_GEN[getTodayDate().getMonth()]}</p>
         </div>
       </div>
-
-      {/* FIPI Widget */}
-      <FipiWidget />
 
       {/* Stats Cards - Modern Style */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

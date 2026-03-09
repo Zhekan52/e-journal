@@ -15,7 +15,7 @@ export const AchievementsPanel: React.FC<AchievementsPanelProps> = ({
   onClose,
   className = '',
 }) => {
-  const { achievements, studentAchievements, studentLevels, grades, testAttempts, fipiProgress, fipiAttempts, chatMessages } = useData();
+  const { achievements, studentAchievements, studentLevels, grades, testAttempts, chatMessages } = useData();
   
   // Используем дефолтные достижения если в базе пусто
   const allAchievements = achievements.length > 0 ? achievements : defaultAchievements;
@@ -34,8 +34,6 @@ export const AchievementsPanel: React.FC<AchievementsPanelProps> = ({
   const stats = useMemo(() => {
     const myGrades = grades.filter(g => g.studentId === studentId);
     const myTests = testAttempts.filter(ta => ta.studentId === studentId);
-    const myFipiProgress = fipiProgress.find(fp => fp.studentId === studentId);
-    const myFipiAttempts = fipiAttempts.filter(fa => fa.studentId === studentId);
     const myChatMessages = chatMessages.filter(cm => cm.fromUserId === studentId);
     
     // Считаем оценки 5
@@ -49,12 +47,6 @@ export const AchievementsPanel: React.FC<AchievementsPanelProps> = ({
     // Количество тестов
     const testCount = myTests.length;
     
-    // Количество FIPI заданий
-    const fipiTasksCount = myFipiAttempts.length;
-    
-    // Баллы FIPI
-    const fipiPoints = myFipiProgress?.totalPoints || 0;
-    
     // Сообщения в чате
     const chatCount = myChatMessages.length;
     
@@ -62,12 +54,10 @@ export const AchievementsPanel: React.FC<AchievementsPanelProps> = ({
       grade5Count,
       avgGrade,
       testCount,
-      fipiTasksCount,
-      fipiPoints,
       chatCount,
       totalAchievements: myAchievements.length,
     };
-  }, [grades, testAttempts, fipiProgress, fipiAttempts, chatMessages, studentId, myAchievements]);
+  }, [grades, testAttempts, chatMessages, studentId, myAchievements]);
   
   // Проверяем, какие достижения получены
   const earnedAchievementIds = useMemo(() => {
@@ -80,7 +70,6 @@ export const AchievementsPanel: React.FC<AchievementsPanelProps> = ({
       streak: { title: 'Серии', icon: <Flame className="w-4 h-4" />, items: [] as Achievement[] },
       tasks: { title: 'Задания', icon: <Target className="w-4 h-4" />, items: [] as Achievement[] },
       grades: { title: 'Оценки', icon: <GraduationCap className="w-4 h-4" />, items: [] as Achievement[] },
-      fipi: { title: 'FIPI', icon: <BookOpen className="w-4 h-4" />, items: [] as Achievement[] },
       points: { title: 'Баллы', icon: <Star className="w-4 h-4" />, items: [] as Achievement[] },
       social: { title: 'Общение', icon: <MessageCircle className="w-4 h-4" />, items: [] as Achievement[] },
       special: { title: 'Особые', icon: <Sparkles className="w-4 h-4" />, items: [] as Achievement[] },
@@ -127,20 +116,10 @@ export const AchievementsPanel: React.FC<AchievementsPanelProps> = ({
       case 'test_master':
         current = stats.testCount;
         break;
-      case 'tasks_10':
-      case 'tasks_50':
-      case 'tasks_100':
-      case 'tasks_500':
-      case 'tasks_1000':
-        current = stats.fipiTasksCount;
-        break;
       case 'points_100':
       case 'points_500':
       case 'points_1000':
       case 'points_5000':
-      case 'points_10000':
-        current = stats.fipiPoints;
-        break;
       case 'average_above_4_5':
       case 'average_above_4_8':
       case 'average_above_5':
@@ -317,14 +296,10 @@ export const AchievementsPanel: React.FC<AchievementsPanelProps> = ({
       
       {/* Stats Summary */}
       <div className="p-4 bg-gray-50 border-t border-gray-100">
-        <div className="grid grid-cols-3 gap-4 text-center">
+        <div className="grid grid-cols-2 gap-4 text-center">
           <div>
             <div className="text-2xl font-bold text-gray-900">{stats.grade5Count}</div>
             <div className="text-xs text-gray-500">Пятёрок</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-gray-900">{stats.fipiTasksCount}</div>
-            <div className="text-xs text-gray-500">Заданий FIPI</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-gray-900">{stats.avgGrade.toFixed(1)}</div>
