@@ -265,6 +265,7 @@ export const StudentView: React.FC = () => {
   const { user, logout } = useAuth();
   const { lessons, grades, diaryEntries, tests, testAttempts, setTestAttempts, testRetakes, setTestRetakes, setGrades, journalColumns, students, testAssignments, attendance } = useData();
   const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [prevTab, setPrevTab] = useState<Tab>('home');
 
   const studentId = user?.id || '';
   // Используем все оценки ученика (без фильтрации по урокам), чтобы совпадало с расчётами админа
@@ -278,6 +279,25 @@ export const StudentView: React.FC = () => {
     { id: 'attendance', label: 'Посещаемость', icon: <UserCheck className="w-5 h-5" /> },
     { id: 'statistics', label: 'Статистика', icon: <BarChart3 className="w-5 h-5" /> },
   ];
+
+  const tabOrder: Tab[] = ['home', 'schedule', 'grades', 'diary', 'attendance', 'statistics'];
+
+  const handleTabChange = (newTab: Tab) => {
+    setPrevTab(activeTab);
+    setActiveTab(newTab);
+  };
+
+  const getTabAnimationClass = () => {
+    const currentIndex = tabOrder.indexOf(activeTab);
+    const prevIndex = tabOrder.indexOf(prevTab);
+    
+    if (currentIndex > prevIndex) {
+      return 'tab-animate-slide-right';
+    } else if (currentIndex < prevIndex) {
+      return 'tab-animate-slide-left';
+    }
+    return 'tab-animate-fade-scale';
+  };
 
   return (
     <div className="min-h-screen">
@@ -296,8 +316,8 @@ export const StudentView: React.FC = () => {
             </div>
             <nav className="flex items-center gap-1 bg-gray-100/80 backdrop-blur rounded-2xl p-1.5">
               {tabs.map(tab => (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${activeTab === tab.id ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'}`}>
+                <button key={tab.id} onClick={() => handleTabChange(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 tab-button ${activeTab === tab.id ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'}`}>
                   {tab.icon}
                   <span className="hidden sm:inline">{tab.label}</span>
                 </button>
@@ -318,7 +338,7 @@ export const StudentView: React.FC = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className={`max-w-7xl mx-auto px-4 py-8 ${getTabAnimationClass()}`}>
         {activeTab === 'home' && <Home myGrades={myGrades} lessons={lessons} />}
         {activeTab === 'schedule' && <Schedule />}
         {activeTab === 'grades' && <Grades myGrades={myGrades} attendance={attendance} studentId={studentId} students={students} />}

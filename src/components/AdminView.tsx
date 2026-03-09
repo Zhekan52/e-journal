@@ -107,10 +107,30 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, testTitle })
 export const AdminView: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [prevTab, setPrevTab] = useState<Tab>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [scheduleEditMode, setScheduleEditMode] = useState(false);
   const [lessonPageParams, setLessonPageParams] = useState<{ subject: string; date: string; lessonNumber: number } | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+
+  const tabOrder: Tab[] = ['dashboard', 'schedule', 'journal', 'attendance', 'tests', 'students', 'lessonTypes', 'reports', 'chat'];
+
+  const handleTabChange = (newTab: Tab) => {
+    setPrevTab(activeTab);
+    setActiveTab(newTab);
+  };
+
+  const getTabAnimationClass = () => {
+    const currentIndex = tabOrder.indexOf(activeTab);
+    const prevIndex = tabOrder.indexOf(prevTab);
+    
+    if (currentIndex > prevIndex) {
+      return 'tab-animate-slide-right';
+    } else if (currentIndex < prevIndex) {
+      return 'tab-animate-slide-left';
+    }
+    return 'tab-animate-fade-scale';
+  };
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'Сводка', icon: <BarChart3 className="w-5 h-5" /> },
@@ -157,9 +177,11 @@ export const AdminView: React.FC = () => {
 
         {/* Navigation */}
         <nav className="flex-1 py-6 px-3 space-y-1.5 overflow-y-auto">
-          {tabs.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+          {tabs.map((tab, index) => (
+            <button 
+              key={tab.id} 
+              onClick={() => handleTabChange(tab.id)}
+              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 tab-button ${
                 activeTab === tab.id 
                   ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25' 
                   : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
@@ -228,16 +250,16 @@ export const AdminView: React.FC = () => {
           </div>
         </header>
 
-        <div className="max-w-7xl mx-auto px-4 py-8">
-        {activeTab === 'dashboard' && <AdminDashboard />}
-        {activeTab === 'schedule' && <Schedule editable={scheduleEditMode} onEditModeChange={setScheduleEditMode} onOpenLessonPage={handleOpenLessonPage} />}
-        {activeTab === 'journal' && <Journal />}
-        {activeTab === 'attendance' && <AttendanceCalendar />}
-        {activeTab === 'tests' && <TestsManager />}
-        {activeTab === 'students' && <StudentsManager />}
-        {activeTab === 'lessonTypes' && <LessonTypesManager />}
-        {activeTab === 'reports' && <Reports />}
-        {activeTab === 'chat' && <AdminChatView />}
+        <div className={`max-w-7xl mx-auto px-4 py-8 ${getTabAnimationClass()}`}>
+          {activeTab === 'dashboard' && <AdminDashboard />}
+          {activeTab === 'schedule' && <Schedule editable={scheduleEditMode} onEditModeChange={setScheduleEditMode} onOpenLessonPage={handleOpenLessonPage} />}
+          {activeTab === 'journal' && <Journal />}
+          {activeTab === 'attendance' && <AttendanceCalendar />}
+          {activeTab === 'tests' && <TestsManager />}
+          {activeTab === 'students' && <StudentsManager />}
+          {activeTab === 'lessonTypes' && <LessonTypesManager />}
+          {activeTab === 'reports' && <Reports />}
+          {activeTab === 'chat' && <AdminChatView />}
         </div>
       </main>
         
