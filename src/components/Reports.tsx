@@ -369,7 +369,11 @@ const StudentReport: React.FC<StudentReportProps> = ({
 
   // Функция экспорта в PDF
   const exportToPDF = async () => {
-    if (!tableRef.current || !selectedStudentData) return;
+    console.log('Экспорт в PDF начат', { tableRef: !!tableRef.current, selectedStudentData: !!selectedStudentData });
+    if (!tableRef.current || !selectedStudentData) {
+      alert('Пожалуйста, выберите ученика');
+      return;
+    }
     
     try {
       const canvas = await html2canvas(tableRef.current, {
@@ -404,8 +408,10 @@ const StudentReport: React.FC<StudentReportProps> = ({
       
       const fileName = `табель_${selectedStudentData.lastName}_${selectedStudentData.firstName}_${dateRange.start}_${dateRange.end}.pdf`;
       pdf.save(fileName);
+      console.log('PDF сохранён');
     } catch (error) {
       console.error('Ошибка при экспорте в PDF:', error);
+      alert('Ошибка при экспорте в PDF');
     }
   };
 
