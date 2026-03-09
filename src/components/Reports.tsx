@@ -7,12 +7,6 @@ import {
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-// @ts-ignore
-import pdfMake from 'pdfmake/build/pdfmake';
-// @ts-ignore
-import pdfFonts from 'pdfmake/build/vfs_fonts';
-// @ts-ignore
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 type ReportTab = 'student' | 'class' | 'attendance' | 'statistics';
 
@@ -373,115 +367,15 @@ const StudentReport: React.FC<StudentReportProps> = ({
     return v === 5 ? 'bg-emerald-100 text-emerald-700' : v === 4 ? 'bg-sky-100 text-sky-700' : v === 3 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700';
   };
 
-  // Функция экспорта в PDF
-  const exportToPDF = async () => {
-    console.log('Экспорт в PDF начат', { selectedStudentData: !!selectedStudentData });
+  // Функция экспорта в PDF через печать
+  const exportToPDF = () => {
     if (!selectedStudentData) {
       alert('Пожалуйста, выберите ученика');
       return;
     }
     
-    try {
-      // Создаём документ pdfMake
-      const docDefinition: any = {
-        pageSize: 'A4',
-        pageOrientation: 'landscape',
-        pageMargins: [10, 20, 10, 20],
-        content: [
-          {
-            text: 'Табель успеваемости',
-            style: 'title',
-            alignment: 'center'
-          },
-          {
-            text: `${selectedStudentData.lastName} ${selectedStudentData.firstName}`,
-            style: 'subtitle',
-            alignment: 'center'
-          },
-          {
-            text: `${formatDateDisplay(dateRange.start)} — ${formatDateDisplay(dateRange.end)}`,
-            style: 'normal',
-            alignment: 'center'
-          }
-        ],
-        styles: {
-          title: { fontSize: 18, bold: true, color: '#4c1d95' as any, margin: [0, 0, 0, 10] },
-          subtitle: { fontSize: 14, color: '#334155' as any, margin: [0, 0, 0, 5] },
-          normal: { fontSize: 10, color: '#334155' as any },
-          tableHeader: { bold: true, fontSize: 10, color: '#4c1d95' as any, fillColor: '#eee2ff' },
-          tableCell: { fontSize: 9, color: '#334155' as any },
-        }
-      };
-      
-      if (overallStudentAverage) {
-        docDefinition.content.push({
-          text: `Средний балл: ${overallStudentAverage}`,
-          style: 'normal',
-          alignment: 'center',
-          margin: [0, 5, 0, 15]
-        });
-      } else {
-        docDefinition.content.push({ text: '', margin: [0, 0, 0, 15] });
-      }
-      
-      // Создаём таблицу
-      const tableBody: any[] = [];
-      
-      // Заголовок таблицы
-      const headerRow: any[] = [{ text: 'Предмет', style: 'tableHeader' }];
-      allDates.slice(0, 15).forEach(d => {
-        headerRow.push({ text: d.split('-')[2], style: 'tableHeader', alignment: 'center' });
-      });
-      headerRow.push({ text: 'Ср.', style: 'tableHeader', alignment: 'center' });
-      tableBody.push(headerRow);
-      
-      // Строки с оценками
-      let rowIndex = 0;
-      SUBJECTS.forEach((subject) => {
-        const data = gradesBySubject[subject];
-        if (!data || Object.keys(data.dates).length === 0) return;
-        
-        const row: any[] = [];
-        row.push({ text: subject, style: 'tableCell', bold: true });
-        
-        allDates.slice(0, 15).forEach(d => {
-          const vals = data.dates[d] || [];
-          if (vals.length > 0) {
-            row.push({ text: vals.map(v => v.value.toString()).join(','), style: 'tableCell', alignment: 'center' });
-          } else {
-            row.push({ text: '', style: 'tableCell' });
-          }
-        });
-        
-        const avg = calculateAverage(subject);
-        row.push({ text: avg || '-', style: 'tableCell', bold: !!avg, alignment: 'center' });
-        
-        tableBody.push(row);
-        rowIndex++;
-      });
-      
-      docDefinition.content.push({
-        table: {
-          headerRows: 1,
-          widths: ['*', ...Array(15).fill(25), 40],
-          body: tableBody
-        },
-        layout: {
-          hLineWidth: () => 0.5,
-          vLineWidth: () => 0.5,
-          hLineColor: () => '#e2e8f0',
-          vLineColor: () => '#e2e8f0',
-          fillColor: (rowIndex: number) => rowIndex % 2 === 0 ? '#f8fafc' : '#ffffff'
-        }
-      });
-      
-      const fileName = `табель_${selectedStudentData.lastName}_${selectedStudentData.firstName}_${dateRange.start}_${dateRange.end}.pdf`;
-      pdfMake.createPdf(docDefinition).download(fileName);
-      console.log('PDF сохранён');
-    } catch (error) {
-      console.error('Ошибка при экспорте в PDF:', error);
-      alert(`Ошибка при экспорте в PDF: ${error instanceof Error ? error.message : String(error)}`);
-    }
+    // Открываем окно печати
+    window.print();
   };
 
   return (
@@ -524,7 +418,7 @@ const StudentReport: React.FC<StudentReportProps> = ({
               className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg font-medium hover:bg-violet-700 transition-colors shadow-md"
             >
               <Download className="w-4 h-4" />
-              Скачать PDF
+              Печать
             </button>
           </div>
 
