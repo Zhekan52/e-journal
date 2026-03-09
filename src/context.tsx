@@ -153,6 +153,8 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   updateUser: (username: string, password: string) => void;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>(null!);
@@ -165,6 +167,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return stored ? JSON.parse(stored) : null;
     } catch { return null; }
   });
+
+  // Тема оформления
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('theme');
+    return (saved as 'light' | 'dark') || 'light';
+  });
+
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => {
+      const newTheme = prev === 'light' ? 'dark' : 'light';
+      localStorage.setItem('theme', newTheme);
+      document.documentElement.classList.toggle('dark', newTheme === 'dark');
+      return newTheme;
+    });
+  }, []);
+
+  // Применяем тему при загрузке
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     const admin = adminUsers.find(u => u.username === username && u.password === password);
@@ -207,7 +229,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [user]);
 
-  return <AuthContext.Provider value={{ user, login, logout, updateUser }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, login, logout, updateUser, theme, toggleTheme }}>{children}</AuthContext.Provider>;
 };
 
 // ==================== DATA ====================

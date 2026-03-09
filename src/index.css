@@ -85,6 +85,43 @@ body {
   min-height: 100vh;
 }
 
+/* Dark Theme */
+.dark body {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+}
+
+.dark .glass {
+  background: rgba(30, 41, 59, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.4);
+}
+
+.dark .glass-dark {
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.5);
+}
+
+/* Dark theme text colors */
+.dark .text-gray-900 { color: #f1f5f9; }
+.dark .text-gray-800 { color: #e2e8f0; }
+.dark .text-gray-700 { color: #cbd5e1; }
+.dark .text-gray-600 { color: #94a3b8; }
+.dark .text-gray-500 { color: #64748b; }
+.dark .text-gray-400 { color: #475569; }
+
+/* Dark theme backgrounds */
+.dark .bg-white { background-color: #1e293b; }
+.dark .bg-gray-50 { background-color: #0f172a; }
+.dark .bg-gray-100 { background-color: #1e293b; }
+.dark .bg-gray-200 { background-color: #334155; }
+.dark .bg-gray-300 { background-color: #475569; }
+
+/* Dark theme borders */
+.dark .border-gray-100 { border-color: #334155; }
+.dark .border-gray-200 { border-color: #475569; }
+.dark .border-gray-300 { border-color: #64748b; }
+
 /* Clean card effect - Modern style */
 .glass {
   background: rgba(255, 255, 255, 0.95);

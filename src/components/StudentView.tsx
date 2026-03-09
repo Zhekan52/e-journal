@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useAuth, useData } from '../context';
 import { Schedule } from './Schedule';
 import { StudentChatWidget } from './Chat';
+import { ThemeToggle } from './ThemeToggle';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import {
@@ -304,6 +305,7 @@ export const StudentView: React.FC = () => {
               ))}
             </nav>
             <div className="flex items-center gap-4">
+              <ThemeToggle />
               <div className="hidden sm:flex items-center gap-3 px-4 py-2.5 bg-gray-100/80 backdrop-blur rounded-2xl">
                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
                   {user?.name?.charAt(0)}
