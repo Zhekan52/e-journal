@@ -2648,8 +2648,20 @@ const Journal: React.FC = () => {
       {journalTab === 'grades' && (
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
           {/* Заголовок с датами */}
-          <div className="overflow-x-auto">
-            <div className="min-w-max">
+          {allSlots.length === 0 ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="text-center">
+                <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+                  <CalendarDays className="w-10 h-10 text-slate-400" />
+                </div>
+                <p className="text-slate-500 font-medium">Нет уроков для отображения</p>
+                <p className="text-slate-400 text-sm mt-1">Добавьте уроки в расписание</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <div className="min-w-max">
               {/* Верхняя панель с месяцами */}
               <div className="flex bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 border-b border-slate-200">
                 <div className="w-14 flex-shrink-0" />
