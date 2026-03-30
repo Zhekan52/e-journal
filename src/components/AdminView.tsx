@@ -5,7 +5,6 @@ import { Schedule } from './Schedule';
 import { QuestionEditor } from './QuestionEditor';
 import { Reports } from './Reports';
 import { AdminChatView } from './Chat';
-import { PracticeManager } from './PracticeManager';
 import { uploadHomeworkFile } from '../firebase';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -139,7 +138,6 @@ export const AdminView: React.FC = () => {
     { id: 'journal', label: 'Журнал', icon: <ClipboardList className="w-5 h-5" /> },
     { id: 'attendance', label: 'Посещаемость', icon: <CalendarDays className="w-5 h-5" /> },
     { id: 'tests', label: 'Тесты', icon: <FileText className="w-5 h-5" /> },
-    { id: 'probniки', label: 'Пробники', icon: <ClipboardCheck className="w-5 h-5" /> },
     { id: 'students', label: 'Ученики', icon: <Users className="w-5 h-5" /> },
     { id: 'lessonTypes', label: 'Типы уроков', icon: <Tag className="w-5 h-5" /> },
     { id: 'reports', label: 'Отчёты', icon: <FileBarChart className="w-5 h-5" /> },
@@ -155,23 +153,23 @@ export const AdminView: React.FC = () => {
 
   return (
     <div className="min-h-screen flex">
-      {/* Sidebar - Modern Design */}
-      <aside className={`fixed left-0 top-0 h-full bg-white/95 backdrop-blur-xl border-r-0 z-40 flex flex-col transition-all duration-300 shadow-2xl ${sidebarCollapsed ? 'w-20' : 'w-64'}`}>
+      {/* Sidebar - Modern Dashboard */}
+      <aside className={`fixed left-0 top-0 h-full bg-white border-r border-slate-200 z-40 flex flex-col transition-all duration-300 shadow-xl ${sidebarCollapsed ? 'w-20' : 'w-64'}`}>
         {/* Logo */}
-        <div className="h-20 flex items-center justify-between px-5 border-b border-gray-100/50">
+        <div className="h-20 flex items-center justify-between px-5 border-b border-slate-100">
           {!sidebarCollapsed && (
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
                 <BookOpen className="w-5 h-5 text-white" />
               </div>
               <div>
-                <span className="font-bold text-gray-900 text-sm block leading-tight">Электронный</span>
-                <span className="font-bold text-gray-900 text-sm block leading-tight">журнал</span>
+                <span className="font-bold text-slate-900 text-sm block leading-tight">Электронный</span>
+                <span className="font-bold text-slate-900 text-sm block leading-tight">журнал</span>
               </div>
             </div>
           )}
           {sidebarCollapsed && (
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center mx-auto shadow-lg shadow-blue-500/25">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center mx-auto shadow-lg shadow-blue-500/25">
               <BookOpen className="w-5 h-5 text-white" />
             </div>
           )}
@@ -183,37 +181,37 @@ export const AdminView: React.FC = () => {
             <button 
               key={tab.id} 
               onClick={() => handleTabChange(tab.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 tab-button ${
+              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 tab-button ${
                 activeTab === tab.id 
                   ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25' 
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
               }`}>
-              <span className={activeTab === tab.id ? 'text-white' : 'text-gray-400'}>{tab.icon}</span>
+              <span className={activeTab === tab.id ? 'text-white' : 'text-slate-400'}>{tab.icon}</span>
               {!sidebarCollapsed && <span>{tab.label}</span>}
             </button>
           ))}
         </nav>
 
         {/* User section */}
-        <div className="p-3 border-t border-gray-100/50">
+        <div className="p-3 border-t border-slate-100">
           {!sidebarCollapsed ? (
-            <button onClick={() => setShowSettingsModal(true)} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-gray-100 transition-colors group">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
+            <button onClick={() => setShowSettingsModal(true)} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 transition-colors group">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
                 {user?.name?.charAt(0)}
               </div>
               <div className="flex-1 text-left">
-                <div className="text-sm font-bold text-gray-900">{user?.name}</div>
-                <div className="text-xs text-gray-500 font-medium">Администратор</div>
+                <div className="text-sm font-bold text-slate-900">{user?.name}</div>
+                <div className="text-xs text-slate-500 font-medium">Администратор</div>
               </div>
             </button>
           ) : (
-            <button onClick={() => setShowSettingsModal(true)} className="w-full flex items-center justify-center p-2 rounded-2xl hover:bg-gray-100 transition-colors">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
+            <button onClick={() => setShowSettingsModal(true)} className="w-full flex items-center justify-center p-2 rounded-xl hover:bg-slate-100 transition-colors">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
                 {user?.name?.charAt(0)}
               </div>
             </button>
           )}
-          <button onClick={logout} className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors mt-1 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+          <button onClick={logout} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors mt-1 ${sidebarCollapsed ? 'justify-center' : ''}`}>
             <LogOut className="w-5 h-5" />
             {!sidebarCollapsed && <span className="text-sm font-semibold">Выход</span>}
           </button>
@@ -222,27 +220,27 @@ export const AdminView: React.FC = () => {
         {/* Collapse button */}
         <button 
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="absolute -right-3 top-24 w-7 h-7 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50 hover:scale-110 transition-all"
+          className="absolute -right-3.5 top-24 w-7 h-7 bg-white border-2 border-slate-200 rounded-full flex items-center justify-center shadow-md hover:bg-slate-50 hover:scale-110 transition-all"
         >
           {sidebarCollapsed ? (
-            <ChevronRight className="w-4 h-4 text-gray-500" />
+            <ChevronRight className="w-4 h-4 text-slate-500" />
           ) : (
-            <ChevronLeft className="w-4 h-4 text-gray-500" />
+            <ChevronLeft className="w-4 h-4 text-slate-500" />
           )}
         </button>
       </aside>
 
       {/* Main content */}
       <main className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-20' : 'ml-64'}`}>
-        <header className="bg-white/80 backdrop-blur-2xl border-b border-gray-200/30 sticky top-0 z-30 shadow-sm">
+        <header className="bg-white/80 backdrop-blur-2xl border-b border-slate-200/30 sticky top-0 z-30 shadow-sm">
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex items-center justify-between h-20">
               <div className="flex items-center gap-4">
                 <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
-                <span className="font-bold text-gray-900 text-xl tracking-tight">{tabs.find(t => t.id === activeTab)?.label}</span>
+                <span className="font-bold text-slate-900 text-xl tracking-tight">{tabs.find(t => t.id === activeTab)?.label}</span>
               </div>
               <div className="flex items-center gap-4">
-                <button onClick={() => setShowSettingsModal(true)} className="sm:hidden flex items-center gap-2 px-3 py-2 bg-gray-100/50 rounded-xl hover:bg-gray-200 transition-colors cursor-pointer">
+                <button onClick={() => setShowSettingsModal(true)} className="sm:hidden flex items-center gap-2 px-3 py-2 bg-slate-100/50 rounded-xl hover:bg-slate-200 transition-colors cursor-pointer">
                   <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
                     {user?.name?.charAt(0)}
                   </div>
@@ -258,7 +256,6 @@ export const AdminView: React.FC = () => {
           {activeTab === 'journal' && <Journal />}
           {activeTab === 'attendance' && <AttendanceCalendar />}
           {activeTab === 'tests' && <TestsManager />}
-          {activeTab === 'probniки' && <PracticeManager />}
           {activeTab === 'students' && <StudentsManager />}
           {activeTab === 'lessonTypes' && <LessonTypesManager />}
           {activeTab === 'reports' && <Reports />}
@@ -426,8 +423,8 @@ const LessonTypesManager: React.FC = () => {
       <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/50 p-6 shadow-lg">
         {customLessonTypes.length === 0 ? (
           <div className="text-center py-12">
-            <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-8 h-8 text-gray-400" />
+            <div className="w-16 h-16 rounded-xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-8 h-8 text-slate-400" />
             </div>
             <p className="text-gray-400 font-medium">Нет пользовательских типов уроков</p>
             <p className="text-gray-300 text-sm mt-1">Создайте свой тип урока для использования в журнале</p>

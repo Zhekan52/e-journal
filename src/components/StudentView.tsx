@@ -39,14 +39,14 @@ const GradeWithTooltip: React.FC<GradeWithTooltipProps> = ({ value, excludeFromA
     : 'w-9 h-9 text-sm';
     
   const colorClass = excludeFromAverage 
-    ? 'bg-gray-200 text-gray-500 cursor-help' 
+    ? 'bg-slate-200 text-slate-500 cursor-help' 
     : value === 5 
-      ? 'bg-success-100 text-success-700 cursor-help' 
+      ? 'bg-emerald-100 text-emerald-700 cursor-help' 
       : value === 4 
-        ? 'bg-primary-100 text-primary-700 cursor-help' 
+        ? 'bg-blue-100 text-blue-700 cursor-help' 
         : value === 3 
-          ? 'bg-warning-100 text-warning-700 cursor-help' 
-          : 'bg-danger-100 text-danger-700 cursor-help';
+          ? 'bg-amber-100 text-amber-700 cursor-help' 
+          : 'bg-red-100 text-red-700 cursor-help';
 
   const tooltipText = testTitle 
     ? `Тест: ${testTitle}` 
@@ -301,36 +301,36 @@ export const StudentView: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Header - Modern Style */}
-      <header className="bg-white/90 backdrop-blur-2xl border-b border-gray-200/30 sticky top-0 z-30 shadow-sm">
+      {/* Header - Modern Dashboard Style */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-xl shadow-blue-500/20">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-xl shadow-blue-500/20">
                 <BookOpen className="w-6 h-6 text-white" />
               </div>
               <div>
-                <span className="font-bold text-gray-900 text-xl tracking-tight block leading-tight">Электронный</span>
-                <span className="font-bold text-gray-900 text-xl tracking-tight block leading-tight">дневник</span>
+                <span className="font-bold text-slate-900 text-xl tracking-tight block leading-tight">Электронный</span>
+                <span className="font-bold text-slate-900 text-xl tracking-tight block leading-tight">дневник</span>
               </div>
             </div>
-            <nav className="flex items-center gap-1 bg-gray-100/80 backdrop-blur rounded-2xl p-1.5">
+            <nav className="flex items-center gap-1 bg-slate-100/80 backdrop-blur rounded-xl p-1.5">
               {tabs.map(tab => (
                 <button key={tab.id} onClick={() => handleTabChange(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 tab-button ${activeTab === tab.id ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'}`}>
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 tab-button ${activeTab === tab.id ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'}`}>
                   {tab.icon}
                   <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               ))}
             </nav>
             <div className="flex items-center gap-4">
-              <div className="hidden sm:flex items-center gap-3 px-4 py-2.5 bg-gray-100/80 backdrop-blur rounded-2xl">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
+              <div className="hidden sm:flex items-center gap-3 px-4 py-2.5 bg-slate-100/80 backdrop-blur rounded-xl">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
                   {user?.name?.charAt(0)}
                 </div>
-                <span className="text-sm font-bold text-gray-800">{user?.name}</span>
+                <span className="text-sm font-bold text-slate-800">{user?.name}</span>
               </div>
-              <button onClick={logout} className="p-3 rounded-2xl hover:bg-red-50 transition-colors text-gray-500 hover:text-red-600">
+              <button onClick={logout} className="p-3 rounded-xl hover:bg-red-50 transition-colors text-slate-500 hover:text-red-600">
                 <LogOut className="w-5 h-5" />
               </button>
             </div>
