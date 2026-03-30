@@ -30,7 +30,7 @@ export const Login: React.FC = () => {
       <div className="w-full max-w-md">
         {/* Card - Modern Dashboard Style */}
         <div className="bg-white border border-slate-200 rounded-2xl shadow-xl p-8 space-y-8">
-          {/* Header */
+          {/* Header */}
           <div className="text-center space-y-3">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/25 mx-auto">
               <GraduationCap className="w-8 h-8 text-white" />
